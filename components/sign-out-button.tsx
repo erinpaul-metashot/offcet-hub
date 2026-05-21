@@ -1,22 +1,28 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui";
 
 import { Power } from "lucide-react";
 
 export function SignOutButton({ collapsed }: { collapsed?: boolean }) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
 
-  const handleSignOut = () => {
-    startTransition(async () => {
+  const handleSignOut = async () => {
+    if (isPending) {
+      return;
+    }
+
+    setIsPending(true);
+
+    try {
       await authClient.signOut();
-      router.push("/login");
-      router.refresh();
-    });
+      window.location.replace("/login");
+    } catch (error) {
+      console.error("Failed to sign out", error);
+      setIsPending(false);
+    }
   };
 
   if (collapsed) {

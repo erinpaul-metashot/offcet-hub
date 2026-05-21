@@ -312,3 +312,58 @@ export const getBuyerDashboard = query({
     };
   },
 });
+
+export const getForLot = query({
+  args: {
+    lotId: v.id("lots"),
+  },
+  handler: async (ctx, args) => {
+    // Basic auth check
+    await requireRole(ctx, ["admin", "supplier"]);
+
+    const assignments = await ctx.db
+      .query("assignments")
+      .withIndex("by_lot", (query) => query.eq("lotId", args.lotId))
+      .collect();
+
+    const populatedAssignments = await Promise.all(
+      assignments.map(async (assignment) => {
+        const user = await ctx.db.get(assignment.assignedToUserId);
+        if (!user) return null;
+
+        // Fetch buyer profile for more details
+        let businessName = "Unknown Business";
+        if (user.role === "buyer") {
+          const buyerProfile = await ctx.db
+            .query("buyerProfiles")
+            .withIndex("by_user", (q) => q.eq("userId", user._id))
+            .first();
+          if (buyerProfile) {
+            businessName = buyerProfile.businessName;
+          }
+        } else if (user.role === "agent") {
+          const agentProfile = await ctx.db
+            .query("agentProfiles")
+            .withIndex("by_user", (q) => q.eq("userId", user._id))
+            .first();
+          if (agentProfile && agentProfile.businessName) {
+            businessName = agentProfile.businessName;
+          }
+        }
+
+        return {
+          ...assignment,
+          user: {
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            businessName,
+          },
+        };
+      })
+    );
+
+    return populatedAssignments.filter((a): a is NonNullable<typeof a> => a !== null);
+  },
+});

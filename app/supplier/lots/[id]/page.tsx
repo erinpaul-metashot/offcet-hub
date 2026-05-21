@@ -20,7 +20,10 @@ import {
   FileText,
   Clock,
   Edit2,
-  CheckCircle2
+  CheckCircle2,
+  Users,
+  Phone,
+  Mail
 } from "lucide-react";
 
 export default function LotDetailsPage() {
@@ -32,6 +35,7 @@ export default function LotDetailsPage() {
   const [isPending, startTransition] = useTransition();
 
   const lot = useQuery(api.lots.get, { lotId });
+  const assignments = useQuery(api.assignments.getForLot, { lotId });
   const markSold = useMutation(api.lots.markSold);
 
   if (lot === undefined) {
@@ -196,6 +200,55 @@ export default function LotDetailsPage() {
                 <p className="text-amber-900 leading-relaxed">
                   {lot.reviewNotes}
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* Assigned Buyers */}
+          {lot.status !== "draft" && lot.status !== "pending_review" && assignments && assignments.length > 0 && (
+            <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden">
+              <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
+                  <Users size={16} className="text-[var(--brand-green)]" />
+                  Assigned Buyers
+                </h3>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {assignments.filter(a => a.responseStatus !== "not_interested").map((assignment) => (
+                    <div key={assignment._id} className="border border-[var(--line)] rounded-xl p-4 bg-[var(--surface)] hover:border-[var(--brand-green)]/30 transition-colors">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-bold text-[var(--ink)]">{assignment.user.businessName}</h4>
+                          <p className="text-sm text-[var(--ink-muted)]">{assignment.user.name}</p>
+                        </div>
+                        <StatusBadge status={assignment.responseStatus || "pending"} />
+                      </div>
+                      <div className="space-y-2 mt-4 text-sm">
+                        <div className="flex items-center gap-2 text-[var(--ink-muted)]">
+                          <Phone size={14} />
+                          <span>{assignment.user.phone || "No phone provided"}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[var(--ink-muted)]">
+                          <Mail size={14} />
+                          <span>{assignment.user.email}</span>
+                        </div>
+                      </div>
+                      {assignment.notes && (
+                        <div className="mt-4 p-3 bg-amber-50/50 border border-amber-100 rounded-lg text-sm text-amber-900">
+                          <p className="font-semibold mb-1 text-xs uppercase tracking-wider">Assignment Notes</p>
+                          <p>{assignment.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {assignments.filter(a => a.responseStatus !== "not_interested").length === 0 && (
+                    <div className="col-span-full flex flex-col items-center justify-center py-8 text-[var(--ink-muted)] border border-dashed border-[var(--line)] rounded-xl">
+                      <Users size={32} className="mb-2 opacity-30 text-[var(--ink-muted)]" />
+                      <p className="font-medium text-sm">No active buyers currently assigned.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
