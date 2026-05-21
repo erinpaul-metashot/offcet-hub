@@ -18,8 +18,8 @@ export const getCurrentUser = query({
 
     return {
       authUserId: viewer.authUser.id,
-      authName: viewer.authUser.name,
-      authEmail: viewer.authUser.email,
+      authName: viewer.authUser.name ?? null,
+      authEmail: viewer.authUser.email ?? null,
       profileComplete: Boolean(viewer.user),
       dashboardPath: viewer.user ? dashboardPathForRole(viewer.user.role) : "/register",
       user: viewer.user

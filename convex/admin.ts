@@ -108,7 +108,6 @@ async function getDeleteGuard(
 
   return {
     canDelete: true,
-    deleteBlockReason: undefined,
   };
 }
 
@@ -669,7 +668,7 @@ export const getDashboardOverview = query({
             createdAt: lot.createdAt,
             location: lot.location,
             supplierName: supplier?.name ?? "Supplier",
-            expectedPrice: lot.expectedPrice,
+            ...(lot.expectedPrice !== undefined ? { expectedPrice: lot.expectedPrice } : {}),
           };
         }),
     );
@@ -700,7 +699,7 @@ export const getDashboardOverview = query({
             expiresAt: lot.expiresAt,
             location: lot.location,
             supplierName: supplier?.name ?? "Supplier",
-            expectedPrice: lot.expectedPrice,
+            ...(lot.expectedPrice !== undefined ? { expectedPrice: lot.expectedPrice } : {}),
           };
         }),
     );

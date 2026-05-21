@@ -315,7 +315,7 @@ export const getSupplierDashboard = query({
             status: lot.status,
             expiresAt: lot.expiresAt,
             location: lot.location,
-            expectedPrice: lot.expectedPrice,
+            ...(lot.expectedPrice !== undefined ? { expectedPrice: lot.expectedPrice } : {}),
           })),
         recentLots: [...lotRows]
           .sort((left, right) => right.updatedAt - left.updatedAt)
@@ -327,7 +327,7 @@ export const getSupplierDashboard = query({
             updatedAt: lot.updatedAt,
             assignmentCount: lot.assignmentCount,
             category: lot.category,
-            expectedPrice: lot.expectedPrice,
+            ...(lot.expectedPrice !== undefined ? { expectedPrice: lot.expectedPrice } : {}),
           })),
       },
     };

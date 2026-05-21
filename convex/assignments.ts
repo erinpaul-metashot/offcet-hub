@@ -119,9 +119,9 @@ export const listAssignedLotsForCurrentUser = query({
           imageUrls,
           supplierName: supplier?.name ?? "Supplier",
           assignedAt: assignment.assignedAt,
-          assignmentNotes: assignment.notes,
+          assignmentNotes: assignment.notes ?? null,
           responseStatus: assignment.responseStatus ?? "pending",
-          responseUpdatedAt: assignment.responseUpdatedAt,
+          responseUpdatedAt: assignment.responseUpdatedAt ?? null,
         };
       }),
     );
@@ -240,7 +240,7 @@ export const getBuyerDashboard = query({
             title: lot.title,
             category: lot.category,
             location: lot.location,
-            expectedPrice: lot.expectedPrice,
+            ...(lot.expectedPrice !== undefined ? { expectedPrice: lot.expectedPrice } : {}),
             expiresAt: lot.expiresAt,
             status: lot.status,
             supplierName: supplier?.name ?? "Supplier",
