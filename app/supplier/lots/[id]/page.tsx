@@ -219,7 +219,9 @@ export default function LotDetailsPage() {
                     <div key={assignment._id} className="border border-[var(--line)] rounded-xl p-4 bg-[var(--surface)] hover:border-[var(--brand-green)]/30 transition-colors">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h4 className="font-bold text-[var(--ink)]">{assignment.user.businessName}</h4>
+                          <h4 className="font-bold text-[var(--ink)]">
+                            {assignment.user.businessName || "Business Profile Pending"}
+                          </h4>
                           <p className="text-sm text-[var(--ink-muted)]">{assignment.user.name}</p>
                         </div>
                         <StatusBadge status={assignment.responseStatus || "pending"} />
@@ -231,7 +233,7 @@ export default function LotDetailsPage() {
                         </div>
                         <div className="flex items-center gap-2 text-[var(--ink-muted)]">
                           <Mail size={14} />
-                          <span>{assignment.user.email}</span>
+                          <span>{assignment.user.email || "No email provided"}</span>
                         </div>
                       </div>
                       {assignment.notes && (

@@ -331,13 +331,13 @@ export const getForLot = query({
         const user = await ctx.db.get(assignment.assignedToUserId);
         if (!user) return null;
 
-        // Fetch buyer profile for more details
+        // Normalize assignee details so the query never returns undefined values.
         let businessName = "Unknown Business";
         if (user.role === "buyer") {
           const buyerProfile = await ctx.db
             .query("buyerProfiles")
             .withIndex("by_user", (q) => q.eq("userId", user._id))
-            .first();
+            .unique();
           if (buyerProfile) {
             businessName = buyerProfile.businessName;
           }
@@ -345,18 +345,23 @@ export const getForLot = query({
           const agentProfile = await ctx.db
             .query("agentProfiles")
             .withIndex("by_user", (q) => q.eq("userId", user._id))
-            .first();
+            .unique();
           if (agentProfile && agentProfile.businessName) {
             businessName = agentProfile.businessName;
           }
         }
 
         return {
-          ...assignment,
+          _id: assignment._id,
+          _creationTime: assignment._creationTime,
+          assignedAt: assignment.assignedAt,
+          notes: assignment.notes ?? null,
+          responseStatus: assignment.responseStatus ?? "pending",
+          responseUpdatedAt: assignment.responseUpdatedAt ?? null,
           user: {
             name: user.name,
-            email: user.email,
-            phone: user.phone,
+            email: user.email || null,
+            phone: user.phone || null,
             role: user.role,
             businessName,
           },

@@ -259,7 +259,7 @@ export const listAssignableUsers = query({
         }
         return {
           ...user,
-          profile: profile ?? undefined,
+          profile: profile ?? null,
         };
       }),
     );
