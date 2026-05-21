@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import "tailwindcss";
+
+:root {
+  --paper: #ffffff;
+  --surface: #fbfbfb;
+  --muted: #f1f1f1;
+  --ink: #050505;
+  --ink-muted: #666666;
+  --line: #e5e5e5;
+  --line-strong: #9d9d9d;
+  --brand-green: #1a5632; /* A dark, deep green suitable for text or primary actions */
+  --brand-green-light: #2b7a4b;
+  --brand-green-muted: #e9f2ec; /* A very light green for backgrounds */
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-light: var(--brand-green-light);
+  --color-brand-green-muted: var(--brand-green-muted);
+
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --font-sans: "Plus Jakarta Sans", "Outfit", "Segoe UI", sans-serif;
+  --font-display: "Outfit", sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-mono: "Consolas", "SFMono-Regular", monospace;
+}
+
+@utility bg-blueprint-grid {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+}
+
+@utility bg-blueprint-grid-dark {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(0, 0, 0, 0.02), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%);
+  color: var(--ink);
+  font-family: var(--font-sans), sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: #1a5632;
+  color: #ffffff;
+}
+
