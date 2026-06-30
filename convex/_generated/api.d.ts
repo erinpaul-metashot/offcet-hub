@@ -15,6 +15,8 @@ import type * as bootstrap from "../bootstrap.js";
 import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
 import type * as lots from "../lots.js";
+import type * as seed from "../seed.js";
+import type * as seedHelpers from "../seedHelpers.js";
 import type * as users from "../users.js";
 
 import type {
@@ -31,6 +33,8 @@ declare const fullApi: ApiFromModules<{
   helpers: typeof helpers;
   http: typeof http;
   lots: typeof lots;
+  seed: typeof seed;
+  seedHelpers: typeof seedHelpers;
   users: typeof users;
 }>;
 

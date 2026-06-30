@@ -42,3 +42,7 @@ next-env.d.ts
 
 # auto-generated files
 skills-lock.json
+
+.agents
+remotion.config.ts
+docs/demo
