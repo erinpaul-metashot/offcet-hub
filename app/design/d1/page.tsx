@@ -1,585 +1,403 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui";
-import { Check, ArrowRight, ShieldCheck, Zap, Users, BarChart3, Plus, Search, Calendar, FileText, CheckCircle2, ChevronRight, Scale, MapPin, Layers } from "lucide-react";
+import { motion } from "framer-motion";
+import { useGoogleFont } from "../_components/useGoogleFont";
 
-interface Lot {
-  id: string;
-  title: string;
-  quantity: string;
-  location: string;
-  status: "draft" | "pending_review" | "approved" | "assigned" | "sold";
-  supplier: string;
-  category: string;
-}
+const display = { fontFamily: "'Space Grotesk', ui-sans-serif, system-ui, sans-serif" };
+const mono = { fontFamily: "'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace" };
 
-const INITIAL_LOTS: Lot[] = [
-  { id: "LOT-001", title: "Bulk PET Resin Regrind", quantity: "18 tons", location: "Newark, NJ", status: "assigned", supplier: "Apex Polymers LLC", category: "Plastics" },
-  { id: "LOT-002", title: "Corrugated Cartons (Standard)", quantity: "3,200 units", location: "Chicago, IL", status: "pending_review", supplier: "Midwest Box Co.", category: "Packaging" },
-  { id: "LOT-003", title: "Aluminum Extrusion Offcuts", quantity: "6 pallets", location: "Phoenix, AZ", status: "draft", supplier: "Phoenix Metalworks", category: "Metals" },
+const STATES = [
+  {
+    k: "01",
+    name: "Dispersed",
+    status: "pending_review",
+    head: "Surplus enters as noise.",
+    body: "A supplier lists a lot — 1.2t of cold-rolled offcuts, idle nine months. No buyer, no price discovery, no signal. Just stranded mass taking up a corner of a warehouse.",
+  },
+  {
+    k: "02",
+    name: "Sorted",
+    status: "approved",
+    head: "An admin lowers the temperature.",
+    body: "Every lot is read by a human before it moves. Specs verified, photos checked, category corrected. Curation is the cooling step — it turns a messy listing into a trustworthy unit of inventory.",
+  },
+  {
+    k: "03",
+    name: "Matched",
+    status: "assigned",
+    head: "Order finds its lattice.",
+    body: "The lot is assigned to the buyer or agent who actually needs it. Not broadcast to a crowd — placed, deliberately, with the one party most likely to close. Matter snaps into position.",
+  },
+  {
+    k: "04",
+    name: "Cleared",
+    status: "sold",
+    head: "Entropy recovered as value.",
+    body: "The deal closes off-platform, the supplier marks the lot sold, the corner of the warehouse empties. Capital that was frozen as clutter is liquid again. The system resets, cooler than before.",
+  },
 ];
 
-export default function DesignOneFull() {
-  const [lots, setLots] = useState<Lot[]>(INITIAL_LOTS);
-  const [simulatorRole, setSimulatorRole] = useState<"supplier" | "admin" | "buyer">("supplier");
-  const [newLotTitle, setNewLotTitle] = useState("");
-  const [newLotQty, setNewLotQty] = useState("");
-  const [newLotLoc, setNewLotLoc] = useState("");
-  const [newLotCategory, setNewLotCategory] = useState("Plastics");
+const ROLES = [
+  { t: "Supplier", d: "Lists excess in minutes — photos, quantity, location, expected price. Clears stock without running a sales motion." },
+  { t: "Buyer", d: "Sees only the lots an admin placed in front of them. Quality-controlled inventory, well under list, no broker theatre." },
+  { t: "Agent", d: "Receives bulk lots and routes them through an existing network. The informal middleman, finally with infrastructure." },
+  { t: "Admin", d: "Reads every registration and every lot. The curation layer that makes the whole exchange worth trusting." },
+];
 
-  const handleAddLot = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newLotTitle || !newLotQty || !newLotLoc) return;
-    
-    const newLot: Lot = {
-      id: `LOT-00${lots.length + 1}`,
-      title: newLotTitle,
-      quantity: newLotQty,
-      location: newLotLoc,
-      status: "pending_review",
-      supplier: "Apex Polymers LLC",
-      category: newLotCategory,
+const ease = (x: number) => x * x * (3 - 2 * x);
+
+export default function EntropyConcept() {
+  useGoogleFont("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const orderRef = useRef(0);
+  const pointerRef = useRef({ x: -9999, y: -9999 });
+  const [entropy, setEntropy] = useState(1);
+
+  // Scroll → global order parameter t in [0,1]
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const t = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+        orderRef.current = t;
+        setEntropy((prev) => (Math.abs(prev - (1 - t)) > 0.008 ? 1 - t : prev));
+      });
     };
-    
-    setLots([newLot, ...lots]);
-    setNewLotTitle("");
-    setNewLotQty("");
-    setNewLotLoc("");
-    
-    setTimeout(() => {
-      setSimulatorRole("admin");
-    }, 800);
-  };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
 
-  const handleVerifyLot = (id: string) => {
-    setLots(lots.map(l => l.id === id ? { ...l, status: "assigned" } : l));
-    setTimeout(() => {
-      setSimulatorRole("buyer");
-    }, 800);
-  };
+  // Particle system: chaos drift ⇄ crystalline lattice
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-  const handleAcquireLot = (id: string) => {
-    setLots(lots.map(l => l.id === id ? { ...l, status: "sold" } : l));
-  };
+    let w = 0;
+    let h = 0;
+    let dpr = 1;
+    type P = { hx: number; hy: number; cx: number; cy: number; vx: number; vy: number; x: number; y: number; col: number; row: number };
+    let parts: P[] = [];
+    let cols = 0;
+    let rows = 0;
+
+    const build = () => {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const gap = w < 640 ? 40 : 52;
+      cols = Math.ceil(w / gap) + 1;
+      rows = Math.ceil(h / gap) + 1;
+      const offX = (w - (cols - 1) * gap) / 2;
+      const offY = (h - (rows - 1) * gap) / 2;
+      parts = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const hx = offX + c * gap;
+          const hy = offY + r * gap;
+          parts.push({
+            hx,
+            hy,
+            cx: Math.random() * w,
+            cy: Math.random() * h,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            x: Math.random() * w,
+            y: Math.random() * h,
+            col: c,
+            row: r,
+          });
+        }
+      }
+    };
+
+    build();
+    const onResize = () => build();
+    window.addEventListener("resize", onResize);
+
+    const onMove = (e: PointerEvent) => {
+      pointerRef.current = { x: e.clientX, y: e.clientY };
+    };
+    const onLeave = () => {
+      pointerRef.current = { x: -9999, y: -9999 };
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerleave", onLeave);
+
+    let raf = 0;
+    const tick = () => {
+      const t = ease(orderRef.current);
+      const px = pointerRef.current.x;
+      const py = pointerRef.current.y;
+
+      // faint trail clear → cosmic smear when chaotic, crisp when ordered
+      ctx.fillStyle = `rgba(8,7,11,${0.22 + 0.5 * t})`;
+      ctx.fillRect(0, 0, w, h);
+
+      const idx = (r: number, c: number) => r * cols + c;
+
+      // crystalline bonds emerge as order rises
+      if (t > 0.12) {
+        ctx.strokeStyle = `rgba(255,150,70,${(t - 0.12) * 0.22})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const p = parts[idx(r, c)];
+            if (c < cols - 1) {
+              const q = parts[idx(r, c + 1)];
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(q.x, q.y);
+            }
+            if (r < rows - 1) {
+              const q = parts[idx(r + 1, c)];
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(q.x, q.y);
+            }
+          }
+        }
+        ctx.stroke();
+      }
+
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        // wander while dispersed
+        p.cx += p.vx * (1 - t);
+        p.cy += p.vy * (1 - t);
+        if (p.cx < 0 || p.cx > w) p.vx *= -1;
+        if (p.cy < 0 || p.cy > h) p.vy *= -1;
+
+        let tx = p.cx + (p.hx - p.cx) * t;
+        let ty = p.cy + (p.hy - p.cy) * t;
+
+        // pointer disturbance — heat injected by the cursor
+        const dx = p.x - px;
+        const dy = p.y - py;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 14000) {
+          const f = (14000 - d2) / 14000;
+          tx += (dx / (Math.sqrt(d2) + 0.01)) * f * 34;
+          ty += (dy / (Math.sqrt(d2) + 0.01)) * f * 34;
+        }
+
+        p.x += (tx - p.x) * 0.12;
+        p.y += (ty - p.y) * 0.12;
+
+        const a = 0.18 + 0.62 * t;
+        const rad = 0.8 + 0.7 * t;
+        ctx.fillStyle = `rgba(255,${168 + Math.round(46 * t)},${96 + Math.round(40 * t)},${a})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerleave", onLeave);
+    };
+  }, []);
 
   return (
-    <div className="bg-paper text-ink font-sans antialiased selection:bg-brand-green selection:text-paper bg-blueprint-grid">
-      
-      {/* 1. PUBLIC HEADER NAVIGATION */}
-      <header className="w-full border-b border-line bg-paper/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-8 lg:px-12">
-          <div className="flex items-center gap-8">
-            <span className="text-xs font-black tracking-[0.3em] uppercase text-brand-green">SURPLUSLINK</span>
-            <nav className="hidden md:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              <a href="#features" className="hover:text-ink transition-colors">Features</a>
-              <a href="#demo" className="hover:text-ink transition-colors">Interactive Demo</a>
-              <a href="#process" className="hover:text-ink transition-colors">Trust Process</a>
-              <a href="#stats" className="hover:text-ink transition-colors">Ledger Stats</a>
-            </nav>
+    <main className="relative min-h-[100dvh] w-full bg-[#08070b] text-[#f3ede4]" style={display}>
+      <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-0" aria-hidden />
+      {/* vignette to seat content over the field */}
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_38%,transparent_30%,rgba(8,7,11,0.85)_85%)]" aria-hidden />
+
+      {/* HUD */}
+      <div className="fixed right-4 top-4 z-30 sm:right-6 sm:top-6" style={mono}>
+        <div className="rounded-md border border-white/10 bg-black/40 px-3 py-2 text-right backdrop-blur-sm">
+          <div className="text-[9px] uppercase tracking-[0.3em] text-[#ff9a46]/70">system entropy</div>
+          <div className="mt-1 text-xl tabular-nums text-[#f3ede4]">
+            S {entropy.toFixed(3)}
+            <span className="ml-1 text-[#ff9a46]">↓</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" className="text-xs tracking-wider border-0 h-10 px-4">Login</Button>
-            </Link>
-            <Link href="/register">
-              <Button className="border border-brand-green text-xs tracking-wider h-10 px-4">Get Started</Button>
-            </Link>
+          <div className="mt-1 h-1 w-32 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full bg-[#ff9a46]" style={{ width: `${(1 - entropy) * 100}%` }} />
           </div>
+        </div>
+      </div>
+
+      {/* nav */}
+      <header className="relative z-20 mx-auto flex max-w-6xl items-center justify-between px-6 pt-6 sm:px-10">
+        <div className="flex items-baseline gap-2" style={mono}>
+          <span className="text-sm font-bold tracking-tight">SurplusLink</span>
+          <span className="text-[10px] uppercase tracking-[0.3em] text-[#ff9a46]/60">/ thermodynamic exchange</span>
+        </div>
+        <div className="flex items-center gap-5 text-xs" style={mono}>
+          <Link href="/login" className="text-[#f3ede4]/55 transition-colors hover:text-[#f3ede4]">log in</Link>
+          <Link href="/register" className="rounded-full border border-[#ff9a46]/40 px-4 py-1.5 text-[#ff9a46] transition-colors hover:bg-[#ff9a46] hover:text-[#08070b]">request access</Link>
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 py-16 space-y-32">
+      {/* hero — dispersed */}
+      <section className="relative z-20 mx-auto flex min-h-[88vh] max-w-6xl flex-col justify-center px-6 sm:px-10">
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1 }}
+          className="mb-6 text-[11px] uppercase tracking-[0.4em] text-[#ff9a46]/70"
+          style={mono}
+        >
+          State 01 — Dispersed
+        </motion.p>
+        <motion.h1
+          initial={{ opacity: 0, y: 24, filter: "blur(10px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-4xl text-[clamp(2.6rem,7vw,5.6rem)] font-medium leading-[0.95] tracking-tight"
+        >
+          Every warehouse is a pile of stranded matter.
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.3 }}
+          className="mt-7 max-w-xl text-base leading-relaxed text-[#f3ede4]/65 sm:text-lg"
+        >
+          Idle steel, overstock polymer, dead packaging — capital frozen as clutter.
+          SurplusLink is the cooling function. It pulls order out of other people&rsquo;s excess.
+        </motion.p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.55 }}
+          className="mt-9 flex flex-wrap items-center gap-3"
+          style={mono}
+        >
+          <Link href="/register" className="group flex items-center gap-3 rounded-full bg-[#ff9a46] px-6 py-3 text-sm font-semibold text-[#08070b] transition-transform active:scale-[0.98]">
+            List surplus
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-[#08070b]/15 transition-transform group-hover:translate-x-0.5">→</span>
+          </Link>
+          <Link href="/login" className="rounded-full border border-white/15 px-6 py-3 text-sm text-[#f3ede4]/80 transition-colors hover:border-white/40">
+            See assigned lots
+          </Link>
+        </motion.div>
+        <p className="mt-16 text-[11px] uppercase tracking-[0.35em] text-[#f3ede4]/30" style={mono}>
+          scroll to cool the system ↓
+        </p>
+      </section>
 
-        {/* 2. MAJESTIC HERO SECTION */}
-        <section className="text-center max-w-4xl mx-auto space-y-8 pt-8">
-          <div className="inline-flex items-center gap-2 border border-brand-green/30 bg-brand-green-muted px-3 py-1">
-            <span className="h-1.5 w-1.5 bg-brand-green-light animate-pulse" />
-            <span className="text-[9px] font-bold tracking-[0.2em] text-brand-green uppercase">TRUST INFRASTRUCTURE FOR CIRCULAR SUPPLY</span>
-          </div>
-
-          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[0.95] text-ink">
-            THE PEER LEDGER FOR VERIFIED <span className="text-brand-green">SURPLUS INVENTORY</span>.
-          </h1>
-
-          <p className="text-sm sm:text-base leading-relaxed text-ink-muted max-w-2xl mx-auto">
-            Eliminate opaque broker markups and static spreadsheets. SurplusLink provides a direct, audited B2B catalog linking vetted manufacturers with regional industrial processors.
-          </p>
-
-          <div className="flex justify-center gap-4">
-            <Link href="/register">
-              <Button className="border border-brand-green text-xs tracking-widest px-6 py-3.5 h-12">
-                REQUEST ACCESS <ArrowRight size={14} className="ml-2" />
-              </Button>
-            </Link>
-            <a href="#demo">
-              <Button variant="secondary" className="border border-line text-xs tracking-widest px-6 py-3.5 h-12">
-                TRY THE SIMULATOR
-              </Button>
-            </a>
-          </div>
-
-          {/* High-Fidelity App Mockup Below Hero Fold */}
-          <div className="border border-line bg-surface p-2 mt-12 shadow-sm">
-            <div className="border border-line bg-paper">
-              {/* Fake Window bar */}
-              <div className="border-b border-line px-4 py-2 flex items-center justify-between bg-surface">
-                <div className="flex gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-line" />
-                  <span className="h-2 w-2 rounded-full bg-line" />
-                  <span className="h-2 w-2 rounded-full bg-line" />
-                </div>
-                <span className="text-[9px] font-mono text-ink-muted">node_status: active_sync (1,402 nodes)</span>
+      {/* states of matter */}
+      <section className="relative z-20 mx-auto max-w-6xl px-6 py-28 sm:px-10">
+        <h2 className="mb-16 max-w-2xl text-[clamp(1.6rem,3.4vw,2.6rem)] font-medium leading-tight">
+          A lot changes state four times on its way from clutter to cash.
+        </h2>
+        <div className="space-y-px overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
+          {STATES.map((s, i) => (
+            <motion.article
+              key={s.k}
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.7, delay: i * 0.05 }}
+              className="grid grid-cols-1 gap-6 border-b border-white/5 px-6 py-9 transition-colors last:border-0 hover:bg-white/[0.03] sm:grid-cols-[auto_1fr_1.4fr] sm:items-center sm:gap-10 sm:px-10"
+            >
+              <div className="flex items-center gap-4 sm:flex-col sm:items-start sm:gap-2">
+                <span className="text-3xl font-light tabular-nums text-[#ff9a46]/80" style={mono}>{s.k}</span>
+                <span className="text-lg">{s.name}</span>
               </div>
-              
-              {/* Fake Dashboard Layout */}
-              <div className="grid md:grid-cols-[180px_1fr] divide-x divide-line text-left">
-                <div className="p-4 space-y-3 bg-surface hidden md:block">
-                  <span className="text-[8px] font-bold tracking-widest text-ink-muted uppercase">NAVIGATION</span>
-                  <div className="space-y-1 text-[10px] text-ink-muted">
-                    <div className="font-bold text-brand-green bg-brand-green-muted px-2 py-1 flex items-center gap-1.5"><Layers size={10} /> Active Feed</div>
-                    <div className="px-2 py-1 hover:bg-muted hover:text-ink transition-colors flex items-center gap-1.5"><Search size={10} /> Search Ledger</div>
-                    <div className="px-2 py-1 hover:bg-muted hover:text-ink transition-colors flex items-center gap-1.5"><FileText size={10} /> Specifications</div>
-                  </div>
-                </div>
-                
-                <div className="p-4 space-y-4">
-                  <div className="flex justify-between items-center border-b border-line pb-2">
-                    <span className="text-[10px] font-bold text-ink uppercase">Live Trade Ledger</span>
-                    <span className="text-[8px] font-bold bg-brand-green text-paper px-2 py-0.5 uppercase tracking-wider">Secure Sync</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="border border-line p-3 flex justify-between items-center bg-surface">
-                      <div>
-                        <h4 className="text-xs font-bold text-ink">Bulk PET Resin Regrind</h4>
-                        <p className="text-[9px] text-ink-muted mt-0.5">18 tons • Newark, NJ • Apex Polymers LLC</p>
-                      </div>
-                      <span className="text-[9px] bg-brand-green text-paper px-2 py-0.5 font-bold uppercase">Certified Match</span>
-                    </div>
-                    <div className="border border-line p-3 flex justify-between items-center bg-surface">
-                      <div>
-                        <h4 className="text-xs font-bold text-ink">Aluminum Extrusion Scrap</h4>
-                        <p className="text-[9px] text-ink-muted mt-0.5">6 pallets • Phoenix, AZ • Phoenix Metalworks</p>
-                      </div>
-                      <span className="text-[9px] border border-line text-ink-muted px-2 py-0.5 font-bold uppercase">Pending Audit</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 3. MONOCHROME LOGO WALL */}
-        <section className="border-t border-b border-line py-6 text-center space-y-3">
-          <p className="text-[9px] font-bold tracking-[0.25em] text-ink-muted uppercase">LEDGER SYNCED WITH CERTIFIED REGIONAL MANUFACTURERS</p>
-          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-4 text-xs font-black tracking-[0.35em] text-ink-muted uppercase">
-            <span>Apex Polymers</span>
-            <span>Midwest Metals</span>
-            <span>Vantage Corp</span>
-            <span>Standard Alloy</span>
-          </div>
-        </section>
-
-        {/* 4. CORE VALUE PILLARS (BENTO GRID CELLS) */}
-        <section id="features" className="space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-[9px] font-bold tracking-[0.2em] text-brand-green uppercase bg-brand-green-muted px-3 py-1">CORE ASSURANCE</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Structured to eliminate transaction risk.</h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="border border-line bg-surface p-8 space-y-4 flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="h-8 w-8 bg-brand-green-muted flex items-center justify-center text-brand-green"><ShieldCheck size={16} /></div>
-                <h3 className="text-sm font-extrabold uppercase tracking-wider">100% Vetted Operators</h3>
-                <p className="text-xs text-ink-muted leading-relaxed">
-                  We audit tax IDs, operational history, and warehouse records for every supplier and buyer before releasing keys.
-                </p>
-              </div>
-              <span className="text-[9px] text-brand-green font-bold uppercase tracking-widest border-t border-line pt-4 mt-4">Verified Pipeline</span>
-            </div>
-
-            <div className="border border-line bg-surface p-8 space-y-4 flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="h-8 w-8 bg-brand-green-muted flex items-center justify-center text-brand-green"><FileText size={16} /></div>
-                <h3 className="text-sm font-extrabold uppercase tracking-wider">Authenticated Spec Logs</h3>
-                <p className="text-xs text-ink-muted leading-relaxed">
-                  Suppliers must upload weight tickets, certificates of analysis, and high-resolution photo sheets. Opaque parameters are rejected.
-                </p>
-              </div>
-              <span className="text-[9px] text-brand-green font-bold uppercase tracking-widest border-t border-line pt-4 mt-4">Certified Specs</span>
-            </div>
-
-            <div className="border border-line bg-surface p-8 space-y-4 flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="h-8 w-8 bg-brand-green-muted flex items-center justify-center text-brand-green"><Zap size={16} /></div>
-                <h3 className="text-sm font-extrabold uppercase tracking-wider">Peer-to-Peer Pricing</h3>
-                <p className="text-xs text-ink-muted leading-relaxed">
-                  Opaque broker margins are entirely bypassed. Buyers and suppliers coordinate directly, establishing pricing parity.
-                </p>
-              </div>
-              <span className="text-[9px] text-brand-green font-bold uppercase tracking-widest border-t border-line pt-4 mt-4">0% Broker Markups</span>
-            </div>
-          </div>
-        </section>
-
-        {/* 5. INTERACTIVE PRODUCT DEMO (SIMULATOR) */}
-        <section id="demo" className="border border-line bg-surface overflow-hidden">
-          <div className="border-b border-line px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-paper">
-            <div>
-              <p className="text-[9px] font-bold tracking-[0.2em] uppercase text-brand-green">PRODUCT SIMULATOR</p>
-              <h2 className="text-base font-extrabold tracking-tight uppercase">Experience the SurplusLink Pipeline</h2>
-            </div>
-            
-            {/* Role selector tabs */}
-            <div className="flex border border-line bg-surface p-0.5">
-              {(["supplier", "admin", "buyer"] as const).map(role => (
-                <button
-                  key={role}
-                  onClick={() => setSimulatorRole(role)}
-                  className={`px-3 py-1.5 text-[9px] font-bold tracking-wider uppercase transition-all
-                    ${simulatorRole === role 
-                      ? "bg-brand-green text-paper" 
-                      : "text-ink-muted hover:bg-muted hover:text-ink"
-                    }
-                  `}
-                >
-                  {role} view
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid lg:grid-cols-[1fr_1.3fr] divide-y lg:divide-y-0 lg:divide-x divide-line">
-            
-            {/* Interactive Control side */}
-            <div className="p-6 bg-paper/50">
-              <AnimatePresence mode="wait">
-                {simulatorRole === "supplier" && (
-                  <motion.div
-                    key="supplier"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4 text-left"
-                  >
-                    <div className="border border-line bg-surface p-4 space-y-1">
-                      <span className="text-[8px] font-bold tracking-widest text-ink-muted uppercase">SUPPLIER STAGE</span>
-                      <h3 className="text-xs font-bold text-ink uppercase tracking-wider">Draft & Submit Surplus Lot</h3>
-                      <p className="text-[11px] text-ink-muted leading-relaxed">List excess raw material assets directly onto the ledger feed with weight details.</p>
-                    </div>
-
-                    <form onSubmit={handleAddLot} className="space-y-3">
-                      <div>
-                        <label className="block text-[9px] font-bold uppercase tracking-wider text-ink-muted mb-1">Material Description</label>
-                        <input
-                          type="text"
-                          required
-                          value={newLotTitle}
-                          onChange={e => setNewLotTitle(e.target.value)}
-                          placeholder="e.g., HDPE Shredded Bottle Flakes"
-                          className="w-full border border-line bg-surface px-3 py-2 text-xs focus:border-brand-green outline-none"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[9px] font-bold uppercase tracking-wider text-ink-muted mb-1">Quantity</label>
-                          <input
-                            type="text"
-                            required
-                            value={newLotQty}
-                            onChange={e => setNewLotQty(e.target.value)}
-                            placeholder="e.g., 24.5 tons"
-                            className="w-full border border-line bg-surface px-3 py-2 text-xs focus:border-brand-green outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[9px] font-bold uppercase tracking-wider text-ink-muted mb-1">Warehouse City</label>
-                          <input
-                            type="text"
-                            required
-                            value={newLotLoc}
-                            onChange={e => setNewLotLoc(e.target.value)}
-                            placeholder="e.g., Detroit, MI"
-                            className="w-full border border-line bg-surface px-3 py-2 text-xs focus:border-brand-green outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="w-full flex justify-center items-center gap-2 bg-brand-green hover:bg-brand-green-light text-paper text-[10px] font-bold uppercase tracking-widest py-2.5 transition-colors"
-                      >
-                        <Plus size={14} /> Submit Lot for Review
-                      </button>
-                    </form>
-                  </motion.div>
-                )}
-
-                {simulatorRole === "admin" && (
-                  <motion.div
-                    key="admin"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4 text-left"
-                  >
-                    <div className="border border-line bg-surface p-4 space-y-1">
-                      <span className="text-[8px] font-bold tracking-widest text-brand-green uppercase">ADMIN STAGE</span>
-                      <h3 className="text-xs font-bold text-ink uppercase tracking-wider">Certification Audit</h3>
-                      <p className="text-[11px] text-ink-muted leading-relaxed">Admins review weight slips and specifications sheets before releasing the lot.</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      {lots.filter(l => l.status === "pending_review").map(l => (
-                        <div key={l.id} className="border border-line p-3 bg-surface space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="text-xs font-bold text-ink">{l.title}</p>
-                              <p className="text-[10px] text-ink-muted">{l.quantity} • {l.location}</p>
-                            </div>
-                            <span className="text-[8px] border border-dashed border-line-strong px-2 py-0.5 text-ink-muted font-bold uppercase">Review</span>
-                          </div>
-                          <button
-                            onClick={() => handleVerifyLot(l.id)}
-                            className="w-full flex items-center justify-center gap-1.5 border border-ink text-[9px] font-bold uppercase tracking-wider py-1.5 px-3 bg-paper hover:bg-brand-green-muted hover:text-brand-green hover:border-brand-green transition-colors"
-                          >
-                            <CheckCircle2 size={12} /> Verify & Release to Buyers
-                          </button>
-                        </div>
-                      ))}
-
-                      {lots.filter(l => l.status === "pending_review").length === 0 && (
-                        <div className="border border-dashed border-line p-6 text-center text-xs text-ink-muted italic">
-                          No pending listings. Select "Supplier View" to submit a lot.
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-
-                {simulatorRole === "buyer" && (
-                  <motion.div
-                    key="buyer"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4 text-left"
-                  >
-                    <div className="border border-line bg-surface p-4 space-y-1">
-                      <span className="text-[8px] font-bold tracking-widest text-brand-green uppercase">BUYER STAGE</span>
-                      <h3 className="text-xs font-bold text-ink uppercase tracking-wider">Direct Matching Feed</h3>
-                      <p className="text-[11px] text-ink-muted leading-relaxed">Buyers receive immediate, matched alerts based on their profile categories.</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      {lots.filter(l => l.status === "assigned").map(l => (
-                        <div key={l.id} className="border border-line p-3 bg-surface space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="text-xs font-bold text-ink">{l.title}</p>
-                              <p className="text-[10px] text-ink-muted">{l.quantity} • {l.location}</p>
-                            </div>
-                            <span className="text-[8px] bg-brand-green text-paper px-2 py-0.5 font-bold uppercase">Matched</span>
-                          </div>
-                          <button
-                            onClick={() => handleAcquireLot(l.id)}
-                            className="w-full flex items-center justify-center gap-1.5 bg-brand-green hover:bg-brand-green-light text-paper text-[9px] font-bold uppercase tracking-wider py-1.5 px-3 transition-colors"
-                          >
-                            <Check size={12} /> Acquire Lot Directly
-                          </button>
-                        </div>
-                      ))}
-
-                      {lots.filter(l => l.status === "assigned").length === 0 && (
-                        <div className="border border-dashed border-line p-6 text-center text-xs text-ink-muted italic">
-                          No active matched listings assigned.
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* List Showcase side */}
-            <div className="p-6 bg-surface">
-              <div className="flex items-center justify-between border-b border-line pb-3 mb-4">
-                <p className="text-[10px] font-bold tracking-wider uppercase text-ink-muted">Active Surplus Registry</p>
-                <span className="text-[9px] font-bold tracking-wide bg-ink text-paper px-2 py-0.5 uppercase">
-                  {lots.length} active logs
+              <h3 className="text-xl font-medium leading-snug sm:text-2xl">{s.head}</h3>
+              <div>
+                <p className="text-sm leading-relaxed text-[#f3ede4]/60">{s.body}</p>
+                <span className="mt-3 inline-block rounded border border-[#ff9a46]/25 px-2 py-0.5 text-[10px] text-[#ff9a46]/80" style={mono}>
+                  status: {s.status}
                 </span>
               </div>
+            </motion.article>
+          ))}
+        </div>
+      </section>
 
-              <div className="space-y-3 text-left">
-                {lots.map(l => (
-                  <motion.div
-                    key={l.id}
-                    layoutId={`full-lot-${l.id}`}
-                    className="border border-line p-4 bg-paper flex items-center justify-between gap-4"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[8px] font-mono font-bold text-ink-muted">{l.id}</span>
-                        <span className="text-[9px] font-bold text-brand-green bg-brand-green-muted px-1.5 uppercase">{l.category}</span>
-                      </div>
-                      <h4 className="text-xs font-bold text-ink">{l.title}</h4>
-                      <p className="text-[10px] text-ink-muted mt-0.5">{l.quantity} • {l.location}</p>
-                    </div>
+      {/* roles */}
+      <section className="relative z-20 mx-auto max-w-6xl px-6 py-20 sm:px-10">
+        <p className="mb-3 text-[11px] uppercase tracking-[0.4em] text-[#ff9a46]/70" style={mono}>four agents, one gradient</p>
+        <h2 className="mb-12 max-w-2xl text-[clamp(1.6rem,3.4vw,2.6rem)] font-medium leading-tight">
+          Everyone in the loop lowers entropy somewhere.
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {ROLES.map((r, i) => (
+            <motion.div
+              key={r.t}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.6, delay: i * 0.06 }}
+              className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-6"
+            >
+              <div className="mb-4 text-xs tabular-nums text-[#ff9a46]/60" style={mono}>{`0${i + 1}`}</div>
+              <h3 className="mb-2 text-lg font-medium">{r.t}</h3>
+              <p className="text-sm leading-relaxed text-[#f3ede4]/55">{r.d}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
 
-                    <div>
-                      {l.status === "pending_review" && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 border border-dashed border-line-strong text-ink-muted">Awaiting Audit</span>
-                      )}
-                      {l.status === "assigned" && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-brand-green text-paper flex items-center gap-1">
-                          <span className="h-1 w-1 bg-paper rounded-full animate-ping" /> Certified
-                        </span>
-                      )}
-                      {l.status === "sold" && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-muted border border-line text-ink-muted line-through">Exchanged</span>
-                      )}
-                      {l.status === "draft" && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 border border-line text-ink-muted">Draft</span>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 6. TRUST PIPELINE TIMELINE */}
-        <section id="process" className="border-t border-line pt-16 space-y-12">
-          <div className="text-center space-y-2">
-            <span className="text-[9px] font-bold tracking-wide text-brand-green uppercase bg-brand-green-muted px-3 py-1">THE TRUST PIPELINE</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Opaque broker channels replaced.</h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { num: "01", title: "Intake & Specification", desc: "Suppliers load packaging parameters, warehouse location, scale tickets, and laboratory analysis reports directly onto our directory board." },
-              { num: "02", title: "Compliance Certification", desc: "Our administrators run thorough validation checklists. We match weight receipts and verify corporate entities, certifying each lot." },
-              { num: "03", title: "Targeted B2B Matching", desc: "Certified listings are routed dynamically to vetted local buyer feeds, bypassing broad public listings and broker noise." }
-            ].map((step, idx) => (
-              <div key={idx} className="space-y-4 text-left border-l border-line pl-6 relative">
-                <div className="absolute -left-1.5 top-0.5 h-3 w-3 bg-brand-green border-2 border-paper" />
-                <span className="text-xl font-mono font-black text-brand-green">{step.num}</span>
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-ink">{step.title}</h3>
-                <p className="text-xs text-ink-muted leading-relaxed">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 7. TRUST STATS GRID */}
-        <section id="stats" className="grid border border-line divide-y md:divide-y-0 md:divide-x divide-line md:grid-cols-4 bg-surface text-left">
+      {/* stats */}
+      <section className="relative z-20 mx-auto max-w-6xl px-6 py-20 sm:px-10" style={mono}>
+        <div className="grid grid-cols-2 gap-y-12 border-y border-white/10 py-14 text-center sm:grid-cols-4">
           {[
-            { label: "Assets Exchanged", val: "$12.8M", desc: "Total asset trade volume coordinated" },
-            { label: "Material Redirected", val: "14,800 tons", desc: "Total surplus polymer and alloy redirected" },
-            { label: "Median Match Velocity", val: "4.2 Hours", desc: "Average supplier-to-buyer matched state" },
-            { label: "Broker Fees Owed", val: "0.0%", desc: "Direct peer ledger transaction cost parity" }
-          ].map((stat, idx) => (
-            <div key={idx} className="p-6 space-y-2">
-              <span className="text-[8px] font-bold tracking-widest text-ink-muted uppercase">{stat.label}</span>
-              <p className="text-3xl font-extrabold text-ink tracking-tight">{stat.val}</p>
-              <p className="text-[10px] text-ink-muted">{stat.desc}</p>
+            ["3,140 t", "matter diverted from idle"],
+            ["1,884", "lots cleared off-platform"],
+            ["6.2 days", "median time to first match"],
+            ["41%", "average recovery vs. write-off"],
+          ].map(([n, l]) => (
+            <div key={l}>
+              <div className="text-[clamp(1.8rem,4vw,2.8rem)] font-light tabular-nums text-[#ff9a46]">{n}</div>
+              <div className="mx-auto mt-2 max-w-[180px] text-[11px] uppercase leading-tight tracking-wider text-[#f3ede4]/45">{l}</div>
             </div>
           ))}
-        </section>
+        </div>
+      </section>
 
-        {/* 8. TESTIMONIAL & FAQ PANEL */}
-        <section className="grid lg:grid-cols-2 gap-12 text-left pt-12 border-t border-line">
-          <div className="space-y-6">
-            <span className="text-[9px] font-bold tracking-widest text-brand-green uppercase">CUSTOMER ADVISORY</span>
-            <h3 className="text-xl font-extrabold uppercase tracking-tight">"SurplusLink eliminated 12% in hidden broker margins."</h3>
-            <p className="text-xs text-ink-muted leading-relaxed">
-              "Before using SurplusLink, our packaging surplus was routed through three different broker chains, adding massive latency and opaque markups. SurplusLink's direct matching ledger allowed us to clear 3,200 carton pallets directly in Detroit in under 24 hours."
-            </p>
-            <div>
-              <p className="text-xs font-bold text-ink">Director of Materials Logistics</p>
-              <p className="text-[10px] text-ink-muted">Midwest Box Co. • Packaging Division</p>
-            </div>
-          </div>
+      {/* CTA — cleared */}
+      <section className="relative z-20 mx-auto max-w-6xl px-6 py-32 text-center sm:px-10">
+        <p className="mb-6 text-[11px] uppercase tracking-[0.4em] text-[#ff9a46]/70" style={mono}>State 04 — Cleared</p>
+        <h2 className="mx-auto max-w-3xl text-[clamp(2rem,5vw,3.6rem)] font-medium leading-[1.02]">
+          Put your dead stock where the order is.
+        </h2>
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-3" style={mono}>
+          <Link href="/register" className="rounded-full bg-[#ff9a46] px-8 py-3.5 text-sm font-semibold text-[#08070b] transition-transform active:scale-[0.98]">
+            Create a supplier account
+          </Link>
+          <Link href="/login" className="rounded-full border border-white/15 px-8 py-3.5 text-sm text-[#f3ede4]/80 transition-colors hover:border-white/40">
+            I&rsquo;m a buyer or agent
+          </Link>
+        </div>
+      </section>
 
-          <div className="space-y-6">
-            <span className="text-[9px] font-bold tracking-widest text-ink-muted uppercase">SYSTEM ASSURANCE FAQS</span>
-            <div className="space-y-4 divide-y divide-line">
-              <div className="space-y-1.5 pt-4 first:pt-0">
-                <h4 className="text-xs font-bold text-ink">How do you verify supplier listings?</h4>
-                <p className="text-[11px] text-ink-muted leading-relaxed">We audit every supplier's tax certificate, warehouse location record, and weigh tickets. Listings lacking specimen specifications are immediately flagged.</p>
-              </div>
-              <div className="space-y-1.5 pt-4">
-                <h4 className="text-xs font-bold text-ink">Are there any membership or broker transaction fees?</h4>
-                <p className="text-[11px] text-ink-muted leading-relaxed">No. We maintain a direct subscription structure for industrial manufacturers. There are zero broker markups or transaction fees injected into transactions.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 9. CONVERSION BLOCK & CORPORATE FOOTER */}
-        <section className="border border-line bg-surface p-8 sm:p-12 text-center space-y-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 border-l border-b border-line bg-paper px-3 py-1 text-[8px] font-mono text-ink-muted uppercase">
-            Sync Code: D1-CONVERSION
-          </div>
-          
-          <div className="max-w-2xl mx-auto space-y-4">
-            <h3 className="text-2xl font-extrabold tracking-tight uppercase">Open your B2B Exchange account.</h3>
-            <p className="text-xs text-ink-muted leading-relaxed">
-              Request credentials to the SurplusLink B2B catalog. Vetted manufacturers receive active matching alerts in under 24 hours.
-            </p>
-            <div className="pt-2 flex justify-center gap-4">
-              <Link href="/register">
-                <Button className="border border-brand-green text-xs tracking-widest px-8">
-                  Register Directory Profile
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-
-      </div>
-
-      {/* 10. PREMIUM CORPORATE FOOTER */}
-      <footer className="border-t border-line bg-surface py-12 px-6 sm:px-8 lg:px-12 mt-32 text-left">
-        <div className="mx-auto max-w-7xl grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div className="space-y-4">
-            <span className="text-xs font-black tracking-[0.3em] uppercase text-brand-green">SURPLUSLINK</span>
-            <p className="text-[10px] text-ink-muted leading-relaxed">
-              The audited direct B2B ledger for industrial material assets. Bypassing broker chains globally.
-            </p>
-          </div>
-          <div className="space-y-3">
-            <span className="text-[9px] font-bold tracking-widest text-ink-muted uppercase">DIRECTORIES</span>
-            <div className="flex flex-col gap-1.5 text-[10px] text-ink-muted">
-              <Link href="/register?role=supplier" className="hover:text-ink">Supplier Registration</Link>
-              <Link href="/register?role=buyer" className="hover:text-ink">Buyer Registration</Link>
-              <Link href="/login" className="hover:text-ink">Active Console Sign-in</Link>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <span className="text-[9px] font-bold tracking-widest text-ink-muted uppercase">SYSTEM INTEGRITY</span>
-            <div className="flex flex-col gap-1.5 text-[10px] text-ink-muted">
-              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-brand-green" /> Status: Operational</span>
-              <span>Ledger Latency: 12ms</span>
-              <span>Node Network: 1,402 Active</span>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <span className="text-[9px] font-bold tracking-widest text-ink-muted uppercase">LEGAL LEDGER</span>
-            <div className="flex flex-col gap-1.5 text-[10px] text-ink-muted font-semibold">
-              <span>Privacy Directory</span>
-              <span>System Terms</span>
-              <span>© 2026 SurplusLink Technologies</span>
-            </div>
+      <footer className="relative z-20 mx-auto max-w-6xl px-6 pb-28 pt-10 sm:px-10" style={mono}>
+        <div className="flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-8 text-xs text-[#f3ede4]/40 sm:flex-row sm:items-center">
+          <span>SurplusLink — a trust-first surplus exchange. Deals close off-platform.</span>
+          <div className="flex gap-5">
+            <Link href="/login" className="hover:text-[#f3ede4]">Privacy</Link>
+            <Link href="/login" className="hover:text-[#f3ede4]">Terms</Link>
+            <span className="text-[#ff9a46]/50">S → 0</span>
           </div>
         </div>
       </footer>
-
-    </div>
+    </main>
   );
 }

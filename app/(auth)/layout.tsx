@@ -1,28 +1,34 @@
+import Link from "next/link";
+
 export default function AuthLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-6 py-10 sm:px-8">
-      <div className="grid w-full gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="hidden border border-[var(--line)] bg-[var(--surface)] p-8 lg:flex lg:flex-col lg:justify-between">
-          <div className="space-y-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--ink-muted)]">
-              SurplusLink
-            </p>
-            <h2 className="text-4xl font-semibold tracking-[-0.06em]">
-              A monochrome workflow for surplus that feels operational, not improvised.
-            </h2>
-          </div>
-          <div className="space-y-3 text-sm leading-6 text-[var(--ink-muted)]">
-            <p>Suppliers submit surplus lots with real addresses, quantities, and expected pricing.</p>
-            <p>Admins verify accounts manually, review lots, and assign to approved buyers or agents.</p>
-            <p>Assigned feeds update live so the right people see the right opportunities immediately.</p>
-          </div>
+    <div className="flex min-h-screen w-full flex-col bg-[var(--cream,#F4F0E6)]">
+      <header className="flex w-full items-center justify-between p-6 sm:px-12 sm:py-8">
+        {/* Logo */}
+        <Link href="/" className="flex items-center border-2 border-black bg-white px-3 py-1.5">
+          <span className="text-xl font-black tracking-tight text-black">Offcet</span>
+          <span className="ml-1.5 border-2 border-black bg-[#D1F53B] px-1.5 py-0.5 text-sm font-bold text-black">Hub</span>
+        </Link>
+
+        {/* Actions */}
+        <div className="flex items-center border-2 border-black bg-white">
+          <Link href="/login" className="px-5 py-2 text-xs font-bold uppercase tracking-widest text-black hover:bg-gray-100">
+            LOGIN
+          </Link>
+          <div className="w-[2px] self-stretch bg-black"></div>
+          <Link href="/register" className="bg-[#D1F53B] px-5 py-2 text-xs font-bold uppercase tracking-widest text-black hover:bg-[#bce628]">
+            REGISTER
+          </Link>
         </div>
-        <div className="flex items-center justify-center">{children}</div>
-      </div>
-    </main>
+      </header>
+
+      <main className="mx-auto flex flex-1 w-full items-center justify-center p-6 pb-20 sm:p-8">
+        {children}
+      </main>
+    </div>
   );
 }

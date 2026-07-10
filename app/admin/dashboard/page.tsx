@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui";
 import {
@@ -16,9 +16,10 @@ import {
 import { formatCurrency, formatDate, sentenceCase } from "@/lib/utils";
 
 export default function AdminOverview() {
-  const dashboard = useQuery(api.admin.getDashboardOverview);
+  const { isAuthenticated } = useConvexAuth();
+  const dashboard = useQuery(api.admin.getDashboardOverview, isAuthenticated ? undefined : "skip");
 
-  if (dashboard === undefined) {
+  if (!dashboard) {
     return (
       <div className="flex min-h-[420px] items-center justify-center">
         <div className="space-y-3 text-center">
@@ -33,8 +34,7 @@ export default function AdminOverview() {
     <div className="grid gap-6">
       <DashboardHero
         eyebrow="Platform Control"
-        title="A clean read on approvals, supply flow, and live marketplace activity."
-        description="This view highlights the real operational pressure points in the app right now: who is waiting for review, how much supply is live, and where buyer engagement is actually happening."
+        title="Live Operations"
       >
         <SummaryPill label="Pending Users" value={`${dashboard.summary.pendingUsers}`} />
         <SummaryPill label="Pending Lots" value={`${dashboard.summary.pendingLots}`} />

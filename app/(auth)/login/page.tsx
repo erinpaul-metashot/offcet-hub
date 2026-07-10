@@ -1,5 +1,5 @@
-import { LoginForm } from "@/components/login-form";
+import { AuthSwitcher } from "@/components/auth-switcher";
 
 export default function LoginPage() {
-  return <LoginForm />;
+  return <AuthSwitcher initialMode="login" />;
 }

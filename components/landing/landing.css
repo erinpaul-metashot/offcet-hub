@@ -1,0 +1,129 @@
+/* ============================================================
+   Offcet Hub — Landing Experience design tokens (scoped)
+   High-Tech Brutalism + Organic Warmth
+   ============================================================ */
+
+.oh-root {
+  /* Locked palette (see DESIGN_PALETTE.md) */
+  --lime: #d1f53b;
+  --lime-deep: #b6da22;
+  --white: #ffffff;
+  --cream: #f4f0e6;
+  --sand: #e3d4c1;
+  --espresso: #5c3a21;
+  --black: #000000;
+  --ink: #0a0a0a;
+  --line: rgba(0, 0, 0, 0.14);
+
+  color: var(--black);
+  background: var(--cream);
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+}
+
+/* Massive editorial display type */
+.oh-display {
+  font-family: "Archivo", "Space Grotesk", sans-serif;
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.oh-mono {
+  font-family: "Space Grotesk", monospace;
+  font-feature-settings: "tnum";
+}
+
+/* Hard brutalist border */
+.oh-border {
+  border: 2px solid var(--black);
+}
+
+/* Narrative label pill */
+.oh-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 2px solid var(--black);
+  background: var(--white);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Fine tech grid used for "platform core" backdrops */
+.oh-grid-bg {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+}
+
+.oh-grid-bg-dark {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+}
+
+/* Soft radial vignette for character/warehouse plates */
+.oh-plate-mask {
+  -webkit-mask-image: radial-gradient(120% 120% at 50% 45%, #000 55%, transparent 100%);
+  mask-image: radial-gradient(120% 120% at 50% 45%, #000 55%, transparent 100%);
+}
+
+/* ---- keyframes ---- */
+@keyframes oh-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes oh-pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(209, 245, 59, 0.6); }
+  70% { box-shadow: 0 0 0 14px rgba(209, 245, 59, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(209, 245, 59, 0); }
+}
+
+@keyframes oh-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.oh-float { animation: oh-float 6s ease-in-out infinite; }
+.oh-pulse { animation: oh-pulse-ring 1.8s ease-out infinite; }
+
+/* Scroll cue */
+@keyframes oh-scroll-cue {
+  0% { transform: translateY(0); opacity: 0; }
+  40% { opacity: 1; }
+  80% { transform: translateY(10px); opacity: 0; }
+  100% { opacity: 0; }
+}
+.oh-scroll-cue::after {
+  content: "";
+  display: block;
+  width: 3px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--black);
+  margin: 6px auto 0;
+  animation: oh-scroll-cue 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oh-float, .oh-pulse { animation: none; }
+}
+
+/* 3D Loader Utilities */
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+

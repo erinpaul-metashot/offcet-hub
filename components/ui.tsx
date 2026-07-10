@@ -11,7 +11,7 @@ import { STATUS_LABELS } from "@/types/domain";
 import { classNames } from "@/lib/utils";
 
 const baseFieldStyles =
-  "w-full rounded-none border border-(--line) bg-(--surface) px-4 py-3 text-sm text-foreground outline-none transition focus:border-(--ink)";
+  "w-full rounded-none border-2 border-[var(--black)] bg-[var(--white)] px-4 py-3 text-sm text-[var(--black)] outline-none transition focus:border-[var(--lime)] focus:ring-2 focus:ring-[var(--lime)] focus:ring-offset-2";
 
 export function Button<T extends ElementType = "button">({
   as,
@@ -28,26 +28,22 @@ export function Button<T extends ElementType = "button">({
   const Component = as || "button";
   const variantStyles =
     variant === "primary"
-      ? "bg-[var(--brand-green)] text-white hover:bg-[var(--brand-green-light)] [&_*]:!text-white"
+      ? "bg-[var(--lime)] text-[var(--black)] border-2 border-[var(--black)] hover:bg-[#C4E936] [&_*]:!text-[var(--black)]"
       : variant === "secondary"
-        ? "border border-[var(--ink)] bg-[var(--paper)] text-foreground hover:bg-[var(--brand-green-muted)]"
-        : "border border-[var(--line)] bg-transparent text-foreground hover:bg-[var(--muted)]";
+        ? "border-2 border-[var(--black)] bg-[var(--white)] text-[var(--black)] hover:bg-[var(--cream)]"
+        : "border-2 border-[var(--black)] bg-transparent text-[var(--black)] hover:bg-[var(--cream)]";
 
   const sizeStyles = size === "sm" ? "min-h-9 px-3 text-xs" : "min-h-11 px-4 text-sm";
 
   return (
     <Component
       className={classNames(
-        "inline-flex items-center justify-center font-medium uppercase tracking-[0.18em] transition disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex items-center justify-center font-bold uppercase tracking-[0.1em] transition disabled:cursor-not-allowed disabled:opacity-50",
         sizeStyles,
         variantStyles,
         className,
       )}
-      style={
-        variant === "primary"
-          ? { ...(style ?? {}), color: "var(--paper)" }
-          : style
-      }
+      style={style}
       {...(props as ComponentPropsWithoutRef<T>)}
     />
   );
@@ -79,8 +75,8 @@ export function Field({
   return (
     <label className="grid gap-2">
       <span className={classNames(
-        "text-[11px] font-semibold uppercase tracking-[0.24em]",
-        error ? "text-red-500" : "text-[var(--ink-muted)]"
+        "text-[11px] font-bold uppercase tracking-[0.24em]",
+        error ? "text-red-500" : "text-[var(--espresso)]"
       )}>
         {label}
       </span>
@@ -97,23 +93,23 @@ export function StatusBadge({
   status: keyof typeof STATUS_LABELS;
 }) {
   const styles: Record<string, string> = {
-    pending: "border border-dashed border-(--line-strong) text-(--ink-muted)",
-    rejected: "border border-(--line) bg-(--muted) text-(--ink-muted)",
-    approved: "border border-(--brand-green) text-(--brand-green)",
-    draft: "border border-(--line) text-(--ink-muted)",
-    pending_review: "border border-dashed border-(--line-strong) text-(--ink-muted)",
-    assigned: "bg-(--brand-green) text-(--paper)",
-    sold: "border border-(--line) bg-(--muted) line-through",
-    expired: "border border-(--line) bg-[repeating-linear-gradient(135deg,#f4f4f4,#f4f4f4_8px,#ececec_8px,#ececec_16px)] text-(--ink-muted)",
-    interested: "border border-(--ink) bg-(--muted) text-(--ink)",
-    not_interested: "border border-(--line) bg-(--muted) text-(--ink-muted)",
+    pending: "border-2 border-dashed border-[var(--black)] text-[var(--espresso)]",
+    rejected: "border-2 border-[var(--black)] bg-[var(--sand)] text-[var(--espresso)]",
+    approved: "border-2 border-[var(--black)] bg-[var(--lime)] text-[var(--black)]",
+    draft: "border-2 border-[var(--black)] bg-[var(--white)] text-[var(--espresso)]",
+    pending_review: "border-2 border-dashed border-[var(--black)] text-[var(--espresso)]",
+    assigned: "border-2 border-[var(--black)] bg-[var(--lime)] text-[var(--black)]",
+    sold: "border-2 border-[var(--black)] bg-[var(--sand)] line-through",
+    expired: "border-2 border-[var(--black)] bg-[repeating-linear-gradient(135deg,#f4f4f4,#f4f4f4_8px,#E3D4C1_8px,#E3D4C1_16px)] text-[var(--espresso)]",
+    interested: "border-2 border-[var(--black)] bg-[var(--cream)] text-[var(--black)]",
+    not_interested: "border-2 border-[var(--black)] bg-[var(--sand)] text-[var(--espresso)]",
   };
 
   return (
     <span
       className={classNames(
-        "inline-flex min-h-8 items-center px-3 text-[10px] font-semibold uppercase tracking-[0.22em]",
-        styles[status] ?? "border border-(--line)",
+        "inline-flex min-h-8 items-center px-3 text-[10px] font-bold uppercase tracking-[0.22em]",
+        styles[status] ?? "border-2 border-[var(--black)]",
       )}
     >
       {STATUS_LABELS[status]}
@@ -129,7 +125,7 @@ export function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className={classNames("border border-(--line) bg-(--surface)", className)}>
+    <section className={classNames("border-2 border-[var(--black)] bg-[var(--white)]", className)}>
       {children}
     </section>
   );
@@ -143,10 +139,10 @@ export function EmptyState({
   body: string;
 }) {
   return (
-    <div className="grid min-h-48 place-items-center border border-dashed border-(--line) bg-(--surface) p-8 text-center">
+    <div className="grid min-h-48 place-items-center border-2 border-dashed border-[var(--black)] bg-[var(--cream)] p-8 text-center">
       <div className="max-w-sm space-y-2">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em]">{title}</p>
-        <p className="text-sm leading-6 text-(--ink-muted)">{body}</p>
+        <p className="text-sm font-bold uppercase tracking-[0.22em] text-[var(--black)]">{title}</p>
+        <p className="text-sm leading-6 text-[var(--espresso)]">{body}</p>
       </div>
     </div>
   );

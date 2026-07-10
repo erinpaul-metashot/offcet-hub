@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useConvexAuth } from "convex/react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
@@ -30,14 +30,15 @@ export default function AdminLotDetailsPage() {
   const lotId = params.id as Id<"lots">;
   const router = useRouter();
 
-  const lot = useQuery(api.lots.get, { lotId });
-  const assignments = useQuery(api.admin.listLotAssignments, { lotId });
+  const { isAuthenticated } = useConvexAuth();
+  const lot = useQuery(api.lots.get, isAuthenticated ? { lotId } : "skip");
+  const assignments = useQuery(api.admin.listLotAssignments, isAuthenticated ? { lotId } : "skip");
   const unapproveLot = useMutation(api.admin.unapproveLot);
 
-  if (lot === undefined || assignments === undefined) {
+  if (lot === undefined || assignments === undefined || !assignments) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3 text-[var(--ink-muted)]">
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--brand-green)] border-t-transparent animate-spin"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-green)] border-t-transparent" />
         <p className="text-sm font-medium">Loading lot details...</p>
       </div>
     );
@@ -87,7 +88,7 @@ export default function AdminLotDetailsPage() {
       <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] p-6 md:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-3 mb-3">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-[var(--brand-green)] bg-[var(--brand-green-muted)]/50 border border-[var(--brand-green)]/10">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-[var(--black)] bg-[var(--lime)] border-2 border-[var(--black)]">
               <Package size={14} />
               {sentenceCase(lot.category)}
             </span>
@@ -108,11 +109,11 @@ export default function AdminLotDetailsPage() {
 
         <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
           {lot.status === "approved" && (
-            <Button onClick={handleUnapprove} variant="secondary" className="w-full sm:w-auto bg-[var(--surface)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)]">
+            <Button onClick={handleUnapprove} variant="secondary" className="w-full sm:w-auto bg-[var(--surface)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)] hover:text-[var(--white)]">
               Unapprove Lot
             </Button>
           )}
-          <Button onClick={() => router.push("/admin/assignments")} className="w-full sm:w-auto flex items-center gap-2 shadow-md">
+          <Button onClick={() => router.push("/admin/assignments")} className="w-full sm:w-auto flex items-center gap-2 shadow-[4px_4px_0_0_var(--black)] hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-[2px_2px_0_0_var(--black)] transition-all">
             <UserPlus size={16} />
             Manage Assignments
           </Button>
@@ -129,7 +130,7 @@ export default function AdminLotDetailsPage() {
           <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden">
             <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]">
               <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-                <FileText size={16} className="text-[var(--brand-green)]" />
+                <FileText size={16} className="text-[var(--black)]" />
                 Key Specifications
               </h3>
             </div>
@@ -146,7 +147,7 @@ export default function AdminLotDetailsPage() {
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-muted)] flex items-center gap-1.5">
                   <DollarSign size={14} /> Expected Price
                 </span>
-                <span className="font-bold text-lg text-[var(--brand-green)]">{formatCurrency(lot.expectedPrice)}</span>
+                <span className="font-bold text-lg text-[var(--black)]">{formatCurrency(lot.expectedPrice)}</span>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -172,7 +173,7 @@ export default function AdminLotDetailsPage() {
           <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden">
             <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]">
               <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-                <FileText size={16} className="text-[var(--brand-green)]" />
+                <FileText size={16} className="text-[var(--black)]" />
                 Description
               </h3>
             </div>
@@ -204,7 +205,7 @@ export default function AdminLotDetailsPage() {
           <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden">
             <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]">
               <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-                <ImageIcon size={16} className="text-[var(--brand-green)]" />
+                <ImageIcon size={16} className="text-[var(--black)]" />
                 Photos ({lot.imageUrls?.length || 0})
               </h3>
             </div>
@@ -226,7 +227,7 @@ export default function AdminLotDetailsPage() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-[var(--ink-muted)] bg-[var(--surface)] rounded-xl border border-dashed border-[var(--line)]">
-                  <ImageIcon size={48} className="mb-3 opacity-50 text-[var(--brand-green)]" />
+                  <ImageIcon size={48} className="mb-3 opacity-50 text-[var(--black)]" />
                   <p className="font-medium text-sm">No photos uploaded for this lot.</p>
                 </div>
               )}
@@ -238,12 +239,12 @@ export default function AdminLotDetailsPage() {
         {/* Right Column: Assignments Tracker (1/3 width) */}
         <div className="xl:col-span-1">
           <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden sticky top-6">
-            <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--brand-green-muted)]/20 flex items-center justify-between">
+            <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--sand)] flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-                <Users size={16} className="text-[var(--brand-green)]" />
+                <Users size={16} className="text-[var(--black)]" />
                 Active Assignments
               </h3>
-              <span className="bg-[var(--brand-green)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-[var(--lime)] border-2 border-[var(--black)] text-[var(--black)] text-xs font-bold px-2 py-0.5 rounded-full">
                 {assignments.length}
               </span>
             </div>

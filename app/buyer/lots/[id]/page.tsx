@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button, StatusBadge } from "@/components/ui";
@@ -28,15 +28,16 @@ export default function AssignedLotDetailsPage() {
   const lotId = params.id as Id<"lots">;
   const router = useRouter();
 
-  const lot = useQuery(api.lots.get, { lotId });
-  const assignments = useQuery(api.assignments.listAssignedLotsForCurrentUser, {});
+  const { isAuthenticated } = useConvexAuth();
+  const lot = useQuery(api.lots.get, isAuthenticated ? { lotId } : "skip");
+  const assignments = useQuery(api.assignments.listAssignedLotsForCurrentUser, isAuthenticated ? {} : "skip");
   const respondToAssignment = useMutation(api.assignments.respondToAssignment);
   const [isPending, startTransition] = useTransition();
 
-  if (lot === undefined || assignments === undefined) {
+  if (lot === undefined || assignments === undefined || !assignments) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3 text-[var(--ink-muted)]">
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--brand-green)] border-t-transparent animate-spin"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-green)] border-t-transparent" />
         <p className="text-sm font-medium">Loading lot details...</p>
       </div>
     );
@@ -87,7 +88,7 @@ export default function AssignedLotDetailsPage() {
       <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] p-6 md:p-8 shadow-sm flex flex-col lg:flex-row gap-8 justify-between">
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3 mb-4">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-[var(--brand-green)] bg-[var(--brand-green-muted)]/50 border border-[var(--brand-green)]/10">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-bold text-[var(--black)] bg-[var(--lime)] border-2 border-[var(--black)]">
               <Package size={14} />
               {sentenceCase(lot.category)}
             </span>
@@ -115,7 +116,7 @@ export default function AssignedLotDetailsPage() {
         {lot.status === "assigned" && assignment && (
           <div className="flex flex-col gap-3 lg:w-[280px] bg-[var(--surface)]/50 p-5 rounded-xl border border-[var(--line)] shrink-0">
             <h3 className="text-sm font-bold text-[var(--ink)] flex items-center gap-2">
-              <MessageSquare size={16} className="text-[var(--brand-green)]" />
+              <MessageSquare size={16} className="text-[var(--black)]" />
               Respond to Assignment
             </h3>
             <p className="text-xs text-[var(--ink-muted)] mb-1">
@@ -124,7 +125,7 @@ export default function AssignedLotDetailsPage() {
             <Button
               disabled={isPending || assignment.responseStatus === "interested"}
               onClick={() => setResponse("interested")}
-              className="w-full justify-center shadow-md bg-[var(--brand-green)] hover:bg-[var(--brand-green-dark)] text-white"
+              className="w-full justify-center"
             >
               <CheckCircle2 size={16} className="mr-2" />
               Interested
@@ -135,7 +136,7 @@ export default function AssignedLotDetailsPage() {
               variant="secondary"
               className="w-full justify-center"
             >
-              <XCircle size={16} className="mr-2 text-red-500" />
+              <XCircle size={16} className="mr-2 text-[var(--black)]" />
               Not Interested
             </Button>
           </div>
@@ -163,7 +164,7 @@ export default function AssignedLotDetailsPage() {
       <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden">
         <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]">
           <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-            <FileText size={16} className="text-[var(--brand-green)]" />
+            <FileText size={16} className="text-[var(--black)]" />
             Lot Specifications
           </h3>
         </div>
@@ -184,7 +185,7 @@ export default function AssignedLotDetailsPage() {
                   <DollarSign size={14} /> Pricing & Expiry
                 </h4>
                 <p className="text-base text-[var(--ink)]">
-                  <span className="font-bold text-[var(--brand-green)]">{formatCurrency(lot.expectedPrice)}</span>
+                  <span className="font-bold text-[var(--black)]">{formatCurrency(lot.expectedPrice)}</span>
                   <span className="text-[var(--ink-muted)] mx-2">•</span>
                   Expires {formatDate(lot.expiresAt)}
                 </p>
@@ -224,7 +225,7 @@ export default function AssignedLotDetailsPage() {
       <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden">
         <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]">
           <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-            <ImageIcon size={16} className="text-[var(--brand-green)]" />
+            <ImageIcon size={16} className="text-[var(--black)]" />
             Photos ({lot.imageUrls?.length || 0})
           </h3>
         </div>
@@ -246,7 +247,7 @@ export default function AssignedLotDetailsPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-[var(--ink-muted)] bg-[var(--surface)] rounded-xl border border-dashed border-[var(--line)]">
-              <ImageIcon size={48} className="mb-3 opacity-50 text-[var(--brand-green)]" />
+              <ImageIcon size={48} className="mb-3 opacity-50 text-[var(--black)]" />
               <p className="font-medium text-sm">No photos uploaded for this lot.</p>
             </div>
           )}

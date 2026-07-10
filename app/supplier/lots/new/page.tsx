@@ -213,7 +213,7 @@ function LotEditorForm({
         <div className="bg-[var(--surface)] p-6 md:p-8 rounded-2xl border border-[var(--line)] shadow-sm">
           <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[var(--line)] pb-5">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--brand-green)] flex items-center gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--black)] flex items-center gap-2">
                 <FileText size={14} />
                 {editId ? "Edit Draft" : "New Lot Draft"}
               </p>
@@ -374,7 +374,7 @@ function LotEditorForm({
                       });
                     }}
                     className={classNames(
-                      "pl-10 text-[var(--ink-muted)] file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--brand-green-muted)] file:text-[var(--brand-green)] hover:file:bg-[var(--brand-green)] hover:file:text-white file:transition-colors",
+                      "pl-10 text-[var(--ink-muted)] file:mr-4 file:py-1.5 file:px-4 file:rounded-md file:border-2 file:border-[var(--black)] file:text-xs file:font-bold file:bg-[var(--lime)] file:text-[var(--black)] hover:file:bg-[var(--cream)] file:transition-colors",
                       fieldErrors.imageStorageIds ? "border-red-500 focus:border-red-500 ring-1 ring-red-500/20" : ""
                     )}
                   />
@@ -454,20 +454,20 @@ function LotEditorForm({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[var(--paper)] rounded-2xl border border-[var(--brand-green)]/40 ring-2 ring-[var(--brand-green)]/10 p-5 shadow-lg overflow-hidden relative group transition-all"
+              className="bg-[var(--paper)] rounded-2xl border-2 border-[var(--black)] p-5 shadow-[4px_4px_0_0_var(--black)] overflow-hidden relative group transition-all"
             >
               <div className="flex flex-col gap-3 relative z-10">
                 {/* Upper row: category and status */}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[var(--brand-green)] flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[var(--brand-green)] animate-pulse"></span>
+                  <span className="text-xs font-bold text-[var(--black)] flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[var(--lime)] animate-pulse border border-[var(--black)]"></span>
                     {editor.category ? sentenceCase(editor.category) : "Category"}
                   </span>
                   <StatusBadge status="draft" />
                 </div>
 
                 {/* Title */}
-                <h4 className="text-xl font-bold tracking-tight text-[var(--ink)] line-clamp-2 break-all leading-tight mt-1">
+                <h4 className="text-xl font-bold tracking-tight text-[var(--black)] line-clamp-2 break-all leading-tight mt-1">
                   {editor.title || <span className="text-[var(--ink-muted)] italic opacity-60">Draft Title</span>}
                 </h4>
 
@@ -502,7 +502,7 @@ function LotEditorForm({
 
                   <div className="flex items-center gap-3 text-[var(--ink-muted)]">
                     <DollarSign size={16} className="shrink-0 opacity-70 text-[var(--ink)]" />
-                    <span className={classNames("font-bold text-base", editor.expectedPrice ? "text-[var(--brand-green)]" : "text-[var(--ink-muted)]")}>
+                    <span className={classNames("font-bold text-base", editor.expectedPrice ? "text-[var(--black)]" : "text-[var(--ink-muted)]")}>
                       {editor.expectedPrice ? formatCurrency(Number(editor.expectedPrice)) : "Price on request"}
                     </span>
                   </div>
@@ -534,7 +534,7 @@ function LotEditorForm({
               </div>
               
               {/* Active Indicator Line */}
-              <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-[var(--brand-green)]" />
+              <div className="absolute top-0 bottom-0 left-0 w-2 bg-[var(--lime)] border-r-2 border-[var(--black)]" />
             </motion.div>
           ) : (
             <motion.div
@@ -544,8 +544,8 @@ function LotEditorForm({
               exit={{ opacity: 0, scale: 0.95 }}
               className="rounded-2xl border-2 border-dashed border-[var(--line-strong)] bg-[var(--surface)] p-12 text-center shadow-sm"
             >
-              <div className="w-16 h-16 rounded-full bg-[var(--brand-green-muted)]/30 border border-[var(--brand-green)]/20 flex items-center justify-center mx-auto mb-5 text-[var(--brand-green)] shadow-sm">
-                <FileText size={24} />
+              <div className="w-16 h-16 rounded-full bg-[var(--lime)] border-4 border-[var(--black)] flex items-center justify-center mx-auto mb-5 text-[var(--black)] shadow-[4px_4px_0_0_var(--black)]">
+                <FileText size={24} strokeWidth={2} />
               </div>
               <p className="text-lg font-bold text-[var(--ink)] mb-2 tracking-tight">Design your Lot</p>
               <p className="text-sm text-[var(--ink-muted)] leading-relaxed max-w-[250px] mx-auto">

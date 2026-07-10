@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useMemo, useState, useTransition, useEffect } from "react";
 import type { Id } from "@/convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {
   Button,
@@ -83,7 +83,8 @@ function createEditor(user: ManagedUser): UserEditorState {
 }
 
 export default function UserManagementPage() {
-  const userManagement = useQuery(api.admin.getUserManagementView);
+  const { isAuthenticated } = useConvexAuth();
+  const userManagement = useQuery(api.admin.getUserManagementView, isAuthenticated ? undefined : "skip");
   const approveUser = useMutation(api.admin.approveUser);
   const rejectUser = useMutation(api.admin.rejectUser);
   const updateUserAccount = useMutation(api.admin.updateUserAccount);
@@ -268,7 +269,7 @@ export default function UserManagementPage() {
                     )}
                   >
                     <td className="py-4 px-6 align-top">
-                      <div className="font-semibold text-base text-[var(--ink)] group-hover:text-[var(--brand-green)] transition-colors">
+                      <div className="font-bold text-base text-[var(--black)] transition-colors">
                         {user.name}
                       </div>
                       <div className="text-xs text-[var(--ink-muted)] mt-1 flex items-center gap-1.5">
@@ -463,27 +464,27 @@ export default function UserManagementPage() {
           <div className="flex w-full sm:w-auto overflow-x-auto no-scrollbar">
             <button
               className={classNames(
-                "px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap",
+                "px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap flex items-center",
                 activeTab === "users"
-                  ? "border-[var(--brand-green)] text-[var(--brand-green)]"
-                  : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                  ? "border-[var(--black)] text-[var(--black)]"
+                  : "border-transparent text-[var(--espresso)] hover:text-[var(--black)] hover:border-[var(--black)]"
               )}
               onClick={() => setActiveTab("users")}
               type="button"
             >
-              Users <span className="ml-1.5 bg-[var(--line)] text-[var(--ink)] px-2 py-0.5 rounded-full text-[10px]">{managedUsers.length}</span>
+              Users <span className={classNames("ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold border-2", activeTab === "users" ? "bg-[var(--lime)] border-[var(--black)] text-[var(--black)]" : "bg-[var(--surface)] border-transparent text-[var(--espresso)]")}>{managedUsers.length}</span>
             </button>
             <button
               className={classNames(
-                "px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap",
+                "px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap flex items-center",
                 activeTab === "requests"
-                  ? "border-[var(--brand-green)] text-[var(--brand-green)]"
-                  : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                  ? "border-[var(--black)] text-[var(--black)]"
+                  : "border-transparent text-[var(--espresso)] hover:text-[var(--black)] hover:border-[var(--black)]"
               )}
               onClick={() => setActiveTab("requests")}
               type="button"
             >
-              Requests <span className="ml-1.5 bg-[var(--line)] text-[var(--ink)] px-2 py-0.5 rounded-full text-[10px]">{pendingRequests.length}</span>
+              Requests <span className={classNames("ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold border-2", activeTab === "requests" ? "bg-[var(--lime)] border-[var(--black)] text-[var(--black)]" : "bg-[var(--surface)] border-transparent text-[var(--espresso)]")}>{pendingRequests.length}</span>
             </button>
           </div>
 
@@ -588,7 +589,7 @@ function UserEditDrawer({
           <button
             onClick={onCancel}
             disabled={isPending}
-            className="p-2 text-[var(--ink-muted)] hover:bg-[var(--line)] hover:text-[var(--ink)] rounded-xl transition-colors cursor-pointer"
+            className="p-2 text-[var(--ink-muted)] hover:bg-[var(--line)] hover:text-[var(--white)] rounded-xl transition-colors cursor-pointer"
             type="button"
           >
             <X size={18} />

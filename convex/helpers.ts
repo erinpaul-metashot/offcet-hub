@@ -1,6 +1,7 @@
 import type { Id, Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { authComponent, createAuth } from "./auth";
+import { ConvexError } from "convex/values";
 
 type AppCtx = QueryCtx | MutationCtx;
 
@@ -65,7 +66,7 @@ export async function requireViewer(ctx: AppCtx) {
   const viewer = await getViewer(ctx);
 
   if (!viewer?.user) {
-    throw new Error("Authentication required.");
+    throw new ConvexError("Authentication required.");
   }
 
   return viewer as {
@@ -82,11 +83,11 @@ export async function requireRole(
   const viewer = await requireViewer(ctx);
 
   if (viewer.user.status !== "approved") {
-    throw new Error("Account approval is required.");
+    throw new ConvexError("Account approval is required.");
   }
 
   if (!roles.includes(viewer.user.role)) {
-    throw new Error("You do not have access to this action.");
+    throw new ConvexError("You do not have access to this action.");
   }
 
   return viewer;

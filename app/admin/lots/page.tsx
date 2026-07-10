@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useDeferredValue, useMemo, useState, useTransition } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button, EmptyState, Input, StatusBadge } from "@/components/ui";
 import { classNames, formatDate, sentenceCase } from "@/lib/utils";
@@ -62,8 +62,9 @@ function matchesManagedLot(lot: OverviewLot, query: string) {
 }
 
 export default function SupplyManagementPage() {
-  const pendingLotsQuery = useQuery(api.admin.listPendingLots);
-  const lotOverviewQuery = useQuery(api.admin.listLotOverview);
+  const { isAuthenticated } = useConvexAuth();
+  const pendingLotsQuery = useQuery(api.admin.listPendingLots, isAuthenticated ? undefined : "skip");
+  const lotOverviewQuery = useQuery(api.admin.listLotOverview, isAuthenticated ? undefined : "skip");
   const approveLot = useMutation(api.admin.approveLot);
   const rejectLot = useMutation(api.admin.rejectLot);
   const unapproveLot = useMutation(api.admin.unapproveLot);
@@ -202,27 +203,27 @@ export default function SupplyManagementPage() {
           <div className="flex w-full sm:w-auto overflow-x-auto no-scrollbar">
             <button
               className={classNames(
-                "px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap",
+                "px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap flex items-center",
                 activeTab === "managed"
-                  ? "border-[var(--brand-green)] text-[var(--brand-green)]"
-                  : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                  ? "border-[var(--black)] text-[var(--black)]"
+                  : "border-transparent text-[var(--espresso)] hover:text-[var(--black)] hover:border-[var(--black)]"
               )}
               onClick={() => setActiveTab("managed")}
               type="button"
             >
-              Managed Supply <span className="ml-1.5 bg-[var(--line)] text-[var(--ink)] px-2 py-0.5 rounded-full text-[10px]">{managedLots.length}</span>
+              Managed Supply <span className={classNames("ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold border-2", activeTab === "managed" ? "bg-[var(--lime)] border-[var(--black)] text-[var(--black)]" : "bg-[var(--surface)] border-transparent text-[var(--espresso)]")}>{managedLots.length}</span>
             </button>
             <button
               className={classNames(
-                "px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap",
+                "px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap flex items-center",
                 activeTab === "requests"
-                  ? "border-[var(--brand-green)] text-[var(--brand-green)]"
-                  : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                  ? "border-[var(--black)] text-[var(--black)]"
+                  : "border-transparent text-[var(--espresso)] hover:text-[var(--black)] hover:border-[var(--black)]"
               )}
               onClick={() => setActiveTab("requests")}
               type="button"
             >
-              Pending Lots <span className="ml-1.5 bg-[var(--line)] text-[var(--ink)] px-2 py-0.5 rounded-full text-[10px]">{pendingLots.length}</span>
+              Pending Lots <span className={classNames("ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold border-2", activeTab === "requests" ? "bg-[var(--lime)] border-[var(--black)] text-[var(--black)]" : "bg-[var(--surface)] border-transparent text-[var(--espresso)]")}>{pendingLots.length}</span>
             </button>
           </div>
 
@@ -260,7 +261,7 @@ export default function SupplyManagementPage() {
                       {/* Left: Info */}
                       <div className="flex-1 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
-                          <h3 className="text-xl font-bold tracking-tight text-[var(--ink)] group-hover:text-[var(--brand-green)] transition-colors">{lot.title}</h3>
+                          <h3 className="text-xl font-bold tracking-tight text-[var(--black)] transition-colors">{lot.title}</h3>
                           <StatusBadge status={lot.status} />
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] bg-[var(--surface)] border border-[var(--line)]">
                             <Package size={12} /> {sentenceCase(lot.category)}
@@ -282,7 +283,7 @@ export default function SupplyManagementPage() {
                           </div>
                           <div className="flex flex-col gap-1">
                             <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><Users size={12}/> Activity</span>
-                            <span className="font-medium text-[var(--brand-green)]">{lot.assigneeCount} assignees</span>
+                            <span className="font-bold text-[var(--black)]">{lot.assigneeCount} assignees</span>
                           </div>
                         </div>
 
@@ -290,7 +291,7 @@ export default function SupplyManagementPage() {
                         {lot.assigneeCount > 0 && (
                           <div className="flex flex-wrap items-center gap-4 text-xs mt-2 p-3 bg-[var(--surface)] rounded-lg border border-[var(--line)]">
                             <span className="font-semibold text-[var(--ink)]">Responses:</span>
-                            <span className="flex items-center gap-1 text-[var(--brand-green)]"><CheckCircle2 size={14}/> {lot.responseSummary.interested} Interested</span>
+                            <span className="flex items-center gap-1 text-[var(--black)] font-bold"><CheckCircle2 size={14}/> {lot.responseSummary.interested} Interested</span>
                             <span className="flex items-center gap-1 text-red-600"><XCircle size={14}/> {lot.responseSummary.notInterested} Not Interested</span>
                             <span className="flex items-center gap-1 text-amber-600"><Clock size={14}/> {lot.responseSummary.pending} Pending</span>
                           </div>
@@ -345,7 +346,7 @@ export default function SupplyManagementPage() {
                       {/* Left: Info */}
                       <div className="flex-1 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
-                          <h3 className="text-xl font-bold tracking-tight text-[var(--ink)] group-hover:text-[var(--brand-green)] transition-colors">{lot.title}</h3>
+                          <h3 className="text-xl font-bold tracking-tight text-[var(--black)] transition-colors">{lot.title}</h3>
                           <StatusBadge status={lot.status} />
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] bg-[var(--surface)] border border-[var(--line)]">
                             <Package size={12} /> {sentenceCase(lot.category)}
@@ -373,7 +374,7 @@ export default function SupplyManagementPage() {
                         <Button
                           disabled={isPending}
                           onClick={() => onApproveLot(lot._id, lot.title)}
-                          className="justify-center shadow-md bg-[var(--brand-green)] hover:bg-[var(--brand-green-dark)] text-white"
+                          className="justify-center shadow-[4px_4px_0_0_var(--black)] hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-[2px_2px_0_0_var(--black)] transition-all"
                         >
                           Approve Lot
                         </Button>
@@ -389,7 +390,7 @@ export default function SupplyManagementPage() {
                           disabled={isPending}
                           onClick={() => onRejectLot(lot._id, lot.title)}
                           variant="ghost"
-                          className="justify-center text-red-600 hover:text-red-700 hover:bg-red-50 text-xs"
+                          className="justify-center text-xs"
                         >
                           Return To Draft
                         </Button>

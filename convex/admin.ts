@@ -170,7 +170,12 @@ async function removeRoleProfile(ctx: MutationCtx, user: Doc<"users">) {
 export const getUserManagementView = query({
   args: {},
   handler: async (ctx) => {
-    const viewer = await requireRole(ctx, ["admin"]);
+    let viewer;
+    try {
+      viewer = await requireRole(ctx, ["admin"]);
+    } catch (e) {
+      return null;
+    }
 
     const [pendingUsers, approvedUsers, rejectedUsers] = await Promise.all([
       ctx.db
@@ -217,7 +222,11 @@ export const getUserManagementView = query({
 export const listPendingUsers = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    try {
+      await requireRole(ctx, ["admin"]);
+    } catch (e) {
+      return null;
+    }
 
     const users = await ctx.db
       .query("users")
@@ -231,7 +240,11 @@ export const listPendingUsers = query({
 export const listAssignableUsers = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    try {
+      await requireRole(ctx, ["admin"]);
+    } catch (e) {
+      return null;
+    }
 
     const users = await ctx.db
       .query("users")
@@ -414,7 +427,11 @@ export const deleteUserAccount = mutation({
 export const listPendingLots = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    try {
+      await requireRole(ctx, ["admin"]);
+    } catch (e) {
+      return null;
+    }
 
     const lots = await ctx.db
       .query("lots")
@@ -440,7 +457,11 @@ export const listPendingLots = query({
 export const listLotOverview = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    try {
+      await requireRole(ctx, ["admin"]);
+    } catch (e) {
+      return null;
+    }
 
     const lots = await ctx.db.query("lots").collect();
 
@@ -561,7 +582,11 @@ export const listLotAssignments = query({
     lotId: v.id("lots"),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    try {
+      await requireRole(ctx, ["admin"]);
+    } catch (e) {
+      return null;
+    }
 
     const assignments = await ctx.db
       .query("assignments")
@@ -584,7 +609,11 @@ export const listLotAssignments = query({
 export const getDashboardOverview = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    try {
+      await requireRole(ctx, ["admin"]);
+    } catch (e) {
+      return null;
+    }
 
     const [users, lots, assignments] = await Promise.all([
       ctx.db.query("users").collect(),

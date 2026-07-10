@@ -12,23 +12,24 @@ export function DashboardHero({
 }: {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   children?: ReactNode;
 }) {
   return (
-    <Panel className="relative overflow-hidden border-[var(--line)] bg-[linear-gradient(135deg,rgba(26,86,50,0.08),rgba(26,86,50,0.02)_40%,rgba(255,255,255,1)_100%)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(26,86,50,0.12),transparent_30%)]" />
-      <div className="relative grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
+    <Panel className="relative overflow-hidden border-2 border-[var(--black)] bg-[var(--lime)] shadow-[8px_8px_0_0_var(--black)]">
+      <div className="relative grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
         <div className="space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--brand-green-light)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--espresso)]">
             {eyebrow}
           </p>
-          <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)] sm:text-4xl">
+          <h1 className="max-w-3xl text-4xl font-bold tracking-[-0.05em] text-[var(--black)] uppercase">
             {title}
           </h1>
-          <p className="max-w-2xl text-sm leading-6 text-[var(--ink-muted)] sm:text-base">
-            {description}
-          </p>
+          {description && (
+            <p className="max-w-2xl text-sm leading-6 text-[var(--espresso)] sm:text-base font-bold">
+              {description}
+            </p>
+          )}
         </div>
         {children ? <div className="grid gap-3">{children}</div> : null}
       </div>
@@ -237,11 +238,11 @@ export function SummaryPill({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--brand-green)]/20 bg-white/70 px-4 py-3 backdrop-blur">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
+    <div className="border-2 border-[var(--black)] bg-white px-4 py-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--espresso)]">
         {label}
       </p>
-      <p className="mt-1 text-lg font-semibold text-[var(--ink)]">{value}</p>
+      <p className="mt-1 text-2xl font-bold text-[var(--black)]">{value}</p>
     </div>
   );
 }

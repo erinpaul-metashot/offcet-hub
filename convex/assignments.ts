@@ -93,7 +93,12 @@ export const listAssignedLotsForCurrentUser = query({
     locationText: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const viewer = await requireRole(ctx, ["buyer", "agent"]);
+    let viewer;
+    try {
+      viewer = await requireRole(ctx, ["buyer", "agent"]);
+    } catch (e) {
+      return null;
+    }
     const assignments = await ctx.db
       .query("assignments")
       .withIndex("by_assigned_to", (query) => query.eq("assignedToUserId", viewer.user._id))
@@ -216,7 +221,12 @@ export const unassignLot = mutation({
 export const getBuyerDashboard = query({
   args: {},
   handler: async (ctx) => {
-    const viewer = await requireRole(ctx, ["buyer"]);
+    let viewer;
+    try {
+      viewer = await requireRole(ctx, ["buyer"]);
+    } catch (e) {
+      return null;
+    }
     const assignments = await ctx.db
       .query("assignments")
       .withIndex("by_assigned_to", (query) => query.eq("assignedToUserId", viewer.user._id))
@@ -319,7 +329,11 @@ export const getForLot = query({
   },
   handler: async (ctx, args) => {
     // Basic auth check
-    await requireRole(ctx, ["admin", "supplier"]);
+    try {
+      await requireRole(ctx, ["admin", "supplier"]);
+    } catch (e) {
+      return null;
+    }
 
     const assignments = await ctx.db
       .query("assignments")

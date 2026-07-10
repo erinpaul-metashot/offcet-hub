@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition, useEffect } from "react";
 import type { Id } from "@/convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button, Panel, Textarea } from "@/components/ui";
 import { sentenceCase, formatDate, formatCurrency, classNames } from "@/lib/utils";
@@ -31,8 +31,9 @@ import {
 } from "lucide-react";
 
 export default function AssignmentsPage() {
-  const assignableUsers = useQuery(api.admin.listAssignableUsers);
-  const lotOverview = useQuery(api.admin.listLotOverview);
+  const { isAuthenticated } = useConvexAuth();
+  const assignableUsers = useQuery(api.admin.listAssignableUsers, isAuthenticated ? undefined : "skip");
+  const lotOverview = useQuery(api.admin.listLotOverview, isAuthenticated ? undefined : "skip");
   const assignLot = useMutation(api.assignments.assignLot);
   const unassignLot = useMutation(api.assignments.unassignLot);
 
@@ -62,8 +63,9 @@ export default function AssignmentsPage() {
   // Fetch current assignments for the active lot
   const currentAssignments = useQuery(
     api.admin.listLotAssignments,
-    selectedLotId ? { lotId: selectedLotId as Id<"lots"> } : "skip"
+    isAuthenticated && selectedLotId ? { lotId: selectedLotId as Id<"lots"> } : "skip"
   );
+
 
   const assignableLots = useMemo(() => {
     return lotOverview?.filter((lot) => lot.status === "approved" || lot.status === "assigned") ?? [];
@@ -152,6 +154,17 @@ export default function AssignmentsPage() {
         return a.name.localeCompare(b.name);
       });
   }, [assignableUsers, recruitSearch, recruitRoleFilter, recruitMatchFilter, selectedLot, currentAssignments]);
+
+  if (assignableUsers === undefined || lotOverview === undefined) {
+    return (
+      <div className="flex min-h-[420px] items-center justify-center">
+        <div className="space-y-3 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-green)] border-t-transparent" />
+          <p className="text-sm text-[var(--ink-muted)]">Loading assignments...</p>
+        </div>
+      </div>
+    );
+  }
 
   function toggleAssignee(userId: Id<"users">) {
     setSelectedAssignees((current) =>
@@ -293,8 +306,8 @@ export default function AssignmentsPage() {
                       className={classNames(
                         "group cursor-pointer rounded-xl p-4 transition-all relative overflow-hidden",
                         isSelected 
-                          ? "bg-[var(--brand-green-muted)]/40 border border-[var(--brand-green)]/30 ring-1 ring-[var(--brand-green)]/30" 
-                          : "bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--line-strong)] hover:shadow-sm"
+                          ? "bg-[var(--lime)] border-[var(--black)] ring-2 ring-[var(--black)]" 
+                          : "bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--black)]"
                       )}
                       whileHover={{ y: -2 }}
                       transition={{ duration: 0.2 }}
@@ -302,12 +315,12 @@ export default function AssignmentsPage() {
                       <div className="flex flex-col gap-2 relative z-10">
                         {/* Upper row: category and status */}
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-[var(--brand-green)] flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-green)]"></span>
+                          <span className="text-xs font-bold text-[var(--black)] flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--black)]"></span>
                             {sentenceCase(lot.category)}
                           </span>
                           {hasAssigned && (
-                            <span className="inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold text-[var(--brand-green)] bg-[var(--brand-green-muted)] border border-[var(--brand-green)]/20">
+                            <span className="inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold text-[var(--black)] bg-[var(--lime)] border-2 border-[var(--black)]">
                               Assigned
                             </span>
                           )}
@@ -315,8 +328,8 @@ export default function AssignmentsPage() {
 
                         {/* Title */}
                         <h4 className={classNames(
-                          "text-base font-semibold tracking-tight transition-colors line-clamp-2",
-                          isSelected ? "text-[var(--brand-green)]" : "text-[var(--ink)] group-hover:text-[var(--brand-green)]"
+                          "text-base font-bold tracking-tight transition-colors line-clamp-2",
+                          "text-[var(--black)]"
                         )}>
                           {lot.title}
                         </h4>
@@ -336,7 +349,7 @@ export default function AssignmentsPage() {
                       
                       {/* Active Indicator Line */}
                       {isSelected && (
-                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-[var(--brand-green)]" />
+                        <div className="absolute top-0 bottom-0 left-0 w-2 bg-[var(--black)]" />
                       )}
                     </motion.div>
                   );
@@ -358,8 +371,8 @@ export default function AssignmentsPage() {
                 exit={{ opacity: 0, scale: 0.98 }}
                 className="h-full flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--line)] bg-[var(--surface)] p-12 text-center"
               >
-                <div className="rounded-full bg-[var(--brand-green-muted)] p-6 text-[var(--brand-green)] mb-6 shadow-sm">
-                  <FileText size={48} strokeWidth={1.5} />
+                <div className="rounded-full bg-[var(--lime)] border-4 border-[var(--black)] p-6 text-[var(--black)] mb-6 shadow-[4px_4px_0_0_var(--black)]">
+                  <FileText size={48} strokeWidth={2} />
                 </div>
                 <h3 className="text-xl font-bold tracking-tight text-[var(--ink)]">
                   Select a Supply Lot to Begin
@@ -381,7 +394,7 @@ export default function AssignmentsPage() {
                 <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] p-6 shadow-sm shrink-0 flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-6">
                   <div className="flex-1 w-full">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-[var(--brand-green)] bg-[var(--brand-green-muted)]/50">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-[var(--black)] bg-[var(--lime)] border-2 border-[var(--black)]">
                         {sentenceCase(selectedLot.category)}
                       </span>
                       <span className="text-sm font-medium text-[var(--ink-muted)] flex items-center gap-1.5">
@@ -399,7 +412,7 @@ export default function AssignmentsPage() {
                       <div className="w-1 h-1 rounded-full bg-[var(--line-strong)]"></div>
                       <div className="flex items-center gap-2">
                         <span>Expected Price:</span>
-                        <span className="font-bold text-[var(--brand-green)]">{formatCurrency(selectedLot.expectedPrice)}</span>
+                        <span className="font-bold text-[var(--black)]">{formatCurrency(selectedLot.expectedPrice)}</span>
                       </div>
                     </div>
                   </div>
@@ -407,7 +420,7 @@ export default function AssignmentsPage() {
                   <Button
                     onClick={() => setIsDetailModalOpen(true)}
                     variant="secondary"
-                    className="shrink-0 flex items-center gap-2 bg-[var(--surface)] hover:bg-[var(--line)] border-[var(--line)] text-sm"
+                    className="shrink-0 flex items-center gap-2 bg-[var(--surface)] hover:bg-[var(--line)] hover:text-[var(--white)] border-[var(--line)] text-sm"
                   >
                     <Info size={16} />
                     View Details
@@ -424,7 +437,7 @@ export default function AssignmentsPage() {
                       className={classNames(
                         "px-6 py-3 text-sm font-semibold rounded-t-xl transition-colors flex items-center gap-2",
                         activeTab === "recruit"
-                          ? "bg-[var(--paper)] text-[var(--brand-green)] border-t border-x border-[var(--line)] shadow-[0_4px_0_0_var(--paper)] relative z-10 -mb-[1px]"
+                          ? "bg-[var(--paper)] text-[var(--black)] border-t border-x border-[var(--black)] shadow-[0_4px_0_0_var(--paper)] relative z-10 -mb-[1px]"
                           : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
                       )}
                     >
@@ -436,7 +449,7 @@ export default function AssignmentsPage() {
                       className={classNames(
                         "px-6 py-3 text-sm font-semibold rounded-t-xl transition-colors flex items-center gap-2",
                         activeTab === "manage"
-                          ? "bg-[var(--paper)] text-[var(--brand-green)] border-t border-x border-[var(--line)] shadow-[0_4px_0_0_var(--paper)] relative z-10 -mb-[1px]"
+                          ? "bg-[var(--paper)] text-[var(--black)] border-t border-x border-[var(--black)] shadow-[0_4px_0_0_var(--paper)] relative z-10 -mb-[1px]"
                           : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
                       )}
                     >
@@ -444,7 +457,7 @@ export default function AssignmentsPage() {
                       Active Assignments
                       <span className={classNames(
                         "ml-1.5 px-2 py-0.5 rounded-full text-xs font-bold",
-                        activeTab === "manage" ? "bg-[var(--brand-green-muted)]" : "bg-[var(--line)] text-[var(--ink)]"
+                        activeTab === "manage" ? "bg-[var(--lime)] text-[var(--black)] border-2 border-[var(--black)]" : "bg-[var(--surface)] text-[var(--espresso)] border border-transparent"
                       )}>
                         {currentAssignments?.length || 0}
                       </span>
@@ -496,7 +509,7 @@ export default function AssignmentsPage() {
                                 className="rounded text-[var(--brand-green)] focus:ring-[var(--brand-green)] w-4 h-4 border-[var(--line-strong)]"
                               />
                               <span className="font-medium text-[var(--ink)] flex items-center gap-1.5">
-                                <Sparkles size={14} className="text-[var(--brand-green)]" />
+                                <Sparkles size={14} className="text-[var(--black)]" />
                                 Smart Matches
                               </span>
                             </label>
@@ -539,11 +552,11 @@ export default function AssignmentsPage() {
                                     className={classNames(
                                       "p-4 rounded-xl flex flex-col gap-3 transition-all relative select-none",
                                       alreadyAssigned
-                                        ? "opacity-50 cursor-not-allowed bg-[var(--paper)] border border-[var(--line)]"
-                                        : "cursor-pointer bg-[var(--paper)] border",
+                                        ? "opacity-50 cursor-not-allowed bg-[var(--sand)] border-2 border-[var(--black)]"
+                                        : "cursor-pointer border-2 border-[var(--black)]",
                                       isSelected && !alreadyAssigned
-                                        ? "border-[var(--brand-green)] bg-[var(--brand-green-muted)]/20 shadow-sm ring-1 ring-[var(--brand-green)]/20"
-                                        : "border-[var(--line)] hover:border-[var(--line-strong)]"
+                                        ? "bg-[var(--lime)] shadow-[4px_4px_0_0_var(--black)] -translate-y-1 -translate-x-1"
+                                        : !alreadyAssigned ? "bg-[var(--white)] hover:bg-[var(--cream)] hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[2px_2px_0_0_var(--black)]" : ""
                                     )}
                                   >
                                     <div className="flex items-start justify-between gap-3">
@@ -584,11 +597,11 @@ export default function AssignmentsPage() {
                                       </span>
 
                                       {alreadyAssigned ? (
-                                        <span className="font-bold text-[var(--ink-muted)] uppercase tracking-wider text-[10px] bg-[var(--surface)] px-2 py-1 rounded">
+                                        <span className="font-bold text-[var(--black)] uppercase tracking-wider text-[10px] bg-[var(--surface)] border-2 border-[var(--black)] px-2 py-1 rounded">
                                           Already Assigned
                                         </span>
                                       ) : user.isSmartMatch ? (
-                                        <span className="inline-flex items-center gap-1 bg-[var(--brand-green-muted)] text-[var(--brand-green)] px-2 py-1 rounded-md font-bold text-[10px] uppercase tracking-wide">
+                                        <span className="inline-flex items-center gap-1 bg-[var(--lime)] border-2 border-[var(--black)] text-[var(--black)] px-2 py-1 rounded-md font-bold text-[10px] uppercase tracking-wide">
                                           <Sparkles size={12} />
                                           Smart Match
                                         </span>
@@ -797,7 +810,7 @@ export default function AssignmentsPage() {
             >
               <div className="flex items-center justify-between border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--brand-green)]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--black)]">
                     Lot Specifications
                   </span>
                   <h3 className="text-xl font-bold text-[var(--ink)] tracking-tight mt-0.5">
@@ -823,7 +836,7 @@ export default function AssignmentsPage() {
                     />
                   ) : (
                     <div className="flex flex-col items-center text-[var(--ink-muted)] opacity-60">
-                      <Building size={48} className="mb-3 text-[var(--brand-green)]" />
+                      <Building size={48} className="mb-3 text-[var(--black)]" />
                       <span className="text-sm font-semibold">No Image Uploaded</span>
                     </div>
                   )}
@@ -837,7 +850,7 @@ export default function AssignmentsPage() {
                   </div>
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] block mb-1">Expected Price</span>
-                    <span className="font-bold text-[var(--brand-green)]">{formatCurrency(selectedLot.expectedPrice)}</span>
+                    <span className="font-bold text-[var(--black)]">{formatCurrency(selectedLot.expectedPrice)}</span>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] block mb-1">Quantity</span>
@@ -850,7 +863,7 @@ export default function AssignmentsPage() {
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] block mb-1">Location</span>
                     <span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-                      <MapPin size={14} className="text-[var(--brand-green)]" />
+                      <MapPin size={14} className="text-[var(--black)]" />
                       {selectedLot.location}
                     </span>
                   </div>

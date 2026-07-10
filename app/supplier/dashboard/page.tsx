@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui";
 import {
@@ -16,9 +16,10 @@ import {
 import { formatCurrency, formatDate, sentenceCase } from "@/lib/utils";
 
 export default function SupplierOverview() {
-  const dashboard = useQuery(api.lots.getSupplierDashboard);
+  const { isAuthenticated } = useConvexAuth();
+  const dashboard = useQuery(api.lots.getSupplierDashboard, isAuthenticated ? undefined : "skip");
 
-  if (dashboard === undefined) {
+  if (!dashboard) {
     return (
       <div className="flex min-h-[420px] items-center justify-center">
         <div className="space-y-3 text-center">

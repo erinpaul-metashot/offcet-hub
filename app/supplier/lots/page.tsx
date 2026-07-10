@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState, useTransition } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button, StatusBadge } from "@/components/ui";
 import { formatCurrency, formatDate, classNames, sentenceCase } from "@/lib/utils";
@@ -40,7 +40,8 @@ function matchesLot(lot: Lot, query: string) {
 type TabType = "all" | "active" | "drafts" | "archived";
 
 export default function MyLotsPage() {
-  const lotsQuery = useQuery(api.lots.listForSupplier);
+  const { isAuthenticated } = useConvexAuth();
+  const lotsQuery = useQuery(api.lots.listForSupplier, isAuthenticated ? undefined : "skip");
   const markSold = useMutation(api.lots.markSold);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -65,11 +66,11 @@ export default function MyLotsPage() {
       .filter((lot) => matchesLot(lot, deferredSearchQuery));
   }, [lots, activeTab, deferredSearchQuery]);
 
-  if (lotsQuery === undefined) {
+  if (!lotsQuery) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[500px] gap-4 text-[var(--ink-muted)]">
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--brand-green)] border-t-transparent animate-spin"></div>
-        <p className="text-sm font-medium">Loading your lots...</p>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-green)] border-t-transparent" />
+        <p className="text-sm">Loading lots...</p>
       </div>
     );
   }
@@ -115,7 +116,7 @@ export default function MyLotsPage() {
                 className={classNames(
                   "px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap",
                   activeTab === tab
-                    ? "border-[var(--brand-green)] text-[var(--brand-green)]"
+                    ? "border-[var(--black)] text-[var(--black)]"
                     : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
                 )}
                 onClick={() => setActiveTab(tab)}
@@ -134,7 +135,7 @@ export default function MyLotsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search lots, location, status..."
-                className="w-full pl-9 pr-4 py-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-green-muted)] focus:border-[var(--brand-green)] transition-all"
+                className="w-full pl-9 pr-4 py-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--black)] focus:border-[var(--black)] transition-all"
               />
             </div>
           </div>
@@ -152,12 +153,12 @@ export default function MyLotsPage() {
           ) : (
             <div className="grid gap-4">
               {filteredLots.map((lot) => (
-                <div key={lot._id} className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[var(--brand-green)]/40 transition-all flex flex-col xl:flex-row gap-6 justify-between group">
+                <div key={lot._id} className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-6 shadow-sm hover:shadow-[4px_4px_0_0_var(--black)] hover:-translate-y-1 hover:-translate-x-1 hover:border-[var(--black)] transition-all flex flex-col xl:flex-row gap-6 justify-between group">
                   
                   {/* Left: Info */}
                   <div className="flex-1 space-y-4">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="text-xl font-bold tracking-tight text-[var(--ink)] group-hover:text-[var(--brand-green)] transition-colors">{lot.title}</h3>
+                      <h3 className="text-xl font-bold tracking-tight text-[var(--black)] transition-colors">{lot.title}</h3>
                       <StatusBadge status={lot.status} />
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] bg-[var(--surface)] border border-[var(--line)]">
                         <Package size={12} /> {sentenceCase(lot.category)}
@@ -228,8 +229,8 @@ export default function MyLotsPage() {
                             }
                           });
                         }}
-                        variant="ghost"
-                        className="justify-center text-xs hover:bg-[var(--line)] text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                        variant="secondary"
+                        className="justify-center text-xs"
                       >
                         Mark Sold
                       </Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button, StatusBadge } from "@/components/ui";
@@ -34,14 +34,15 @@ export default function LotDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const lot = useQuery(api.lots.get, { lotId });
-  const assignments = useQuery(api.assignments.getForLot, { lotId });
+  const { isAuthenticated } = useConvexAuth();
+  const lot = useQuery(api.lots.get, isAuthenticated ? { lotId } : "skip");
+  const assignments = useQuery(api.assignments.getForLot, isAuthenticated ? { lotId } : "skip");
   const markSold = useMutation(api.lots.markSold);
 
-  if (lot === undefined) {
+  if (lot === undefined || assignments === undefined) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3 text-[var(--ink-muted)]">
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--brand-green)] border-t-transparent animate-spin"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-green)] border-t-transparent" />
         <p className="text-sm font-medium">Loading lot details...</p>
       </div>
     );
@@ -95,7 +96,7 @@ export default function LotDetailsPage() {
       <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] p-6 md:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-3 mb-3">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-[var(--brand-green)] bg-[var(--brand-green-muted)]/50 border border-[var(--brand-green)]/10">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-bold text-[var(--black)] bg-[var(--lime)] border-2 border-[var(--black)]">
               <Package size={14} />
               {sentenceCase(lot.category)}
             </span>
@@ -122,7 +123,7 @@ export default function LotDetailsPage() {
             </Button>
           )}
           {lot.status !== "sold" && (
-            <Button disabled={isPending} onClick={handleMarkSold} className="w-full sm:w-auto flex items-center gap-2 shadow-md bg-[var(--brand-green)] hover:bg-[var(--brand-green-dark)] text-white">
+            <Button disabled={isPending} onClick={handleMarkSold} className="w-full sm:w-auto flex items-center gap-2">
               <CheckCircle2 size={16} />
               Mark Sold
             </Button>
@@ -140,7 +141,7 @@ export default function LotDetailsPage() {
           <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden">
             <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]">
               <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-                <FileText size={16} className="text-[var(--brand-green)]" />
+                <FileText size={16} className="text-[var(--black)]" />
                 Key Specifications
               </h3>
             </div>
@@ -150,7 +151,7 @@ export default function LotDetailsPage() {
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-muted)] flex items-center gap-1.5">
                   <DollarSign size={14} /> Expected Price
                 </span>
-                <span className="font-bold text-lg text-[var(--brand-green)]">{formatCurrency(lot.expectedPrice)}</span>
+                <span className="font-bold text-lg text-[var(--black)]">{formatCurrency(lot.expectedPrice)}</span>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -176,7 +177,7 @@ export default function LotDetailsPage() {
           <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden">
             <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]">
               <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-                <FileText size={16} className="text-[var(--brand-green)]" />
+                <FileText size={16} className="text-[var(--black)]" />
                 Description
               </h3>
             </div>
@@ -209,7 +210,7 @@ export default function LotDetailsPage() {
             <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden">
               <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-                  <Users size={16} className="text-[var(--brand-green)]" />
+                  <Users size={16} className="text-[var(--black)]" />
                   Assigned Buyers
                 </h3>
               </div>
@@ -259,7 +260,7 @@ export default function LotDetailsPage() {
           <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden">
             <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]">
               <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-                <ImageIcon size={16} className="text-[var(--brand-green)]" />
+                <ImageIcon size={16} className="text-[var(--black)]" />
                 Photos ({lot.imageUrls?.length || 0})
               </h3>
             </div>
@@ -281,7 +282,7 @@ export default function LotDetailsPage() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-[var(--ink-muted)] bg-[var(--surface)] rounded-xl border border-dashed border-[var(--line)]">
-                  <ImageIcon size={48} className="mb-3 opacity-50 text-[var(--brand-green)]" />
+                  <ImageIcon size={48} className="mb-3 opacity-50 text-[var(--black)]" />
                   <p className="font-medium text-sm">No photos uploaded for this lot.</p>
                 </div>
               )}
@@ -295,7 +296,7 @@ export default function LotDetailsPage() {
           <div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm overflow-hidden sticky top-6">
             <div className="border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)] flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-                <Clock size={16} className="text-[var(--brand-green)]" />
+                <Clock size={16} className="text-[var(--black)]" />
                 Activity Timeline
               </h3>
             </div>
@@ -316,7 +317,7 @@ export default function LotDetailsPage() {
 
                 <div className="flex gap-4">
                   <div className="mt-1">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--brand-green)] shadow-[0_0_0_4px_var(--brand-green-muted)]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--lime)] border border-[var(--black)] shadow-[0_0_0_2px_var(--black)]" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-[var(--ink)]">Last Updated</p>

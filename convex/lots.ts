@@ -164,7 +164,12 @@ export const markSold = mutation({
 export const listForSupplier = query({
   args: {},
   handler: async (ctx) => {
-    const viewer = await requireRole(ctx, ["supplier"]);
+    let viewer;
+    try {
+      viewer = await requireRole(ctx, ["supplier"]);
+    } catch (e) {
+      return null;
+    }
     const lots = await ctx.db
       .query("lots")
       .withIndex("by_supplier", (query) => query.eq("supplierUserId", viewer.user._id))
@@ -196,8 +201,11 @@ export const get = query({
     lotId: v.id("lots"),
   },
   handler: async (ctx, args) => {
-    // Basic auth check
-    await requireRole(ctx, ["admin", "supplier", "buyer", "agent"]);
+    try {
+      await requireRole(ctx, ["admin", "supplier", "buyer", "agent"]);
+    } catch (e) {
+      return null;
+    }
     
     const lot = await ctx.db.get(args.lotId);
     if (!lot) {
@@ -218,7 +226,12 @@ export const get = query({
 export const getSupplierDashboard = query({
   args: {},
   handler: async (ctx) => {
-    const viewer = await requireRole(ctx, ["supplier"]);
+    let viewer;
+    try {
+      viewer = await requireRole(ctx, ["supplier"]);
+    } catch (e) {
+      return null;
+    }
     const lots = await ctx.db
       .query("lots")
       .withIndex("by_supplier", (query) => query.eq("supplierUserId", viewer.user._id))

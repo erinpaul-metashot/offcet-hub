@@ -4,8 +4,8 @@ import { ConvexClientProvider } from "@/app/convex-client-provider";
 import { getToken } from "@/lib/auth-server";
 
 export const metadata: Metadata = {
-  title: "SurplusLink",
-  description: "Curated surplus inventory marketplace for suppliers, buyers, and agents.",
+  title: "Offcet Hub — Where surplus finds its next owner",
+  description: "The B2B platform that connects suppliers, admins, and buyers around excess inventory.",
 };
 
 export default async function RootLayout({

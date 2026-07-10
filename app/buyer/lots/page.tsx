@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button, EmptyState, StatusBadge } from "@/components/ui";
 import { formatCurrency, formatDate, sentenceCase, classNames } from "@/lib/utils";
@@ -22,10 +22,11 @@ export default function AssignedLotsPage() {
   const [searchText, setSearchText] = useState("");
   const [locationText, setLocationText] = useState("");
   
-  const lots = useQuery(api.assignments.listAssignedLotsForCurrentUser, {
+  const { isAuthenticated } = useConvexAuth();
+  const lots = useQuery(api.assignments.listAssignedLotsForCurrentUser, isAuthenticated ? {
     searchText,
     locationText,
-  });
+  } : "skip");
 
   return (
     <div className="max-w-[1200px] mx-auto space-y-8 pb-12">
@@ -50,7 +51,7 @@ export default function AssignedLotsPage() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="Search by title or category..."
-              className="w-full pl-9 pr-4 py-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-green-muted)] focus:border-[var(--brand-green)] transition-all"
+              className="w-full pl-9 pr-4 py-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--black)] focus:border-[var(--black)] transition-all"
             />
           </div>
           <div className="relative flex-1 sm:max-w-xs">
@@ -60,19 +61,22 @@ export default function AssignedLotsPage() {
               value={locationText}
               onChange={(e) => setLocationText(e.target.value)}
               placeholder="Filter by location..."
-              className="w-full pl-9 pr-4 py-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-green-muted)] focus:border-[var(--brand-green)] transition-all"
+              className="w-full pl-9 pr-4 py-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--black)] focus:border-[var(--black)] transition-all"
             />
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      {lots === undefined ? (
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-[var(--ink-muted)] bg-[var(--paper)] rounded-2xl border border-[var(--line)]">
-          <div className="w-8 h-8 rounded-full border-2 border-[var(--brand-green)] border-t-transparent animate-spin"></div>
-          <p className="text-sm font-medium">Loading your assignments...</p>
+      {/* Lots Grid */}
+      {lots === undefined || !lots ? (
+        <div className="flex flex-col items-center justify-center py-24 px-6 bg-[var(--paper)] rounded-2xl border border-[var(--line)]">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-green)] border-t-transparent" />
+          <h3 className="mt-6 text-lg font-bold text-[var(--ink)]">Loading assignments</h3>
+          <p className="mt-2 text-sm text-[var(--ink-muted)] max-w-sm text-center">
+            Fetching your assigned inventory...
+          </p>
         </div>
-      ) : !lots.length ? (
+      ) : lots.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-16 text-center border-2 border-dashed border-[var(--line)] rounded-2xl bg-[var(--paper)]">
           <Inbox size={48} className="mb-4 text-[var(--ink-muted)] opacity-50" />
           <h3 className="text-xl font-bold text-[var(--ink)] mb-2">No lots assigned yet</h3>
@@ -83,12 +87,12 @@ export default function AssignedLotsPage() {
       ) : (
         <div className="grid gap-6">
           {lots.map((lot) => (
-            <div key={lot._id} className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-md hover:border-[var(--brand-green)]/40 transition-all flex flex-col lg:flex-row gap-8 justify-between group">
+            <div key={lot._id} className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-[4px_4px_0_0_var(--black)] hover:-translate-y-1 hover:-translate-x-1 hover:border-[var(--black)] transition-all flex flex-col lg:flex-row gap-8 justify-between group">
               
               {/* Left Content */}
               <div className="flex-1 flex flex-col">
                 <div className="flex flex-wrap items-center gap-3 mb-4">
-                  <h3 className="text-2xl font-bold tracking-tight text-[var(--ink)] group-hover:text-[var(--brand-green)] transition-colors">
+                  <h3 className="text-2xl font-bold tracking-tight text-[var(--black)] transition-colors">
                     {lot.title}
                   </h3>
                   <StatusBadge status={lot.status} />
@@ -111,7 +115,7 @@ export default function AssignedLotsPage() {
                     <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 text-[var(--ink-muted)]">
                       <DollarSign size={12}/> Expected Price
                     </span>
-                    <span className="font-bold text-[var(--brand-green)]">{formatCurrency(lot.expectedPrice)}</span>
+                    <span className="font-bold text-[var(--black)]">{formatCurrency(lot.expectedPrice)}</span>
                   </div>
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 text-[var(--ink-muted)]">

@@ -1,333 +1,263 @@
 "use client";
 
-import React, { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui";
-import { 
-  ShieldCheck, 
-  MapPin, 
-  Scale, 
-  ChevronRight, 
-  CheckCircle2, 
-  ArrowRight,
-  TrendingUp,
-  Clock,
-  Layers,
-  FileText,
-  Zap,
-  ChevronDown
-} from "lucide-react";
+import { motion, AnimatePresence, type PanInfo } from "framer-motion";
+import { useGoogleFont } from "../_components/useGoogleFont";
 
-interface MaterialLot {
-  id: string;
-  title: string;
-  category: string;
-  weight: string;
-  location: string;
-  specs: string[];
-  supplier: string;
-}
+const serif = { fontFamily: "'Fraunces', Georgia, serif" };
+const hand = { fontFamily: "'Caveat', cursive" };
+const sans = { fontFamily: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif" };
 
-const LOTS: MaterialLot[] = [
-  { id: "LOT-01", title: "Bulk PET Resin Regrind", category: "Plastics", weight: "18.0 Tons", location: "Newark, NJ", specs: ["Clean cold-wash", "Pre-consumer regrind", "Intrinsically clean PET"], supplier: "Apex Polymers LLC" },
-  { id: "LOT-02", title: "HDPE Shredded Bottles (Flakes)", category: "Plastics", weight: "24.5 Tons", location: "Detroit, MI", specs: ["98% clean separation", "Baled weight certificates", "Post-industrial source"], supplier: "Vantage Plastics Corp" },
-  { id: "LOT-03", title: "Aluminum Extrusion Offcuts", category: "Metals", weight: "6.0 Pallets", location: "Phoenix, AZ", specs: ["6063 Alloy specification", "Clean bundles", "Mill certificate logged"], supplier: "Phoenix Metalworks" },
-  { id: "LOT-04", title: "Unused Corrugated Cartons", category: "Packaging", weight: "3,200 Units", location: "Chicago, IL", specs: ["200# Mullen test", "Awaiting packaging match", "Stored in dry environment"], supplier: "Midwest Box Co." }
+const LINEN = "#ddd2c0";
+const FELT = "#26443a";
+const INK = "#231f18";
+const GREEN = "#1a5632";
+
+type BinId = "buyer" | "agent" | "hold";
+type Lot = { id: string; t: string; q: string; loc: string; px: string };
+
+const INITIAL: Lot[] = [
+  { id: "SL-4471", t: "Cold-rolled steel offcuts", q: "1.2 t", loc: "Coimbatore", px: "₹38/kg" },
+  { id: "SL-4502", t: "HDPE regrind, natural", q: "6.8 t", loc: "Houston", px: "$0.41/lb" },
+  { id: "SL-4488", t: "Nitrile glove overstock", q: "84 cartons", loc: "Rotterdam", px: "€0.022" },
+  { id: "SL-4530", t: "Lithium cell packs, B-grade", q: "310 units", loc: "Shenzhen", px: "$3.10" },
+  { id: "SL-4544", t: "Powder-coat pigment, mixed", q: "440 kg", loc: "Vitória", px: "$2.80/kg" },
 ];
 
-export default function DesignFiveFull() {
-  const [selectedLotId, setSelectedLotId] = useState<string>("LOT-01");
-  const [activeFaq, setActiveFaq] = useState<number | null>(null);
+const BINS: { id: BinId; label: string; note: string; tone: string }[] = [
+  { id: "buyer", label: "Assign → Buyer", note: "matched to a shop", tone: GREEN },
+  { id: "agent", label: "Route → Agent", note: "into the network", tone: "#9a6b1e" },
+  { id: "hold", label: "Hold / Reject", note: "needs another look", tone: "#8a3a2e" },
+];
 
-  const selectedLot = LOTS.find(l => l.id === selectedLotId) || LOTS[0];
+const FLOW = [
+  { n: "01", t: "A supplier drops a lot on the table", d: "Photos, quantity, location, expected price. It lands in the queue as pending_review." },
+  { n: "02", t: "An admin picks it up and reads it", d: "Specs checked, category fixed, quality judged by a human — not an algorithm guessing." },
+  { n: "03", t: "It gets placed, not broadcast", d: "Assigned to the one buyer or agent who actually needs it. Deliberate, every time." },
+];
 
-  const toggleFaq = (index: number) => {
-    setActiveFaq(activeFaq === index ? null : index);
+export default function SortingTableConcept() {
+  useGoogleFont("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Caveat:wght@500;600;700&display=swap");
+
+  const tableRef = useRef<HTMLDivElement | null>(null);
+  const binRefs = {
+    buyer: useRef<HTMLDivElement | null>(null),
+    agent: useRef<HTMLDivElement | null>(null),
+    hold: useRef<HTMLDivElement | null>(null),
+  };
+
+  const [pile, setPile] = useState<Lot[]>(INITIAL);
+  const [placed, setPlaced] = useState<Record<BinId, Lot[]>>({ buyer: [], agent: [], hold: [] });
+  const [dragging, setDragging] = useState<string | null>(null);
+
+  const cleared = placed.buyer.length + placed.agent.length + placed.hold.length;
+
+  const handleEnd = (lot: Lot, _e: unknown, info: PanInfo) => {
+    setDragging(null);
+    const { x, y } = info.point;
+    for (const id of ["buyer", "agent", "hold"] as BinId[]) {
+      const r = binRefs[id].current?.getBoundingClientRect();
+      if (r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+        setPile((prev) => prev.filter((l) => l.id !== lot.id));
+        setPlaced((prev) => ({ ...prev, [id]: [...prev[id], lot] }));
+        return;
+      }
+    }
+  };
+
+  const reset = () => {
+    setPile(INITIAL);
+    setPlaced({ buyer: [], agent: [], hold: [] });
   };
 
   return (
-    <div className="min-h-screen bg-paper text-ink font-sans antialiased selection:bg-brand-green selection:text-paper">
-      
-      {/* 1. PUBLIC HEADER NAVIGATION */}
-      <header className="w-full border-b border-line bg-paper/85 backdrop-blur-md sticky top-14 z-40">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-8 lg:px-12">
-          <div className="flex items-center gap-10">
-            <span className="text-xs font-black tracking-[0.25em] uppercase text-brand-green">SURPLUSLINK</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/login">
-              <span className="text-xs font-bold tracking-wider uppercase text-ink-muted hover:text-ink cursor-pointer transition-colors">Sign in</span>
+    <main className="relative min-h-[100dvh] w-full" style={{ backgroundColor: LINEN, color: INK, ...sans }}>
+      {/* canvas-weave texture */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.5] mix-blend-multiply"
+        style={{ backgroundImage: "repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(0,0,0,0.02) 0 1px, transparent 1px 3px)" }}
+        aria-hidden
+      />
+
+      <div className="relative z-10">
+        <header className="mx-auto flex max-w-6xl items-center justify-between px-6 pt-7 sm:px-10">
+          <span className="text-lg font-semibold" style={serif}>SurplusLink</span>
+          <div className="flex items-center gap-5 text-sm">
+            <Link href="/login" className="opacity-65 transition-opacity hover:opacity-100">Log in</Link>
+            <Link href="/register" className="rounded-full px-5 py-2 text-sm font-medium text-[#f3eee2] transition-transform active:scale-[0.98]" style={{ backgroundColor: FELT }}>
+              Get on the table
             </Link>
-            <Link href="/register">
-              <Button size="sm" className="shadow-sm">Join Exchange</Button>
-            </Link>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* 2. DUAL SPLIT-SCREEN LAYOUT */}
-      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-3.5rem)] divide-y lg:divide-y-0 lg:divide-x divide-line">
-        
-        {/* LEFT COLUMN: STICKY BRAND CONTEXT */}
-        <section className="lg:w-1/2 lg:h-[calc(100vh-7.5rem)] lg:sticky lg:top-30 p-8 sm:p-12 lg:p-16 flex flex-col justify-between bg-surface text-left">
-          <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 border border-brand-green/30 bg-brand-green-muted px-2.5 py-0.5 text-brand-green">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-green-light animate-pulse" />
-              <span className="text-[9px] font-bold tracking-[0.25em] uppercase">THE DIRECT EXCHANGE</span>
+        {/* HERO + SORTING TABLE */}
+        <section className="mx-auto max-w-6xl px-6 pt-14 sm:px-10">
+          <p className="mb-4 text-sm uppercase tracking-[0.3em]" style={{ color: GREEN }}>curation, by hand</p>
+          <h1 className="max-w-3xl text-[clamp(2.4rem,6vw,4.6rem)] font-medium leading-[0.98] tracking-tight" style={serif}>
+            Surplus doesn&rsquo;t get matched by an algorithm. It gets sorted on a table.
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-relaxed opacity-70">
+            Every lot passes through a human. Try it — drag a ticket into a tray and clear the queue yourself.
+          </p>
+
+          {/* the felt mat */}
+          <div
+            ref={tableRef}
+            className="relative mt-10 overflow-hidden rounded-[28px] p-5 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.5)] sm:p-8"
+            style={{ backgroundColor: FELT, minHeight: 560 }}
+          >
+            <div className="pointer-events-none absolute inset-0 rounded-[28px] shadow-[inset_0_2px_1px_rgba(255,255,255,0.08),inset_0_-40px_80px_rgba(0,0,0,0.25)]" />
+
+            <div className="relative flex items-center justify-between text-[#e9e2d2]">
+              <span className="text-sm uppercase tracking-[0.25em] opacity-70" style={{ fontFamily: "'JetBrains Mono', monospace" }}>review queue</span>
+              <span className="text-2xl" style={hand}>{cleared} of {INITIAL.length} cleared</span>
             </div>
 
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[0.95] text-ink">
-              Ditch broker loops. <br />Exchange <span className="text-brand-green">directly</span>.
-            </h1>
-
-            <p className="text-sm leading-relaxed text-ink-muted max-w-md">
-              SurplusLink is a private coordination ledger that enables vetted manufacturers to list excess material lots and coordinate directly with regional processors. Complete chemical spec logging, 0% middleman markups.
-            </p>
-
-            <div className="flex gap-4 pt-2">
-              <Link href="/register">
-                <Button className="shadow-md">
-                  Request Ledger Credentials <ArrowRight size={14} className="ml-2" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          <div className="border-t border-line pt-8 mt-12 space-y-4">
-            <div className="flex gap-3">
-              <ShieldCheck className="text-brand-green shrink-0 mt-0.5" size={16} />
-              <div>
-                <h4 className="text-xs font-bold text-ink uppercase tracking-wider">100% Vetted Directory</h4>
-                <p className="text-[11px] text-ink-muted leading-relaxed">
-                  No duplicate brokers. No spam listings. Every operator in our private B2B ledger is verified by tax registration and facilities audits.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* RIGHT COLUMN: SCROLLABLE HOMEPAGE NARRATIVE */}
-        <section className="lg:w-1/2 p-8 sm:p-12 lg:p-16 space-y-24 bg-paper scroll-smooth text-left">
-          
-          {/* A. MONOCHROME LOGO WALL */}
-          <div className="space-y-4">
-            <span className="text-[9px] font-bold tracking-[0.3em] text-[#a1a1a0] uppercase block">SYNCHRONIZED NETWORK PARTNERS</span>
-            <div className="flex flex-wrap gap-x-8 gap-y-3 text-xs font-bold tracking-widest text-[#666664] uppercase border-b border-line pb-8">
-              <span>Apex Polymers</span>
-              <span>Midwest Steel</span>
-              <span>Vantage Corp</span>
-              <span>Standard Alloys</span>
-            </div>
-          </div>
-
-          {/* B. INTERACTIVE LOT INSPECTOR */}
-          <div className="space-y-6">
-            <div>
-              <p className="text-[9px] font-bold tracking-[0.25em] text-ink-muted uppercase">CATALOG PREVIEW</p>
-              <h2 className="text-xl font-bold tracking-tight uppercase">Active Certified Lots</h2>
-              <p className="text-xs text-ink-muted mt-1">Select an active lot below to inspect authenticated chemical analyses, weigh tickets, and supplier details.</p>
-            </div>
-
-            <div className="grid gap-3">
-              {LOTS.map(lot => {
-                const isSelected = selectedLotId === lot.id;
-                return (
-                  <div 
-                    key={lot.id}
-                    onClick={() => setSelectedLotId(lot.id)}
-                    className={`cursor-pointer border p-5 transition-all text-left flex flex-col justify-between gap-4
-                      ${isSelected 
-                        ? "border-brand-green bg-brand-green-muted/20" 
-                        : "border-line hover:border-ink bg-surface"
-                      }
-                    `}
-                  >
-                    <div className="flex justify-between items-start gap-4">
-                      <div>
-                        <span className="text-[9px] font-bold tracking-widest uppercase text-brand-green bg-brand-green-muted px-2 py-0.5">
-                          {lot.category}
-                        </span>
-                        <h3 className="text-xs font-bold text-ink mt-2 uppercase tracking-wider">{lot.title}</h3>
-                        <p className="text-[10px] text-ink-muted mt-1">{lot.weight} • {lot.location}</p>
+            {/* the pile of lot tickets */}
+            <div className="relative mt-6 min-h-[230px]">
+              {pile.length === 0 ? (
+                <div className="flex min-h-[230px] flex-col items-center justify-center text-center text-[#e9e2d2]">
+                  <p className="text-3xl" style={hand}>Table cleared. Nice.</p>
+                  <button onClick={reset} className="mt-4 rounded-full border border-[#e9e2d2]/40 px-5 py-2 text-sm text-[#e9e2d2] transition-colors hover:bg-[#e9e2d2]/10">
+                    Reset the queue
+                  </button>
+                </div>
+              ) : (
+                <AnimatePresence>
+                  {pile.map((lot, i) => (
+                    <motion.div
+                      key={lot.id}
+                      drag
+                      dragConstraints={tableRef}
+                      dragElastic={0.18}
+                      dragSnapToOrigin
+                      onDragStart={() => setDragging(lot.id)}
+                      onDragEnd={(e, info) => handleEnd(lot, e, info)}
+                      initial={{ opacity: 0, y: 16, rotate: 0 }}
+                      animate={{ opacity: 1, y: 0, rotate: (i - 2) * 3 }}
+                      exit={{ opacity: 0, scale: 0.6, transition: { duration: 0.2 } }}
+                      whileDrag={{ scale: 1.06, rotate: 0, zIndex: 60, boxShadow: "0 24px 50px rgba(0,0,0,0.45)" }}
+                      whileHover={{ y: -6 }}
+                      className="absolute left-1/2 top-2 w-[230px] cursor-grab touch-none select-none rounded-lg bg-[#f1e9d8] p-4 shadow-[0_10px_24px_rgba(0,0,0,0.3)] active:cursor-grabbing sm:left-[8%] sm:w-[250px]"
+                      style={{ marginLeft: i * 6, zIndex: dragging === lot.id ? 60 : pile.length - i }}
+                    >
+                      {/* tag hole + string */}
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="h-3 w-3 rounded-full border-2" style={{ borderColor: INK, opacity: 0.4 }} />
+                        <span className="text-[10px] uppercase tracking-widest opacity-50" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{lot.id}</span>
                       </div>
-                      <ChevronRight size={14} className={`opacity-40 transition-transform ${isSelected ? "rotate-90 text-brand-green" : ""}`} />
-                    </div>
-
-                    <AnimatePresence>
-                      {isSelected && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden border-t border-line/50 pt-3 mt-1 space-y-3"
-                        >
-                          <div className="grid grid-cols-2 gap-2 text-[10px]">
-                            <div>
-                              <span className="text-ink-muted uppercase font-bold text-[9px]">Vetted Supplier</span>
-                              <p className="font-bold mt-0.5">{lot.supplier}</p>
-                            </div>
-                            <div>
-                              <span className="text-ink-muted uppercase font-bold text-[9px]">Logistics State</span>
-                              <p className="font-bold text-brand-green mt-0.5 flex items-center gap-1">
-                                <span className="h-1.5 w-1.5 rounded-full bg-brand-green animate-pulse" /> Certified Lot
-                              </p>
-                            </div>
-                          </div>
-
-                          <div>
-                            <span className="text-[9px] text-ink-muted uppercase font-bold">Vetted Spec Parameters:</span>
-                            <ul className="mt-1 space-y-1">
-                              {lot.specs.map((spec, i) => (
-                                <li key={i} className="text-[10px] text-ink flex items-center gap-1.5">
-                                  <span className="h-1 w-1 bg-brand-green rounded-full shrink-0" />
-                                  {spec}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
+                      <h3 className="text-lg font-semibold leading-snug" style={serif}>{lot.t}</h3>
+                      <dl className="mt-3 grid grid-cols-3 gap-2 text-xs" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                        <div><dt className="opacity-45">qty</dt><dd className="font-medium tabular-nums">{lot.q}</dd></div>
+                        <div><dt className="opacity-45">loc</dt><dd className="font-medium">{lot.loc}</dd></div>
+                        <div><dt className="opacity-45">ask</dt><dd className="font-medium tabular-nums">{lot.px}</dd></div>
+                      </dl>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              )}
+              {pile.length > 0 && (
+                <p className="pointer-events-none absolute bottom-0 right-2 text-2xl text-[#e9e2d2]/70" style={hand}>
+                  drag me ↓
+                </p>
+              )}
             </div>
-          </div>
 
-          {/* C. CORE FEATURES GRID */}
-          <div className="space-y-8 border-t border-line pt-16">
-            <span className="text-[9px] font-bold tracking-[0.25em] text-ink-muted uppercase block">THE PIPELINE ADVANTAGE</span>
-            
-            <div className="grid gap-6">
-              {[
-                { title: "Chemical Vetting Assurance", icon: <FileText size={16} className="text-brand-green" />, desc: "Every surplus polymer, steel bundle, or packaging lot requires verified laboratory weights and chemistry composition receipts before ledger release." },
-                { title: "Direct Peer Coordination", icon: <Zap size={16} className="text-brand-green" />, desc: "Bypass static broker circles and opaque markups. Vetted entities correspond directly on freight routing and pricing parity." },
-                { title: "Compliance Locking", icon: <CheckCircle2 size={16} className="text-brand-green" />, desc: "Private dashboard handles logistics mapping, recording clean certifications for transport tracking and B2B safety." }
-              ].map((feat, i) => (
-                <div key={i} className="border border-line p-5 bg-surface flex gap-4 text-left hover:border-brand-green transition-colors">
-                  <div className="h-8 w-8 bg-brand-green-muted flex items-center justify-center shrink-0">{feat.icon}</div>
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-ink">{feat.title}</h3>
-                    <p className="text-xs text-ink-muted leading-relaxed mt-1">{feat.desc}</p>
+            {/* the trays */}
+            <div className="relative mt-6 grid grid-cols-3 gap-3 sm:gap-5">
+              {BINS.map((bin) => (
+                <div
+                  key={bin.id}
+                  ref={binRefs[bin.id]}
+                  className="relative rounded-2xl border-2 border-dashed border-[#e9e2d2]/30 p-3 text-center transition-colors sm:p-4"
+                  style={{ minHeight: 96 }}
+                >
+                  <div className="text-base font-semibold text-[#f1e9d8] sm:text-lg" style={serif}>{bin.label}</div>
+                  <div className="text-[11px] uppercase tracking-wider text-[#e9e2d2]/55" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{bin.note}</div>
+                  <div className="mt-2 flex flex-wrap justify-center gap-1">
+                    {placed[bin.id].map((l) => (
+                      <motion.span
+                        key={l.id}
+                        initial={{ scale: 0, rotate: -12 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: "spring", stiffness: 420, damping: 20 }}
+                        className="rounded px-1.5 py-0.5 text-[9px] font-bold text-white"
+                        style={{ backgroundColor: bin.tone, fontFamily: "'JetBrains Mono', monospace" }}
+                      >
+                        {l.id}
+                      </motion.span>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           </div>
+        </section>
 
-          {/* D. TRUST OUTCOMES STATS */}
-          <div className="grid border border-line divide-y divide-line bg-surface text-left">
+        {/* HOW THE TABLE WORKS */}
+        <section className="mx-auto max-w-6xl px-6 py-28 sm:px-10">
+          <h2 className="mb-14 max-w-2xl text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-tight" style={serif}>
+            Three pairs of hands, one clean handoff.
+          </h2>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+            {FLOW.map((f, i) => (
+              <motion.div
+                key={f.n}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.6, delay: i * 0.08 }}
+              >
+                <div className="mb-4 text-5xl" style={{ ...hand, color: GREEN }}>{f.n}</div>
+                <h3 className="mb-2 text-xl font-semibold" style={serif}>{f.t}</h3>
+                <p className="leading-relaxed opacity-70">{f.d}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* stats */}
+        <section className="mx-auto max-w-6xl px-6 pb-8 sm:px-10">
+          <div className="grid grid-cols-2 gap-y-10 rounded-3xl border border-black/10 bg-white/30 py-12 sm:grid-cols-4">
             {[
-              { label: "Assets Coordinated", val: "$12.8M", desc: "Total certified transaction volume synchronized on ledger." },
-              { label: "Material Redirected", val: "14,800 Tons", desc: "Industrial surplus polymers and alloys routed directly to buyers." },
-              { label: "Median Match Velocity", val: "4.2 Hours", desc: "Average duration from lot verification to partner matching." }
-            ].map((stat, idx) => (
-              <div key={idx} className="p-6 space-y-1">
-                <span className="text-[8px] font-bold tracking-widest text-ink-muted uppercase block">{stat.label}</span>
-                <p className="text-2xl font-extrabold text-brand-green tracking-tight">{stat.val}</p>
-                <p className="text-[11px] text-ink-muted">{stat.desc}</p>
+              ["3,140 t", "sorted off warehouse floors"],
+              ["1,884", "lots placed by hand"],
+              ["6.2 days", "median time to a match"],
+              ["41%", "recovered vs. write-off"],
+            ].map(([n, l]) => (
+              <div key={l} className="px-4 text-center">
+                <div className="text-[clamp(1.8rem,4vw,2.8rem)] font-medium tabular-nums" style={{ ...serif, color: GREEN }}>{n}</div>
+                <div className="mx-auto mt-1 max-w-[170px] text-xs uppercase leading-tight tracking-wider opacity-55">{l}</div>
               </div>
             ))}
           </div>
-
-          {/* E. TESTIMONIAL ADVISORY */}
-          <div className="space-y-4 border-t border-line pt-16 text-left">
-            <span className="text-[9px] font-bold tracking-[0.25em] text-brand-green uppercase font-bold block">LOGISTICS ADVISORY</span>
-            <blockquote className="text-sm font-bold text-ink leading-relaxed">
-              "SurplusLink bypassed multiple broker chains, allowing us to coordinate the direct transit of 3,200 carton pallets in under 24 hours. The direct coordination eliminated hidden markups entirely."
-            </blockquote>
-            <div>
-              <p className="text-xs font-bold text-ink uppercase">Logistics Director</p>
-              <p className="text-[10px] text-ink-muted">Midwest Box Co. • Packaging Division</p>
-            </div>
-          </div>
-
-          {/* F. SYSTEM FAQ ACCORDION */}
-          <div className="space-y-6 border-t border-line pt-16">
-            <span className="text-[9px] font-bold tracking-widest text-ink-muted uppercase block">SYSTEM ASSURANCE FAQS</span>
-            
-            <div className="border border-line divide-y divide-line bg-surface">
-              {[
-                { q: "How is operator compliance screened?", a: "Every operator submits corporate tax records, regional warehouse permissions, and facilities credentials. Lots without verified scale tickets are rejected." },
-                { q: "Are there middleman commissions?", a: "No. We operate a flat monthly subscription model for vetted industrial manufacturers. There are zero transaction fees or broker commissions injected." }
-              ].map((faq, idx) => {
-                const isOpen = activeFaq === idx;
-                return (
-                  <div key={idx} className="p-4 space-y-2">
-                    <button 
-                      onClick={() => toggleFaq(idx)}
-                      className="w-full flex justify-between items-center text-xs font-bold uppercase tracking-wider text-ink hover:text-brand-green transition-colors text-left"
-                    >
-                      <span>{faq.q}</span>
-                      <ChevronDown size={12} className={`text-ink-muted transition-transform ${isOpen ? "rotate-180 text-brand-green" : ""}`} />
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {isOpen && (
-                        <motion.p 
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="text-[11px] text-ink-muted leading-relaxed overflow-hidden pt-1"
-                        >
-                          {faq.a}
-                        </motion.p>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* G. CLOSING CONVERSION BANNER */}
-          <div className="border border-line bg-surface p-8 text-center space-y-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 border-l border-b border-line bg-paper px-3 py-1 text-[8px] font-mono text-ink-muted">
-              SYNC: D5_SPLIT
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-extrabold tracking-tight uppercase text-ink">Request ledger access.</h3>
-              <p className="text-xs text-ink-muted leading-relaxed">
-                Create your verified profile. Vetted manufacturers receive matched material alerts in under 24 hours.
-              </p>
-            </div>
-            <div className="pt-2 flex justify-center">
-              <Link href="/register">
-                <Button className="px-8 shadow-sm">Get Credentials</Button>
-              </Link>
-            </div>
-          </div>
-
-          {/* H. PREMIUM CORPORATE FOOTER */}
-          <footer className="border-t border-line pt-12 text-left text-[10px] text-ink-muted space-y-4">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <span className="font-bold text-ink uppercase tracking-wider">DIRECTORIES</span>
-                <div className="flex flex-col gap-1">
-                  <Link href="/register?role=supplier" className="hover:text-ink">Supplier Registration</Link>
-                  <Link href="/register?role=buyer" className="hover:text-ink">Buyer Registration</Link>
-                  <Link href="/login" className="hover:text-ink">Active Ledger Terminal</Link>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <span className="font-bold text-ink uppercase tracking-wider">SYSTEM ASSURANCE</span>
-                <div className="flex flex-col gap-1">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-brand-green animate-pulse" /> Operational</span>
-                  <span>Ledger Latency: 12ms</span>
-                  <span>Nodes: 1,402 Active</span>
-                </div>
-              </div>
-            </div>
-            <div className="border-t border-line pt-4 flex flex-col sm:flex-row justify-between gap-2 text-[9px] font-semibold text-ink-muted">
-              <span>Privacy Policy • Ledger Terms</span>
-              <span>© 2026 SurplusLink Technologies</span>
-            </div>
-          </footer>
-
         </section>
 
-      </div>
+        <section className="mx-auto max-w-6xl px-6 py-28 text-center sm:px-10">
+          <h2 className="mx-auto max-w-3xl text-[clamp(2rem,5vw,3.6rem)] font-medium leading-[1.0]" style={serif}>
+            Put your surplus in front of the right pair of hands.
+          </h2>
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/register" className="rounded-full px-8 py-3.5 text-sm font-medium text-[#f3eee2] transition-transform active:scale-[0.98]" style={{ backgroundColor: FELT }}>
+              List a lot
+            </Link>
+            <Link href="/login" className="rounded-full border-2 px-8 py-3.5 text-sm font-medium transition-colors hover:bg-black/5" style={{ borderColor: INK }}>
+              I&rsquo;m a buyer or agent
+            </Link>
+          </div>
+        </section>
 
-    </div>
+        <footer className="mx-auto max-w-6xl px-6 pb-28 pt-8 sm:px-10">
+          <div className="flex flex-col items-start justify-between gap-4 border-t border-black/10 pt-8 text-sm opacity-60 sm:flex-row sm:items-center">
+            <span>SurplusLink — curated surplus, sorted by people.</span>
+            <div className="flex gap-5">
+              <Link href="/login" className="hover:opacity-100">Privacy</Link>
+              <Link href="/login" className="hover:opacity-100">Terms</Link>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </main>
   );
 }
