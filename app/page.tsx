@@ -1,9 +1,106 @@
+"use client";
+
 import NetworkBackground from "@/components/NetworkBackground";
 import Image from "next/image";
+import { motion, useScroll, useMotionValueEvent } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import Script from "next/script";
+
+// Custom easings and variants based on emil-design-eng philosophy
+const easeOut = [0.23, 1, 0.32, 1] as const;
+const easeInOut = [0.77, 0, 0.175, 1] as const;
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+  }
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 30, scale: 0.98 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: easeOut } }
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.95 },
+  show: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: easeOut } }
+};
+
+const fadeRight = {
+  hidden: { opacity: 0, x: -30, scale: 0.98 },
+  show: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.6, ease: easeOut } }
+};
+
+const springHover = {
+  scale: 1.05,
+  transition: { type: "spring" as const, stiffness: 400, damping: 10 }
+};
 
 export default function Home() {
+  const router = useRouter();
+  const navRef = useRef<HTMLElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const [navVisible, setNavVisible] = useState(true);
+  const { scrollY: windowScrollY } = useScroll();
+  const { scrollY: containerScrollY } = useScroll({ container: mainRef });
+
+  const handleScrollChange = (latest: number, scrollSource: any) => {
+    const previous = scrollSource.getPrevious() || 0;
+    if (latest > previous && latest > 150) {
+      setNavVisible(false);
+    } else {
+      setNavVisible(true);
+    }
+  };
+
+  useMotionValueEvent(windowScrollY, "change", (latest) => handleScrollChange(latest, windowScrollY));
+  useMotionValueEvent(containerScrollY, "change", (latest) => handleScrollChange(latest, containerScrollY));
+
+  useEffect(() => {
+    let glassInstance: any = null;
+    const timer = setInterval(() => {
+      if (typeof window !== "undefined" && (window as any).liquidGlass) {
+        if (navRef.current) {
+          glassInstance = (window as any).liquidGlass(navRef.current, { scale: -112, blur: 5 });
+        }
+        clearInterval(timer);
+      }
+    }, 100);
+
+    return () => {
+      clearInterval(timer);
+      if (glassInstance) glassInstance.destroy();
+    };
+  }, []);
+
   return (
-    <main className="w-full min-h-[100dvh] md:h-screen overflow-y-auto md:snap-y md:snap-mandatory bg-charcoal text-pure-white overflow-x-hidden">
+    <main ref={mainRef} className="w-full min-h-[100dvh] md:h-screen overflow-y-auto md:snap-y md:snap-mandatory bg-charcoal text-pure-white overflow-x-hidden">
+      <Script src="/liquid-glass.js" strategy="afterInteractive" />
+
+      {/* TOP NAVBAR */}
+      <motion.nav 
+        ref={navRef} 
+        initial={{ y: 0 }}
+        animate={{ y: navVisible ? 0 : "-100%" }}
+        transition={{ duration: 0.3, ease: easeOut }}
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-2 md:px-12 md:py-3 bg-charcoal/40 border-b border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.1)] transition-colors duration-300"
+      >
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
+          <div className="relative w-6 h-6 md:w-8 md:h-8">
+             <Image src="/cirka-c-logo-white.png" alt="Cirka" fill className="object-contain" />
+          </div>
+          <span className="text-pure-white font-bold uppercase tracking-wider text-lg md:text-xl mt-0.5">Cirka</span>
+        </div>
+        <button 
+          onClick={() => router.push('/login')}
+          className="bg-cirka-orange hover:bg-white hover:text-cirka-orange text-pure-white px-5 md:px-6 py-1.5 md:py-2 rounded-full font-bold uppercase tracking-wide text-xs md:text-sm transition-all duration-300 shadow-[0_0_10px_rgba(255,92,0,0.4)] hover:shadow-[0_0_15px_rgba(255,255,255,0.6)]"
+        >
+          Login
+        </button>
+      </motion.nav>
 
       {/* SECTION 1: HERO */}
       <section className="relative w-full min-h-[100dvh] md:h-screen flex flex-col md:snap-start overflow-hidden bg-charcoal">
@@ -12,28 +109,28 @@ export default function Home() {
         <div className="h-[85dvh] md:h-[85vh] relative w-full px-6 sm:px-8 md:px-12 lg:px-16 pt-8 pb-8 sm:pb-12 md:pb-16 lg:pb-20 flex flex-col justify-end">
           <NetworkBackground className="text-white opacity-20 absolute inset-0 pointer-events-none" />
 
-          {/* Top Right Logo */}
-          <div className="absolute top-8 right-8 md:top-12 md:right-12 lg:top-16 lg:right-16 w-24 md:w-32 lg:w-40 aspect-square">
-            <Image src="/cirka-c-logo-white.png" alt="Cirka Mark" fill className="object-cover object-center" />
-          </div>
-
           {/* Main Content (Left Aligned) */}
-          <div className="relative z-10 w-full lg:pl-12 mt-auto">
+          <motion.div 
+            className="relative z-10 w-full lg:pl-12 mt-auto"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="show"
+          >
             {/* Huge CIRKA Logo (Cropped via aspect ratio) */}
-            <div className="relative w-full max-w-[75vw] sm:max-w-[65vw] lg:max-w-[55vw] xl:max-w-[45vw] aspect-[3/1] lg:aspect-[10/3] mb-4 md:mb-6">
-              <Image src="/cirka-logo-white.png" alt="CIRKA" fill className="object-cover object-left" />
-            </div>
+            <motion.div variants={fadeUp} className="relative w-full max-w-[75vw] sm:max-w-[65vw] lg:max-w-[55vw] xl:max-w-[45vw] aspect-[3/1] lg:aspect-[10/3] mb-4 md:mb-6">
+              <Image src="/cirka-logo-white.png" alt="CIRKA" fill className="object-cover object-left" priority />
+            </motion.div>
 
             {/* Subtitle 1 */}
-            <h1 className="text-[5.5vw] sm:text-[4vw] md:text-[2.2vw] lg:text-[1.8vw] xl:text-[1.4vw] md:whitespace-nowrap max-w-none font-bold uppercase text-pure-white mb-4 md:mb-6 tracking-wide">
+            <motion.h1 variants={fadeUp} className="text-[5.5vw] sm:text-[4vw] md:text-[2.2vw] lg:text-[1.8vw] xl:text-[1.4vw] md:whitespace-nowrap max-w-none font-bold uppercase text-pure-white mb-4 md:mb-6 tracking-wide">
               The missing infrastructure for secondary textile resources.
-            </h1>
+            </motion.h1>
 
             {/* Subtitle 2 */}
-            <p className="text-xs md:text-sm lg:text-base font-light uppercase text-gray-300 tracking-wider max-w-4xl">
+            <motion.p variants={fadeUp} className="text-xs md:text-sm lg:text-base font-light uppercase text-gray-300 tracking-wider max-w-4xl">
               Connecting materials, data and people to create measurable local value and impact.
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
         </div>
 
         {/* Bottom White Partner Banner (15%) */}
@@ -76,37 +173,43 @@ export default function Home() {
             Every major industry has an operating system
           </h2>
 
-          <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-[90rem] gap-8 lg:gap-12">
+          <motion.div 
+            className="flex flex-col md:flex-row items-center justify-center w-full max-w-[90rem] gap-8 lg:gap-12"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-10%" }}
+          >
 
             {/* Left Column - List */}
             <div className="flex-1 w-full text-base md:text-lg lg:text-xl font-light space-y-4 md:space-y-6 text-center md:text-left">
-              <p className="md:whitespace-nowrap">Manufacturing has EPR</p>
-              <p className="md:whitespace-nowrap">Finance has banking infrastructure</p>
-              <p className="md:whitespace-nowrap">Retail has ecommerce platforms</p>
-              <p className="md:whitespace-nowrap">Logistics has global networks.</p>
-              <p className="font-bold pt-2 text-xl md:text-2xl lg:text-3xl text-pure-white md:whitespace-nowrap">
+              <motion.p variants={fadeUp} className="md:whitespace-nowrap">Manufacturing has EPR</motion.p>
+              <motion.p variants={fadeUp} className="md:whitespace-nowrap">Finance has banking infrastructure</motion.p>
+              <motion.p variants={fadeUp} className="md:whitespace-nowrap">Retail has ecommerce platforms</motion.p>
+              <motion.p variants={fadeUp} className="md:whitespace-nowrap">Logistics has global networks.</motion.p>
+              <motion.p variants={fadeUp} className="font-bold pt-2 text-xl md:text-2xl lg:text-3xl text-pure-white md:whitespace-nowrap">
                 Secondary textile resources has none.
-              </p>
+              </motion.p>
             </div>
 
             {/* Middle Column - Arrow */}
-            <div className="hidden md:flex items-center justify-center shrink-0 w-24 md:w-32 lg:w-40">
+            <motion.div variants={scaleIn} className="hidden md:flex items-center justify-center shrink-0 w-24 md:w-32 lg:w-40">
               <svg className="w-full text-cirka-orange drop-shadow-md" viewBox="0 0 100 40" fill="currentColor">
                 <path d="M75,12 L75,0 L100,20 L75,40 L75,28 L0,28 L0,12 Z" />
               </svg>
-            </div>
+            </motion.div>
 
             {/* Right Column - Logo & Text */}
             <div className="flex-1 w-full flex flex-col items-center justify-center shrink-0">
-              <div className="relative w-24 sm:w-36 md:w-48 lg:w-56 aspect-square mb-6">
+              <motion.div variants={scaleIn} className="relative w-24 sm:w-36 md:w-48 lg:w-56 aspect-square mb-6">
                 <Image src="/cirka-c-logo-white.png" alt="Cirka" fill className="object-contain" />
-              </div>
-              <p className="font-bold uppercase text-center text-lg md:text-xl lg:text-2xl tracking-wide">
+              </motion.div>
+              <motion.p variants={fadeUp} className="font-bold uppercase text-center text-lg md:text-xl lg:text-2xl tracking-wide">
                 That is the gap CIRKA exists to fill.
-              </p>
+              </motion.p>
             </div>
 
-          </div>
+          </motion.div>
         </div>
 
         {/* Bottom White Area with Network */}
@@ -126,27 +229,39 @@ export default function Home() {
           {/* Tan/Grey circle: middle right */}
           <div className="hidden md:block absolute top-1/3 md:top-1/2 right-8 md:right-12 lg:right-24 w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-[#A19B86] z-0 -translate-y-1/2 opacity-50 md:opacity-100"></div>
 
-          <div className="relative z-10 pointer-events-none">
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold uppercase mb-6 md:mb-8 pointer-events-auto">
+          <motion.div 
+            className="relative z-10 pointer-events-none"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-10%" }}
+          >
+            <motion.h2 variants={fadeUp} className="text-4xl sm:text-5xl md:text-6xl font-bold uppercase mb-6 md:mb-8 pointer-events-auto">
               Value is lost....
-            </h2>
-            <p className="text-xl sm:text-2xl md:text-3xl mb-8 md:mb-12 font-medium pointer-events-auto">
+            </motion.h2>
+            <motion.p variants={fadeUp} className="text-xl sm:text-2xl md:text-3xl mb-8 md:mb-12 font-medium pointer-events-auto">
               WHEN RESOURCES, DATA AND PEOPLE REMAIN DISCONNECTED.
-            </p>
-            <ul className="space-y-4 text-lg sm:text-xl md:text-2xl font-light text-gray-500 pointer-events-auto">
-              <li>Valuable materials.</li>
-              <li>Valuable skills.</li>
-              <li>Valuable communities.</li>
-              <li>Valuable data.</li>
-            </ul>
-            <p className="text-3xl sm:text-4xl md:text-5xl font-black mt-10 md:mt-12 uppercase text-charcoal pointer-events-auto">
+            </motion.p>
+            <motion.ul variants={staggerContainer} className="space-y-4 text-lg sm:text-xl md:text-2xl font-light text-gray-500 pointer-events-auto">
+              <motion.li variants={fadeRight}>Valuable materials.</motion.li>
+              <motion.li variants={fadeRight}>Valuable skills.</motion.li>
+              <motion.li variants={fadeRight}>Valuable communities.</motion.li>
+              <motion.li variants={fadeRight}>Valuable data.</motion.li>
+            </motion.ul>
+            <motion.p variants={fadeUp} className="text-3xl sm:text-4xl md:text-5xl font-black mt-10 md:mt-12 uppercase text-charcoal pointer-events-auto">
               DISCONNECTED.
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
         </div>
 
         <div className="bg-charcoal relative flex items-center justify-center p-6 md:p-8 lg:p-16 min-h-[400px] md:min-h-0">
-          <div className="relative w-full h-full min-h-[300px] md:min-h-0 max-h-[80vh] border-[8px] md:border-[12px] border-pure-white bg-gray-200">
+          <motion.div 
+            className="relative w-full h-full min-h-[300px] md:min-h-0 max-h-[80vh] border-[8px] md:border-[12px] border-pure-white bg-gray-200"
+            initial={{ clipPath: "inset(0 0 100% 0)" }}
+            whileInView={{ clipPath: "inset(0 0 0 0)" }}
+            viewport={{ once: true, margin: "-10%" }}
+            transition={{ duration: 0.8, ease: easeOut }}
+          >
             <Image
               src="/cirka_textile_waste.png"
               alt="Textile Waste"
@@ -154,13 +269,25 @@ export default function Home() {
               className="object-cover"
             />
             {/* Green circle: overlapping the left edge */}
-            <div className="absolute top-2/3 -left-4 md:-left-8 lg:-left-12 w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full bg-cirka-green z-20 -translate-y-1/2"></div>
+            <motion.div 
+              initial={{ scale: 0 }}
+              whileInView={{ scale: 1 }}
+              viewport={{ once: true, margin: "-10%" }}
+              transition={{ delay: 0.4, type: "spring", stiffness: 200, damping: 15 }}
+              className="absolute top-2/3 -left-4 md:-left-8 lg:-left-12 w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full bg-cirka-green z-20 -translate-y-1/2"
+            ></motion.div>
 
             {/* White Outline Logo */}
-            <div className="absolute -bottom-10 -right-4 md:-bottom-20 md:-right-8 z-20 w-32 h-32 md:w-56 md:h-56 drop-shadow-2xl">
+            <motion.div 
+              variants={fadeUp} 
+              initial="hidden" 
+              whileInView="show" 
+              viewport={{ once: true }} 
+              className="absolute -bottom-10 -right-4 md:-bottom-20 md:-right-8 z-20 w-32 h-32 md:w-56 md:h-56 drop-shadow-2xl"
+            >
               <Image src="/cirka-c-logo-white.png" alt="Cirka" fill className="object-contain" />
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
@@ -238,22 +365,29 @@ export default function Home() {
           <div className="relative w-full h-auto max-w-6xl aspect-[16/9] flex items-center justify-center origin-center shrink-0">
 
           {/* Connector Lines (SVG) */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <motion.svg 
+            className="absolute inset-0 w-full h-full pointer-events-none z-0" 
+            viewBox="0 0 100 100" 
+            preserveAspectRatio="none"
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-10%" }}
+          >
             <defs>
               <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
                 <polygon points="0 0, 6 3, 0 6" fill="#FF5C00" />
               </marker>
             </defs>
             {/* Grey Lines */}
-            <line x1="40" y1="50" x2="15" y2="35" stroke="#545454" strokeWidth="0.3" />
-            <line x1="40" y1="50" x2="50" y2="25" stroke="#545454" strokeWidth="0.3" />
-            <line x1="40" y1="50" x2="40" y2="80" stroke="#545454" strokeWidth="0.3" />
+            <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, ease: easeOut } } }} x1="40" y1="50" x2="15" y2="35" stroke="#545454" strokeWidth="0.3" />
+            <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, ease: easeOut } } }} x1="40" y1="50" x2="50" y2="25" stroke="#545454" strokeWidth="0.3" />
+            <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, ease: easeOut } } }} x1="40" y1="50" x2="40" y2="80" stroke="#545454" strokeWidth="0.3" />
 
             {/* Orange Arrows */}
-            <line x1="44" y1="50" x2="69" y2="28" stroke="#FF5C00" strokeWidth="0.4" markerEnd="url(#arrowhead)" />
-            <line x1="44" y1="50" x2="69" y2="50" stroke="#FF5C00" strokeWidth="0.4" markerEnd="url(#arrowhead)" />
-            <line x1="44" y1="50" x2="69" y2="72" stroke="#FF5C00" strokeWidth="0.4" markerEnd="url(#arrowhead)" />
-          </svg>
+            <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, delay: 0.2, ease: easeOut } } }} x1="44" y1="50" x2="69" y2="28" stroke="#FF5C00" strokeWidth="0.4" markerEnd="url(#arrowhead)" />
+            <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, delay: 0.2, ease: easeOut } } }} x1="44" y1="50" x2="69" y2="50" stroke="#FF5C00" strokeWidth="0.4" markerEnd="url(#arrowhead)" />
+            <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, delay: 0.2, ease: easeOut } } }} x1="44" y1="50" x2="69" y2="72" stroke="#FF5C00" strokeWidth="0.4" markerEnd="url(#arrowhead)" />
+          </motion.svg>
 
           {/* Central Node */}
           <div className="absolute top-[50%] left-[40%] -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center overflow-visible">
@@ -332,66 +466,90 @@ export default function Home() {
       <section className="relative w-full min-h-[100dvh] md:min-h-screen bg-[#F5F5F5] text-charcoal flex flex-col items-center justify-center md:snap-start p-8 py-20 md:py-8 overflow-hidden">
         <NetworkBackground className="text-charcoal opacity-10 absolute inset-0 z-0 pointer-events-none" />
 
-        <div className="relative z-10 bg-[#545454] px-6 md:px-12 py-4 mb-16 md:mb-24 shadow-md">
+        <motion.div 
+          className="relative z-10 bg-[#545454] px-6 md:px-12 py-4 mb-16 md:mb-24 shadow-md"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: "-10%" }}
+          transition={{ duration: 0.5, ease: easeOut }}
+        >
           <h2 className="text-4xl md:text-5xl font-black uppercase text-pure-white text-center tracking-wide">
             How Cirka Works
           </h2>
-        </div>
+        </motion.div>
 
-        <div className="flex flex-col md:flex-row items-center md:items-start justify-between w-full max-w-5xl space-y-6 md:space-y-0 relative z-10 mt-8 md:mt-0">
+        <motion.div 
+          className="flex flex-col md:flex-row items-center md:items-start justify-between w-full max-w-5xl space-y-6 md:space-y-0 relative z-10 mt-8 md:mt-0"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-10%" }}
+        >
 
           {/* Vertical connector line for mobile */}
-          <div className="md:hidden absolute top-[10%] bottom-[10%] left-1/2 w-1 bg-cirka-orange -translate-x-1/2 z-0"></div>
+          <motion.div 
+            className="md:hidden absolute top-[10%] bottom-[10%] left-1/2 w-1 bg-cirka-orange -translate-x-1/2 z-0 origin-top"
+            initial={{ scaleY: 0 }}
+            whileInView={{ scaleY: 1 }}
+            viewport={{ once: true, margin: "-10%" }}
+            transition={{ duration: 1, ease: easeOut }}
+          ></motion.div>
 
           {/* Connector lines for desktop (without absolute arrows) */}
           {/* top-[62px] perfectly centers the 4px (h-1) line with the 64px center of the circles */}
-          <div className="hidden md:block absolute top-[62px] left-[10%] right-[10%] h-[4px] bg-cirka-orange z-0"></div>
+          <motion.div 
+            className="hidden md:block absolute top-[62px] left-[10%] right-[10%] h-[4px] bg-cirka-orange z-0 origin-left"
+            initial={{ scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true, margin: "-10%" }}
+            transition={{ duration: 1, ease: easeOut }}
+          ></motion.div>
 
           {/* 1. Secondary Resources */}
-          <div className="flex flex-col items-center z-10 w-48 relative group md:mt-4">
+          <motion.div variants={scaleIn} className="flex flex-col items-center z-10 w-48 relative group md:mt-4">
             {/* top-[3rem] (48px) + md:mt-4 (16px) = 64px perfectly aligns with the line center */}
             <div className="hidden md:block absolute top-[3rem] left-[8rem] -translate-y-1/2 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[12px] border-r-cirka-orange z-0"></div>
-            <div className="w-24 h-24 rounded-full bg-cirka-green flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400, damping: 10 }} className="w-24 h-24 rounded-full bg-cirka-green flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
               <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-            </div>
+            </motion.div>
             <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal leading-tight">Secondary<br />Resources</p>
-          </div>
+          </motion.div>
 
           {/* 2. CIRKA */}
-          <div className="flex flex-col items-center z-20 w-48 relative group">
-            <div className="w-32 h-32 relative drop-shadow-xl bg-charcoal rounded-full p-2 flex items-center justify-center border-[4px] border-[#F5F5F5] shrink-0 z-10">
+          <motion.div variants={scaleIn} className="flex flex-col items-center z-20 w-48 relative group">
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400, damping: 10 }} className="w-32 h-32 relative drop-shadow-xl bg-charcoal rounded-full p-2 flex items-center justify-center border-[4px] border-[#F5F5F5] shrink-0 z-10">
               <div className="w-full h-full relative scale-110">
                 <Image src="/cirka-c-logo-white.png" alt="Cirka" fill className="object-contain" />
               </div>
-            </div>
+            </motion.div>
             <p className="mt-4 font-black text-center text-lg md:text-xl text-cirka-orange uppercase">CIRKA</p>
-          </div>
+          </motion.div>
 
           {/* 3. People */}
-          <div className="flex flex-col items-center z-10 w-48 relative group md:mt-4">
-            <div className="w-24 h-24 rounded-full bg-cirka-orange flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
+          <motion.div variants={scaleIn} className="flex flex-col items-center z-10 w-48 relative group md:mt-4">
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400, damping: 10 }} className="w-24 h-24 rounded-full bg-cirka-orange flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
               <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-            </div>
+            </motion.div>
             <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal">People</p>
-          </div>
+          </motion.div>
 
           {/* 4. Local Economy */}
-          <div className="flex flex-col items-center z-10 w-48 relative group md:mt-4">
-            <div className="w-24 h-24 rounded-full bg-cirka-orange flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
+          <motion.div variants={scaleIn} className="flex flex-col items-center z-10 w-48 relative group md:mt-4">
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400, damping: 10 }} className="w-24 h-24 rounded-full bg-cirka-orange flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
               <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
+            </motion.div>
             <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal">Local Economy</p>
-          </div>
+          </motion.div>
 
           {/* 5. Impact */}
-          <div className="flex flex-col items-center z-10 w-48 relative group md:mt-4">
+          <motion.div variants={scaleIn} className="flex flex-col items-center z-10 w-48 relative group md:mt-4">
             <div className="hidden md:block absolute top-[3rem] right-[8rem] -translate-y-1/2 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-l-[12px] border-l-cirka-orange z-0"></div>
-            <div className="w-24 h-24 rounded-full bg-cirka-green flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400, damping: 10 }} className="w-24 h-24 rounded-full bg-cirka-green flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
               <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
+            </motion.div>
             <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal">Impact</p>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         <p className="text-xl md:text-2xl font-bold uppercase mt-24 text-center w-full max-w-none px-4 tracking-wide text-charcoal relative z-10">
           Connecting materials, people and data to create measurable local value and impact.
@@ -440,55 +598,61 @@ export default function Home() {
             </div>
 
             {/* DESKTOP LAYOUT (SVG Diagram) */}
-            <div className="hidden lg:flex relative w-[600px] h-[600px] items-center justify-center scale-[0.65] xl:scale-[0.75] origin-center shrink-0">
+            <motion.div 
+              className="hidden lg:flex relative w-[600px] h-[600px] items-center justify-center scale-[0.65] xl:scale-[0.75] origin-center shrink-0"
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, margin: "-10%" }}
+              variants={staggerContainer}
+            >
 
               {/* Central Logo */}
-              <div className="w-64 h-64 absolute z-30 flex items-center justify-center">
+              <motion.div variants={scaleIn} className="w-64 h-64 absolute z-30 flex items-center justify-center">
                 <div className="w-full h-full relative scale-125">
                   <Image src="/cirka-c-logo-white.png" alt="Cirka" fill className="object-contain" />
                 </div>
-              </div>
+              </motion.div>
 
               {/* Connecting Lines */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 600 600">
+              <motion.svg className="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 600 600">
                 <g stroke="white" strokeWidth="6">
-                  <line x1="300" y1="205" x2="300" y2="40" />
-                  <line x1="367" y1="233" x2="484" y2="116" />
-                  <line x1="395" y1="300" x2="560" y2="300" />
-                  <line x1="367" y1="367" x2="484" y2="484" />
-                  <line x1="300" y1="395" x2="300" y2="560" />
-                  <line x1="233" y1="367" x2="116" y2="484" />
-                  <line x1="205" y1="300" x2="40" y2="300" />
-                  <line x1="233" y1="233" x2="116" y2="116" />
+                  <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, ease: easeOut } } }} x1="300" y1="205" x2="300" y2="40" />
+                  <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, ease: easeOut } } }} x1="367" y1="233" x2="484" y2="116" />
+                  <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, ease: easeOut } } }} x1="395" y1="300" x2="560" y2="300" />
+                  <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, ease: easeOut } } }} x1="367" y1="367" x2="484" y2="484" />
+                  <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, ease: easeOut } } }} x1="300" y1="395" x2="300" y2="560" />
+                  <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, ease: easeOut } } }} x1="233" y1="367" x2="116" y2="484" />
+                  <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, ease: easeOut } } }} x1="205" y1="300" x2="40" y2="300" />
+                  <motion.line variants={{ hidden: { pathLength: 0 }, show: { pathLength: 1, transition: { duration: 1, ease: easeOut } } }} x1="233" y1="233" x2="116" y2="116" />
                 </g>
-              </svg>
+              </motion.svg>
 
               {/* Role Bubbles */}
-              <div className="absolute left-[300px] top-[40px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[300px] top-[40px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
                 Textile<br />Collectors
-              </div>
-              <div className="absolute left-[484px] top-[116px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
+              </motion.div>
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[484px] top-[116px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
                 Brands
-              </div>
-              <div className="absolute left-[560px] top-[300px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
+              </motion.div>
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[560px] top-[300px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
                 Re-Makers
-              </div>
-              <div className="absolute left-[484px] top-[484px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
+              </motion.div>
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[484px] top-[484px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
                 Local<br />Communities
-              </div>
-              <div className="absolute left-[300px] top-[560px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
+              </motion.div>
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[300px] top-[560px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
                 Educational<br />Institutions
-              </div>
-              <div className="absolute left-[116px] top-[484px] w-32 h-32 rounded-full bg-charcoal flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
+              </motion.div>
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[116px] top-[484px] w-32 h-32 rounded-full bg-charcoal flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
                 Technology<br />Providers
-              </div>
-              <div className="absolute left-[40px] top-[300px] w-32 h-32 rounded-full bg-charcoal flex items-center justify-center text-center font-bold text-base shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight px-2 text-white">
+              </motion.div>
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[40px] top-[300px] w-32 h-32 rounded-full bg-charcoal flex items-center justify-center text-center font-bold text-base shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight px-2 text-white">
                 Government<br />& Trade<br />Assoc.
-              </div>
-              <div className="absolute left-[116px] top-[116px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
+              </motion.div>
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[116px] top-[116px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
                 Manufacturers
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
 
         </div>
@@ -496,41 +660,53 @@ export default function Home() {
 
       {/* SECTION 7: THE WORLD IS CHANGING */}
       <section className="relative w-full min-h-[100dvh] md:h-screen grid grid-cols-1 lg:grid-cols-2 md:snap-start">
-        <div className="bg-charcoal relative flex items-center justify-center p-6 md:p-8 lg:p-16 min-h-[350px] lg:min-h-0">
-          <div className="relative w-full h-full min-h-[250px] lg:min-h-0 max-h-[80vh] border-[6px] md:border-8 border-pure-white shadow-2xl">
+        <div className="bg-charcoal relative flex items-center justify-center p-6 md:p-8 lg:p-16 min-h-[350px] lg:min-h-[500px]">
+          <motion.div 
+            className="relative w-full h-full min-h-[250px] lg:min-h-[400px] max-h-[80vh] border-[6px] md:border-8 border-pure-white shadow-2xl"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-10%" }}
+          >
             <Image
               src="/cirka_pattern_maker.png"
               alt="Pattern Maker"
               fill
               className="object-cover"
             />
-            <div className="absolute -bottom-16 -left-16 z-20 w-48 h-48 drop-shadow-2xl">
+            <motion.div variants={scaleIn} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-10%" }} className="absolute -bottom-16 -left-16 z-20 w-48 h-48 drop-shadow-2xl">
               <Image src="/cirka-c-logo-white.png" alt="Cirka" fill className="object-contain" />
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
 
         <div className="bg-pure-white text-charcoal relative flex flex-col justify-center p-8 md:p-12 lg:p-16">
           <NetworkBackground className="text-charcoal opacity-10 absolute inset-0 pointer-events-none" />
-          <div className="relative z-10">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase mb-8 lg:mb-12 tracking-tight">
+          <motion.div 
+            className="relative z-10"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-10%" }}
+          >
+            <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl lg:text-6xl font-black uppercase mb-8 lg:mb-12 tracking-tight">
               The World Is<br />Changing.
-            </h2>
-            <ul className="space-y-4 lg:space-y-6 text-lg md:text-xl lg:text-2xl font-light">
-              <li>Consumers demand transparency.</li>
-              <li>Brands need measurable impact.</li>
-              <li>Manufacturers need new value streams.</li>
-              <li>Governments require accountability.</li>
-            </ul>
-            <div className="mt-8 lg:mt-12 space-y-2 lg:space-y-4">
-              <p className="text-lg md:text-xl lg:text-2xl font-bold uppercase">
+            </motion.h2>
+            <motion.ul variants={staggerContainer} className="space-y-4 lg:space-y-6 text-lg md:text-xl lg:text-2xl font-light">
+              <motion.li variants={fadeUp}>Consumers demand transparency.</motion.li>
+              <motion.li variants={fadeUp}>Brands need measurable impact.</motion.li>
+              <motion.li variants={fadeUp}>Manufacturers need new value streams.</motion.li>
+              <motion.li variants={fadeUp}>Governments require accountability.</motion.li>
+            </motion.ul>
+            <motion.div variants={staggerContainer} className="mt-8 lg:mt-12 space-y-2 lg:space-y-4">
+              <motion.p variants={fadeUp} className="text-lg md:text-xl lg:text-2xl font-bold uppercase">
                 Technology now makes it possible.
-              </p>
-              <p className="text-lg md:text-xl lg:text-2xl font-bold uppercase">
+              </motion.p>
+              <motion.p variants={fadeUp} className="text-lg md:text-xl lg:text-2xl font-bold uppercase">
                 Infrastructure has become essential.
-              </p>
-            </div>
-          </div>
+              </motion.p>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
@@ -538,23 +714,35 @@ export default function Home() {
       <section className="relative w-full min-h-[100dvh] md:min-h-screen bg-pure-white text-charcoal flex flex-col items-center justify-start md:snap-start pt-8 pb-16 px-4 md:px-8">
         <NetworkBackground className="text-charcoal opacity-10 z-0" />
 
-        <div className="relative z-10 w-full flex justify-center mb-16 mt-8">
+        <motion.div 
+          className="relative z-10 w-full flex justify-center mb-16 mt-8"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: "-10%" }}
+          transition={{ duration: 0.5, ease: easeOut }}
+        >
           <div className="bg-charcoal text-pure-white py-6 px-16 shadow-xl">
             <h2 className="text-4xl md:text-6xl font-black uppercase tracking-widest">
               Measurable Impact
             </h2>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="relative z-10 w-full max-w-7xl flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-8 mt-8">
+        <motion.div 
+          className="relative z-10 w-full max-w-7xl flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-8 mt-8"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-10%" }}
+        >
 
           {/* Social */}
-          <div className="flex flex-col items-center flex-1 w-full relative z-10">
+          <motion.div variants={fadeUp} className="flex flex-col items-center flex-1 w-full relative z-10">
             <div className="relative w-64 h-64 md:w-80 md:h-80 mb-8">
-              <div className="absolute inset-0 rounded-full border-8 border-cirka-orange overflow-hidden shadow-2xl bg-white z-0">
+              <motion.div whileHover={springHover} className="absolute inset-0 rounded-full border-8 border-cirka-orange overflow-hidden shadow-2xl bg-white z-0">
                 <Image src="/cirka_pattern_maker.png" alt="Social" fill className="object-cover opacity-80" />
                 <div className="absolute inset-0 bg-black/20"></div>
-              </div>
+              </motion.div>
               <div className="absolute inset-x-0 bottom-8 flex justify-center z-10">
                 <span className="bg-cirka-orange text-white font-bold px-4 py-2 uppercase tracking-wider shadow">Social</span>
               </div>
@@ -570,15 +758,15 @@ export default function Home() {
               <p>Jobs Created</p>
               <p>Skills Developed</p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Environmental */}
-          <div className="flex flex-col items-center flex-1 w-full relative z-20 lg:-mx-12">
+          <motion.div variants={fadeUp} className="flex flex-col items-center flex-1 w-full relative z-20 lg:-mx-12">
             <div className="relative w-64 h-64 md:w-80 md:h-80 mb-8">
-              <div className="absolute inset-0 rounded-full border-8 border-cirka-orange overflow-hidden shadow-2xl bg-white z-0">
+              <motion.div whileHover={springHover} className="absolute inset-0 rounded-full border-8 border-cirka-orange overflow-hidden shadow-2xl bg-white z-0">
                 <Image src="/cirka_textile_waste.png" alt="Environmental" fill className="object-cover opacity-80" />
                 <div className="absolute inset-0 bg-black/20"></div>
-              </div>
+              </motion.div>
               <div className="absolute inset-x-0 bottom-8 flex justify-center z-10">
                 <span className="bg-cirka-orange text-white font-bold px-4 py-2 uppercase tracking-wider shadow">Environmental</span>
               </div>
@@ -600,15 +788,15 @@ export default function Home() {
               <p>Waste Diverted</p>
               <p>Materials Traced</p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Economic */}
-          <div className="flex flex-col items-center flex-1 w-full relative z-10">
+          <motion.div variants={fadeUp} className="flex flex-col items-center flex-1 w-full relative z-10">
             <div className="relative w-64 h-64 md:w-80 md:h-80 mb-8">
-              <div className="absolute inset-0 rounded-full border-8 border-cirka-orange overflow-hidden shadow-2xl bg-white z-0">
+              <motion.div whileHover={springHover} className="absolute inset-0 rounded-full border-8 border-cirka-orange overflow-hidden shadow-2xl bg-white z-0">
                 <Image src="/cirka_shopping_bags.png" alt="Economic" fill className="object-cover opacity-80" />
                 <div className="absolute inset-0 bg-black/20"></div>
-              </div>
+              </motion.div>
               <div className="absolute inset-x-0 bottom-8 flex justify-center z-10">
                 <span className="bg-cirka-orange text-white font-bold px-4 py-2 uppercase tracking-wider shadow">Economic</span>
               </div>
@@ -624,126 +812,173 @@ export default function Home() {
               <p>Local Businesses Strengthened</p>
               <p>New Revenue Streams Created</p>
             </div>
-          </div>
+          </motion.div>
 
-        </div>
+        </motion.div>
       </section>
-
       {/* SECTION 9: ECOSYSTEM */}
       <section className="relative w-full min-h-[100dvh] md:h-screen flex flex-col lg:grid lg:grid-cols-2 lg:grid-rows-1 md:snap-start bg-charcoal overflow-hidden">
         <NetworkBackground className="text-white opacity-20 absolute inset-0 pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col justify-center items-center p-6 md:p-12 lg:p-24 h-full text-center py-16 md:py-0">
-          <h2 className="text-[9vw] sm:text-[6vw] md:text-5xl lg:text-6xl font-black uppercase mb-4 md:mb-8 tracking-tight leading-tight shrink-0 md:whitespace-nowrap">
+        <motion.div 
+          className="relative z-10 flex flex-col justify-center items-center p-6 md:p-12 lg:p-24 h-full text-center py-16 md:py-0"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-10%" }}
+        >
+          <motion.h2 variants={fadeUp} className="text-[9vw] sm:text-[6vw] md:text-5xl lg:text-6xl font-black uppercase mb-4 md:mb-8 tracking-tight leading-tight shrink-0 md:whitespace-nowrap">
             We Are Building ......
-          </h2>
-          <p className="text-[5vw] sm:text-[3.5vw] md:text-2xl lg:text-3xl font-bold uppercase mb-8 md:mb-16 shrink-0 md:whitespace-nowrap">
+          </motion.h2>
+          <motion.p variants={fadeUp} className="text-[5vw] sm:text-[3.5vw] md:text-2xl lg:text-3xl font-bold uppercase mb-8 md:mb-16 shrink-0 md:whitespace-nowrap">
             Something bigger than a platform.
-          </p>
+          </motion.p>
 
-          <ul className="space-y-4 md:space-y-6 lg:space-y-8 text-[4.5vw] sm:text-[3vw] md:text-xl lg:text-2xl font-bold uppercase shrink-0 md:whitespace-nowrap">
-            <li>We are building an <span className="underline decoration-2 md:decoration-4 underline-offset-4 md:underline-offset-8">ecosystem.</span></li>
-            <li>Shared Infrastructure.</li>
-            <li>New Opportunities.</li>
-            <li>Measurable Impact.</li>
-          </ul>
+          <motion.ul variants={staggerContainer} className="space-y-4 md:space-y-6 lg:space-y-8 text-[4.5vw] sm:text-[3vw] md:text-xl lg:text-2xl font-bold uppercase shrink-0 md:whitespace-nowrap">
+            <motion.li variants={fadeUp}>We are building an <span className="underline decoration-2 md:decoration-4 underline-offset-4 md:underline-offset-8">ecosystem.</span></motion.li>
+            <motion.li variants={fadeUp}>Shared Infrastructure.</motion.li>
+            <motion.li variants={fadeUp}>New Opportunities.</motion.li>
+            <motion.li variants={fadeUp}>Measurable Impact.</motion.li>
+          </motion.ul>
 
-          <div className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 mt-8 md:mt-12 relative shrink-0">
+          <motion.div variants={scaleIn} className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 mt-8 md:mt-12 relative shrink-0">
             <Image src="/cirka-c-logo-white.png" alt="Cirka" fill className="object-contain" />
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         <div className="relative z-10 flex items-center justify-center p-6 md:p-12 lg:p-16 h-full min-h-[350px] lg:min-h-0 w-full">
-          <div className="relative w-full h-full min-h-[250px] lg:min-h-0 max-h-[100%] lg:max-h-[80vh] border-[4px] md:border-8 border-pure-white shadow-2xl">
+          <motion.div 
+            className="relative w-full h-full min-h-[250px] lg:min-h-0 max-h-[100%] lg:max-h-[80vh] border-[4px] md:border-8 border-pure-white shadow-2xl"
+            initial={{ clipPath: "inset(0 0 100% 0)" }}
+            whileInView={{ clipPath: "inset(0 0 0 0)" }}
+            viewport={{ once: true, margin: "-10%" }}
+            transition={{ duration: 0.8, ease: easeOut }}
+          >
             <Image
               src="/cirka_group_selfie.png"
               alt="Group Selfie"
               fill
               className="object-cover"
             />
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* SECTION 10: IMAGINE A WORLD WHERE */}
       <section className="relative w-full min-h-[100dvh] md:h-screen md:snap-start overflow-hidden flex items-center justify-center p-4 md:p-8">
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/cirka_sewing_machine.png"
-            alt="Background"
-            fill
-            className="object-cover"
-          />
+          <motion.div
+            initial={{ opacity: 0, scale: 1.05 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, ease: easeOut }}
+            viewport={{ once: true }}
+            className="absolute inset-0"
+          >
+            <Image
+              src="/cirka_sewing_machine.png"
+              alt="Background"
+              fill
+              className="object-cover"
+            />
+          </motion.div>
           <NetworkBackground className="text-white opacity-70 absolute inset-0 pointer-events-none" />
         </div>
 
-        <div className="relative z-10 w-full h-full bg-[#545454] border-[8px] md:border-[12px] border-pure-white p-6 md:p-10 lg:p-16 flex flex-col justify-center shadow-2xl">
+        <motion.div 
+          className="relative z-10 w-full h-full bg-[#545454] border-[8px] md:border-[12px] border-pure-white p-6 md:p-10 lg:p-16 flex flex-col justify-center shadow-2xl"
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-10%" }}
+        >
 
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold uppercase tracking-wide text-pure-white shrink-0 relative z-10">
-            IMAGINE A WORLD WHERE ...
-          </h2>
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-10%" }} className="relative z-10 flex flex-col justify-center h-full">
+            <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl lg:text-6xl font-bold uppercase tracking-wide text-pure-white shrink-0 relative z-10">
+              IMAGINE A WORLD WHERE ...
+            </motion.h2>
 
-          <div className="mt-6 md:mt-8 lg:mt-10 space-y-4 md:space-y-5 lg:space-y-6 text-base md:text-xl lg:text-2xl font-normal tracking-wide text-pure-white relative z-10">
-            <p>Every community can create value from resources already around them.</p>
-            <p>Every maker has access to the materials they need.</p>
-            <p>Every manufacturer has visibility.</p>
-            <p>Every brand can prove impact.</p>
-            <p>Every resource gets another chance.</p>
-          </div>
+            <motion.div variants={staggerContainer} className="mt-6 md:mt-8 lg:mt-10 space-y-4 md:space-y-5 lg:space-y-6 text-base md:text-xl lg:text-2xl font-normal tracking-wide text-pure-white relative z-10">
+              <motion.p variants={fadeUp}>Every community can create value from resources already around them.</motion.p>
+              <motion.p variants={fadeUp}>Every maker has access to the materials they need.</motion.p>
+              <motion.p variants={fadeUp}>Every manufacturer has visibility.</motion.p>
+              <motion.p variants={fadeUp}>Every brand can prove impact.</motion.p>
+              <motion.p variants={fadeUp}>Every resource gets another chance.</motion.p>
+            </motion.div>
 
-          <div className="mt-10 md:mt-12 lg:mt-16 w-full shrink-0 relative z-10">
-            <p className="text-xl md:text-2xl lg:text-3xl font-bold uppercase text-pure-white tracking-wide max-w-[65%]">
-              THAT'S THE FUTURE WE ARE BUILDING.
-            </p>
-          </div>
+            <motion.div variants={fadeUp} className="mt-10 md:mt-12 lg:mt-16 w-full shrink-0 relative z-10">
+              <p className="text-xl md:text-2xl lg:text-3xl font-bold uppercase text-pure-white tracking-wide max-w-[65%]">
+                THAT'S THE FUTURE WE ARE BUILDING.
+              </p>
+            </motion.div>
+          </motion.div>
 
           {/* Logo is absolute so its massive size doesn't break the text layout height */}
-          <div className="absolute bottom-6 right-6 md:bottom-10 md:right-10 lg:bottom-16 lg:right-16 w-32 h-32 md:w-48 md:h-48 lg:w-64 lg:h-64 xl:w-[22rem] xl:h-[22rem] pointer-events-none z-0">
+          <motion.div 
+            className="absolute bottom-6 right-6 md:bottom-10 md:right-10 lg:bottom-16 lg:right-16 w-32 h-32 md:w-48 md:h-48 lg:w-64 lg:h-64 xl:w-[22rem] xl:h-[22rem] pointer-events-none z-0"
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.5, ease: easeOut }}
+          >
             <Image src="/cirka-c-logo-white.png" alt="Cirka" fill className="object-contain object-right-bottom" />
-          </div>
+          </motion.div>
 
-        </div>
+        </motion.div>
       </section>
 
       {/* SECTION 11: CONTACT / CTA */}
-      <section className="relative w-full min-h-[100dvh] md:h-screen md:snap-start flex flex-col bg-charcoal">
+      <section className="relative w-full min-h-[100dvh] md:min-h-screen md:snap-start flex flex-col bg-charcoal">
 
         {/* Top Dark Section */}
-        <div className="relative w-full flex-grow flex flex-col items-center justify-center px-4 md:px-8 py-8 md:py-10 overflow-hidden">
+        <div className="relative w-full flex-grow flex flex-col items-center justify-center px-4 md:px-8 py-8 md:py-10">
 
           {/* Network Graphic (Left aligned like in the image) */}
           <div className="absolute inset-y-0 left-0 w-1/2 pointer-events-none opacity-40">
             <NetworkBackground className="text-white w-full h-full" />
           </div>
 
-          <div className="relative z-10 w-full max-w-5xl flex flex-col items-center text-center mt-4 md:mt-6">
+          <motion.div 
+            className="relative z-10 w-full max-w-5xl flex flex-col items-center text-center mt-4 md:mt-6"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-10%" }}
+          >
 
             {/* Logo */}
-            <div className="relative w-[90vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] max-w-[45rem] h-28 sm:h-36 md:h-48 lg:h-56 xl:h-64 max-h-[25vh] md:max-h-[35vh] mb-4 md:mb-6 flex items-center justify-center pointer-events-none">
+            <motion.div variants={fadeUp} className="relative w-[90vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] max-w-[45rem] h-28 sm:h-36 md:h-48 lg:h-56 xl:h-64 max-h-[25vh] md:max-h-[35vh] mb-4 md:mb-6 flex items-center justify-center pointer-events-none">
               <Image src="/cirka-logo-white.png" alt="Cirka" fill className="object-cover object-center" priority />
-            </div>
+            </motion.div>
 
             {/* Subheadings - Reduced Size */}
-            <h2 className="text-[4vw] sm:text-[3vw] md:text-lg lg:text-xl xl:text-2xl font-bold uppercase tracking-wide text-pure-white mb-2 md:mb-4 leading-snug">
+            <motion.h2 variants={fadeUp} className="text-[4vw] sm:text-[3vw] md:text-lg lg:text-xl xl:text-2xl font-bold uppercase tracking-wide text-pure-white mb-2 md:mb-4 leading-snug">
               CONNECTING SECONDARY RESOURCES,PEOPLE AND DATA.<br />
               CREATING MEASURABLE VALUE.
-            </h2>
+            </motion.h2>
 
-            <h3 className="text-[3.5vw] sm:text-[2.5vw] md:text-base lg:text-lg xl:text-xl font-bold uppercase tracking-wider text-cirka-orange mb-4 md:mb-8" style={{ WebkitTextStroke: '0.5px #FF5C00' }}>
+            <motion.h3 variants={fadeUp} className="text-[3.5vw] sm:text-[2.5vw] md:text-base lg:text-lg xl:text-xl font-bold uppercase tracking-wider text-cirka-orange mb-4 md:mb-8" style={{ WebkitTextStroke: '0.5px #FF5C00' }}>
               HELP BUILD THE MISSING INFRASTRUCTURE.
-            </h3>
+            </motion.h3>
 
             {/* Paragraph - Reduced Size */}
-            <p className="text-[3.5vw] sm:text-[2vw] md:text-sm lg:text-base xl:text-lg font-medium text-pure-white max-w-4xl leading-relaxed px-4 md:px-0">
+            <motion.p variants={fadeUp} className="text-[3.5vw] sm:text-[2vw] md:text-sm lg:text-base xl:text-lg font-medium text-pure-white max-w-4xl leading-relaxed px-4 md:px-0">
               Whether you are a manufacturer, a brand, a university, a government agency, an innovator, a<br className="hidden md:block" />
-              funder or a re-maker ... there's a place for you within the CIRKA ecosystem.
-            </p>
+              technology provider, a recycler, or an organization working closely with any aspect of the built<br className="hidden md:block" />
+              environment—your expertise and engagement are crucial.
+            </motion.p>
 
-          </div>
+            <motion.button onClick={() => router.push('/login')} variants={fadeUp} className="mt-6 md:mt-10 lg:mt-12 group relative inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold text-pure-white transition-all duration-200 bg-cirka-orange border-2 border-cirka-orange hover:bg-transparent hover:text-cirka-orange focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cirka-orange overflow-hidden shadow-lg z-20 pointer-events-auto cursor-pointer">
+              <span className="text-[3vw] sm:text-[2vw] md:text-base lg:text-lg tracking-wider uppercase">Get Started</span>
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-2 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </motion.button>
+
+          </motion.div>
         </div>
 
         {/* Bottom White Section */}
-        <div className="relative w-full shrink-0 pb-4 flex flex-col">
+        <div className="relative w-full shrink-0 pb-4 flex flex-col z-20">
           <div className="w-full flex-grow bg-pure-white flex flex-col items-center justify-center text-charcoal px-4 py-6 md:py-8">
             <div className="flex flex-col items-center space-y-2 md:space-y-3 text-sm md:text-base lg:text-lg font-medium">
               <p className="font-bold uppercase text-base md:text-lg lg:text-xl xl:text-2xl mb-1 md:mb-2 tracking-wide">
@@ -755,6 +990,24 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <motion.footer 
+          className="w-full bg-[#333333] py-4 md:py-6 px-4 md:px-8 border-t border-white/10 shrink-0"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, ease: easeOut }}
+        >
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-xs md:text-sm text-pure-white/60">
+            <p>&copy; {new Date().getFullYear()} CIRKA. All rights reserved.</p>
+            <div className="flex space-x-6 mt-4 md:mt-0">
+              <a href="#" className="hover:text-pure-white transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-pure-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-pure-white transition-colors">LinkedIn</a>
+            </div>
+          </div>
+        </motion.footer>
 
       </section>
 
