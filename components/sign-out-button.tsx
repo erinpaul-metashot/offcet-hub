@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui";
+import { useSignOut } from "@/components/sign-out-context";
 
 import { Power } from "lucide-react";
 
 export function SignOutButton({ collapsed }: { collapsed?: boolean }) {
   const [isPending, setIsPending] = useState(false);
+  const { setIsSigningOut } = useSignOut();
 
   const handleSignOut = async () => {
     if (isPending) {
@@ -15,6 +17,7 @@ export function SignOutButton({ collapsed }: { collapsed?: boolean }) {
     }
 
     setIsPending(true);
+    setIsSigningOut(true);
 
     try {
       await authClient.signOut();
@@ -22,6 +25,7 @@ export function SignOutButton({ collapsed }: { collapsed?: boolean }) {
     } catch (error) {
       console.error("Failed to sign out", error);
       setIsPending(false);
+      setIsSigningOut(false);
     }
   };
 

@@ -16,21 +16,31 @@ export function DashboardHero({
   children?: ReactNode;
 }) {
   return (
-    <Panel className="relative overflow-hidden border-[var(--line)] bg-[linear-gradient(135deg,rgba(26,86,50,0.08),rgba(26,86,50,0.02)_40%,rgba(255,255,255,1)_100%)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(26,86,50,0.12),transparent_30%)]" />
-      <div className="relative grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
-        <div className="space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--brand-green-light)]">
+    <Panel className="relative overflow-hidden border-transparent bg-[var(--sidebar-bg)] shadow-none rounded-[2rem]">
+      {/* Node / Network Graphic Hint (Constellation Motif) */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,92,0,0.15),transparent_40%)]" />
+      <div className="absolute right-0 top-0 h-full w-[40%] opacity-20 pointer-events-none">
+        <svg viewBox="0 0 400 400" className="w-full h-full text-[var(--brand-primary)]">
+          <circle cx="300" cy="100" r="4" fill="currentColor" />
+          <circle cx="200" cy="200" r="6" fill="currentColor" />
+          <circle cx="350" cy="250" r="3" fill="currentColor" />
+          <path d="M 300 100 L 200 200 L 350 250" stroke="currentColor" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+        </svg>
+      </div>
+
+      <div className="relative grid gap-6 p-8 sm:p-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
+        <div className="space-y-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--brand-primary)]">
             {eyebrow}
           </p>
-          <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)] sm:text-4xl">
+          <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
             {title}
           </h1>
-          <p className="max-w-2xl text-sm leading-6 text-[var(--ink-muted)] sm:text-base">
+          <p className="max-w-2xl text-sm leading-relaxed text-[var(--sidebar-text-muted)] sm:text-base">
             {description}
           </p>
         </div>
-        {children ? <div className="grid gap-3">{children}</div> : null}
+        {children ? <div className="grid gap-4">{children}</div> : null}
       </div>
     </Panel>
   );
@@ -50,18 +60,21 @@ export function DashboardMetricCard({
   return (
     <Panel
       className={classNames(
-        "h-full p-5",
+        "h-full p-6 transition-transform duration-300 ease-[var(--ease-out)] hover:-translate-y-1",
         accent
-          ? "border-[var(--brand-green)]/25 bg-[var(--brand-green-muted)]/40"
+          ? "border-[var(--brand-primary)]/20 bg-[var(--brand-primary-light)]/10"
           : "bg-[var(--paper)]",
       )}
     >
       <div className="space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--ink-muted)]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
           {label}
         </p>
-        <p className="text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)]">{value}</p>
-        <p className="text-sm leading-5 text-[var(--ink-muted)]">{hint}</p>
+        <p className={classNames(
+          "text-4xl font-semibold tracking-[-0.05em]",
+          accent ? "text-[var(--brand-primary)]" : "text-[var(--ink)]"
+        )}>{value}</p>
+        <p className="text-[13px] leading-5 text-[var(--ink-muted)]">{hint}</p>
       </div>
     </Panel>
   );
@@ -79,17 +92,17 @@ export function DashboardSection({
   action?: ReactNode;
 }) {
   return (
-    <Panel className="overflow-hidden">
-      <div className="flex flex-col gap-3 border-b border-[var(--line)] bg-[var(--surface)]/80 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
+    <Panel className="overflow-hidden flex flex-col h-full">
+      <div className="flex flex-col gap-4 border-b border-[var(--line)] bg-[var(--paper)] px-6 py-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1.5">
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
           {description ? (
-            <p className="text-sm leading-5 text-[var(--ink-muted)]">{description}</p>
+            <p className="text-sm leading-relaxed text-[var(--ink-muted)]">{description}</p>
           ) : null}
         </div>
         {action}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-6 flex-1 bg-[var(--paper)]">{children}</div>
     </Panel>
   );
 }
@@ -118,11 +131,11 @@ export function HorizontalBarChart({
               <span className="font-medium text-[var(--ink)]">{item.label}</span>
               <span className="text-[var(--ink-muted)]">{item.value}</span>
             </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-[var(--muted)]">
+            <div className="h-2 overflow-hidden rounded-full bg-[var(--surface)]">
               <div
                 className={classNames(
-                  "h-full rounded-full",
-                  item.tone === "accent" ? "bg-[var(--brand-green)]" : "bg-[var(--line-strong)]",
+                  "h-full rounded-full transition-all duration-1000 ease-[var(--ease-out)]",
+                  item.tone === "accent" ? "bg-[var(--brand-primary)]" : "bg-[var(--brand-secondary)]",
                 )}
                 style={{ width: `${width}%` }}
               />
@@ -154,9 +167,9 @@ export function TrendColumns({
 
         return (
           <div key={item.label} className="flex min-w-0 flex-col items-center gap-3">
-            <div className="flex h-32 w-full items-end rounded-2xl border border-[var(--line)] bg-[linear-gradient(180deg,rgba(26,86,50,0.06),rgba(26,86,50,0.14))] p-2">
+            <div className="flex h-36 w-full items-end rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-2">
               <div
-                className="w-full rounded-xl bg-[linear-gradient(180deg,var(--brand-green-light),var(--brand-green))]"
+                className="w-full rounded-xl bg-[var(--brand-primary)] transition-all duration-1000 ease-[var(--ease-out)]"
                 style={{ height: `${height}%` }}
                 title={`${item.value} ${valueLabel}`}
               />
@@ -193,12 +206,12 @@ export function DashboardList({
 }) {
   if (!items.length) {
     return (
-      <div className="grid min-h-44 place-items-center border border-dashed border-[var(--line)] bg-[var(--surface)] px-6 py-10 text-center">
+      <div className="grid min-h-48 place-items-center rounded-xl border border-dashed border-[var(--line-strong)] bg-[var(--surface)] px-6 py-10 text-center">
         <div className="max-w-sm space-y-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--ink)]">
+          <p className="text-[13px] font-bold uppercase tracking-[0.2em] text-[var(--ink)]">
             {emptyTitle}
           </p>
-          <p className="text-sm leading-6 text-[var(--ink-muted)]">{emptyBody}</p>
+          <p className="text-sm leading-relaxed text-[var(--ink-muted)]">{emptyBody}</p>
         </div>
       </div>
     );
@@ -237,11 +250,11 @@ export function SummaryPill({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--brand-green)]/20 bg-white/70 px-4 py-3 backdrop-blur">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
+    <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-md">
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
         {label}
       </p>
-      <p className="mt-1 text-lg font-semibold text-[var(--ink)]">{value}</p>
+      <p className="mt-1 text-2xl font-semibold text-white">{value}</p>
     </div>
   );
 }

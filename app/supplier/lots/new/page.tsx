@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button, Field, Input, Panel, Textarea, StatusBadge } from "@/components/ui";
+import { Button, Field, Input, Panel, Textarea, StatusBadge, Spinner } from "@/components/ui";
 import { lotEditorSchema } from "@/lib/validators";
 import { formatCurrency, formatDate, classNames, sentenceCase } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -568,7 +568,7 @@ export default function LotEditorPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-pulse flex flex-col items-center gap-3 text-[var(--ink-muted)]">
-          <div className="w-8 h-8 border-2 border-[var(--brand-green)] border-t-transparent rounded-full animate-spin" />
+          <Spinner size="md" />
           <p className="text-sm font-medium tracking-wide uppercase">Loading draft...</p>
         </div>
       </div>

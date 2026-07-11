@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Button, StatusBadge } from "@/components/ui";
+import { Button, StatusBadge, Spinner } from "@/components/ui";
 import { formatCurrency, formatDate, sentenceCase, classNames } from "@/lib/utils";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
@@ -41,7 +41,7 @@ export default function LotDetailsPage() {
   if (lot === undefined) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3 text-[var(--ink-muted)]">
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--brand-green)] border-t-transparent animate-spin"></div>
+        <Spinner size="md" />
         <p className="text-sm font-medium">Loading lot details...</p>
       </div>
     );

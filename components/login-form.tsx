@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { authClient } from "@/lib/auth-client";
-import { Button, Field, Input, Panel } from "@/components/ui";
+import { Button, Field, Input } from "@/components/ui";
 
 export function LoginForm() {
   const router = useRouter();
@@ -38,26 +37,16 @@ export function LoginForm() {
   }
 
   return (
-    <Panel className="w-full max-w-xl p-8 sm:p-10">
-      <div className="mb-8 space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--ink-muted)]">
-          Secure Access
-        </p>
-        <h1 className="text-3xl font-semibold tracking-[-0.05em]">Log in to SurplusLink</h1>
-        <p className="text-sm leading-6 text-[var(--ink-muted)]">
-          Use your approved email and password to access your role-specific dashboard.
-        </p>
-      </div>
-
+    <div className="grid gap-6">
       {registered ? (
-        <p className="mb-4 border border-[var(--line)] bg-[var(--muted)] px-4 py-3 text-sm">
+        <p className="rounded-lg border border-[var(--brand-secondary)] bg-[var(--brand-secondary-muted)] px-4 py-3 text-sm font-medium text-[var(--ink)]">
           Registration submitted. Sign in to check your approval status.
         </p>
       ) : null}
 
       {rejected ? (
-        <p className="mb-4 border border-[var(--line)] bg-[var(--muted)] px-4 py-3 text-sm">
-          Your account is not approved yet. Review the note on the pending page after signing in.
+        <p className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          Your account is not approved yet. Check back after admin review.
         </p>
       ) : null}
 
@@ -84,20 +73,16 @@ export function LoginForm() {
           />
         </Field>
 
-        {error ? <p className="text-sm">{error}</p> : null}
+        {error ? (
+          <p className="rounded-md bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {error}
+          </p>
+        ) : null}
 
-        <Button disabled={isPending} type="submit">
-          {isPending ? "Signing In" : "Login"}
+        <Button disabled={isPending} type="submit" className="mt-1">
+          {isPending ? "Signing in…" : "Log in"}
         </Button>
       </form>
-
-      <p className="mt-6 text-sm text-[var(--ink-muted)]">
-        Need an account?{" "}
-        <Link className="underline decoration-[var(--ink)] underline-offset-4" href="/register">
-          Register here
-        </Link>
-        .
-      </p>
-    </Panel>
+    </div>
   );
 }

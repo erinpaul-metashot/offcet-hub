@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/sign-out-button";
 import { classNames } from "@/lib/utils";
 import { Menu, X, LayoutDashboard, Package, FileText, Users, FilePlus } from "lucide-react";
+import { SignOutProvider, useSignOut } from "@/components/sign-out-context";
+import { Spinner } from "@/components/ui";
 
 export interface NavItem {
   label: string;
@@ -21,7 +23,21 @@ const ICONS: Record<string, React.ReactNode> = {
   requests: <FileText size={18} />,
 };
 
-export function AppLayout({
+export function AppLayout(props: {
+  user: { name: string; email: string };
+  roleTitle: string;
+  navItems: NavItem[];
+  pageTitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <SignOutProvider>
+      <AppLayoutInner {...props} />
+    </SignOutProvider>
+  );
+}
+
+function AppLayoutInner({
   user,
   roleTitle,
   navItems,
@@ -37,9 +53,21 @@ export function AppLayout({
   const pathname = usePathname();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setCollapsed] = useState(false);
+  const { isSigningOut } = useSignOut();
 
   const toggleMobileSidebar = () => setSidebarOpen(!isSidebarOpen);
   const toggleDesktopSidebar = () => setCollapsed(!isCollapsed);
+
+  if (isSigningOut) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[var(--surface)]">
+        <div className="space-y-3 text-center">
+          <Spinner size="md" variant="white" />
+          <p className="text-sm text-[var(--ink-muted)]">Signing out...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[var(--surface)]">
@@ -51,36 +79,36 @@ export function AppLayout({
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar Navigation */}
       <aside
         className={classNames(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-[var(--line)] bg-[var(--paper)] transition-all duration-300 lg:static lg:z-auto w-64",
+          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] transition-transform duration-500 ease-[var(--ease-out)] lg:static lg:z-auto w-64",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           isCollapsed ? "lg:w-16" : "lg:w-[20%]"
         )}
       >
         <div className={classNames(
-          "flex h-16 shrink-0 items-center border-b border-[var(--line)] px-4",
+          "flex h-16 shrink-0 items-center border-b border-[var(--sidebar-border)] px-4",
           isCollapsed ? "lg:justify-center lg:px-2" : "justify-between"
         )}>
           {!isCollapsed && (
             <Link
-              href="/"
-              className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--brand-green-light)]"
+              href={navItems[0]?.href || "/"}
+              className="flex items-center"
             >
-              SurplusLink
+              <img src="/cirka-logo-white.png" alt="Cirka" className="h-12 w-auto object-contain object-left scale-[1.3] origin-left" />
             </Link>
           )}
           <div className={classNames("flex items-center gap-2", isCollapsed ? "lg:justify-center" : "")}>
             <button
               onClick={toggleDesktopSidebar}
-              className="hidden p-1 text-[var(--ink-muted)] hover:bg-[var(--brand-green-muted)] hover:text-[var(--brand-green)] lg:block"
+              className="hidden p-1 text-[var(--sidebar-text-muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text)] transition-colors duration-200 lg:block rounded-md"
             >
               <Menu size={20} />
             </button>
             <button
               onClick={toggleMobileSidebar}
-              className="p-1 text-[var(--ink-muted)] hover:bg-[var(--brand-green-muted)] hover:text-[var(--brand-green)] lg:hidden"
+              className="p-1 text-[var(--sidebar-text-muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text)] transition-colors duration-200 lg:hidden rounded-md"
             >
               <X size={20} />
             </button>
@@ -105,15 +133,21 @@ export function AppLayout({
                 key={item.href}
                 href={item.href}
                 className={classNames(
-                  "flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-colors",
+                  "group flex items-center gap-3 rounded-lg py-2.5 text-[13px] font-medium transition-all duration-200",
                   isActive
-                    ? "bg-[var(--brand-green-muted)] text-[var(--brand-green)]"
-                    : "text-[var(--ink-muted)] hover:bg-[var(--muted)] hover:text-[var(--ink)]",
+                    ? "bg-[var(--sidebar-active-bg)] text-[var(--brand-primary)]"
+                    : "text-[var(--sidebar-text-muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text)]",
                   isCollapsed ? "px-2 lg:px-2 lg:justify-center" : "px-3"
                 )}
                 title={isCollapsed ? item.label : undefined}
               >
-                {item.icon && ICONS[item.icon] ? ICONS[item.icon] : <span className="w-4" />}
+                {item.icon && ICONS[item.icon] ? (
+                  <span className="transition-transform duration-300 ease-[var(--ease-out)] group-active:scale-95">
+                    {ICONS[item.icon]}
+                  </span>
+                ) : (
+                  <span className="w-4" />
+                )}
                 <span className={classNames(isCollapsed ? "lg:hidden" : "block")}>
                   {item.label}
                 </span>
@@ -123,33 +157,32 @@ export function AppLayout({
         </nav>
 
         <div className={classNames(
-          "border-t border-[var(--line)] p-4",
+          "border-t border-[var(--sidebar-border)] p-4",
           isCollapsed ? "lg:flex lg:flex-col lg:items-center lg:justify-center lg:px-2" : ""
         )}>
           {!isCollapsed && (
-            <div className="mb-4">
-              <p className="text-sm font-semibold text-[var(--ink)]">{user.name}</p>
-              <p className="text-xs text-[var(--ink-muted)] truncate">{user.email}</p>
+            <div className="mb-5">
+              <p className="text-sm font-medium text-[var(--sidebar-text)]">{user.name}</p>
+              <p className="text-xs text-[var(--sidebar-text-muted)] truncate">{user.email}</p>
             </div>
           )}
           <SignOutButton collapsed={isCollapsed} />
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden bg-[var(--surface)]">
         {/* Mobile Header */}
         <header className="flex h-16 shrink-0 items-center gap-x-4 border-b border-[var(--line)] bg-[var(--paper)] px-4 sm:gap-x-6 sm:px-6 lg:hidden">
           <button
             type="button"
-            className="-m-2.5 p-2.5 text-[var(--ink-muted)] hover:text-[var(--brand-green)]"
+            className="-m-2.5 p-2.5 text-[var(--ink-muted)] hover:text-[var(--brand-primary)] transition-colors"
             onClick={toggleMobileSidebar}
           >
             <span className="sr-only">Open sidebar</span>
             <Menu size={24} />
           </button>
           {pageTitle && (
-            <div className="flex flex-1 font-semibold text-sm tracking-widest uppercase text-[var(--brand-green)]">
+            <div className="flex flex-1 font-bold text-sm tracking-widest uppercase text-[var(--brand-primary)]">
               {pageTitle}
             </div>
           )}

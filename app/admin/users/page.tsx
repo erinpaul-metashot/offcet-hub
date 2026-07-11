@@ -4,13 +4,13 @@ import { useDeferredValue, useMemo, useState, useTransition, useEffect } from "r
 import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import {
-  Button,
+import { Button,
   Field,
   Input,
   Select,
   StatusBadge,
   Textarea,
+  Spinner 
 } from "@/components/ui";
 import { classNames, formatDate } from "@/lib/utils";
 import { ROLE_LABELS, type UserRole, type UserStatus } from "@/types/domain";
@@ -419,7 +419,7 @@ export default function UserManagementPage() {
   if (!userManagement) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[500px] gap-4 text-[var(--ink-muted)]">
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--brand-green)] border-t-transparent animate-spin"></div>
+        <Spinner size="md" />
         <p className="text-sm font-medium">Loading user accounts...</p>
       </div>
     );

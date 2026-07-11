@@ -1,6 +1,7 @@
 "use client";
 
 import NetworkBackground from "@/components/NetworkBackground";
+import Navbar from "@/components/Navbar";
 import Image from "next/image";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -41,39 +42,10 @@ const springHover = {
 
 export default function Home() {
   const router = useRouter();
-  const navRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
-  const [navVisible, setNavVisible] = useState(true);
-  const { scrollY: windowScrollY } = useScroll();
-  const { scrollY: containerScrollY } = useScroll({ container: mainRef });
-
-  const handleScrollChange = (latest: number, scrollSource: any) => {
-    const previous = scrollSource.getPrevious() || 0;
-    if (latest > previous && latest > 150) {
-      setNavVisible(false);
-    } else {
-      setNavVisible(true);
-    }
-  };
-
-  useMotionValueEvent(windowScrollY, "change", (latest) => handleScrollChange(latest, windowScrollY));
-  useMotionValueEvent(containerScrollY, "change", (latest) => handleScrollChange(latest, containerScrollY));
 
   useEffect(() => {
-    let glassInstance: any = null;
-    const timer = setInterval(() => {
-      if (typeof window !== "undefined" && (window as any).liquidGlass) {
-        if (navRef.current) {
-          glassInstance = (window as any).liquidGlass(navRef.current, { scale: -112, blur: 5 });
-        }
-        clearInterval(timer);
-      }
-    }, 100);
-
-    return () => {
-      clearInterval(timer);
-      if (glassInstance) glassInstance.destroy();
-    };
+    // ... Any other effects if needed ...
   }, []);
 
   return (
@@ -81,26 +53,7 @@ export default function Home() {
       <Script src="/liquid-glass.js" strategy="afterInteractive" />
 
       {/* TOP NAVBAR */}
-      <motion.nav 
-        ref={navRef} 
-        initial={{ y: 0 }}
-        animate={{ y: navVisible ? 0 : "-100%" }}
-        transition={{ duration: 0.3, ease: easeOut }}
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-2 md:px-12 md:py-3 bg-charcoal/40 border-b border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.1)] transition-colors duration-300"
-      >
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
-          <div className="relative w-6 h-6 md:w-8 md:h-8">
-             <Image src="/cirka-c-logo-white.png" alt="Cirka" fill className="object-contain" />
-          </div>
-          <span className="text-pure-white font-bold uppercase tracking-wider text-lg md:text-xl mt-0.5">Cirka</span>
-        </div>
-        <button 
-          onClick={() => router.push('/login')}
-          className="bg-cirka-orange hover:bg-white hover:text-cirka-orange text-pure-white px-5 md:px-6 py-1.5 md:py-2 rounded-full font-bold uppercase tracking-wide text-xs md:text-sm transition-all duration-300 shadow-[0_0_10px_rgba(255,92,0,0.4)] hover:shadow-[0_0_15px_rgba(255,255,255,0.6)]"
-        >
-          Login
-        </button>
-      </motion.nav>
+      <Navbar scrollContainerRef={mainRef} showLoginButton />
 
       {/* SECTION 1: HERO */}
       <section className="relative w-full min-h-[100dvh] md:h-screen flex flex-col md:snap-start overflow-hidden bg-charcoal">

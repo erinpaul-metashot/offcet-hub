@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button, Field, Input, Panel, Select, Textarea } from "@/components/ui";
+import { Button, Field, Input, Select, Textarea } from "@/components/ui";
 import { PUBLIC_USER_ROLES, ROLE_LABELS, type PublicUserRole } from "@/types/domain";
 import { splitCommaSeparated } from "@/lib/utils";
 import { publicRegistrationSchema } from "@/lib/validators";
@@ -45,7 +45,7 @@ const initialState: FormState = {
   preferredCategories: "",
 };
 
-export function RegisterForm() {
+export function RegisterForm({ onRegistered }: { onRegistered?: () => void }) {
   const router = useRouter();
   const registerUser = useAction(api.users.registerUser);
   const [state, setState] = useState<FormState>(initialState);
@@ -105,7 +105,12 @@ export function RegisterForm() {
 
         publicRegistrationSchema.parse(payload);
         await registerUser(payload);
-        router.push("/login?registered=1");
+
+        if (onRegistered) {
+          onRegistered();
+        } else {
+          router.push("/login?registered=1");
+        }
       } catch (submissionError) {
         setError(
           submissionError instanceof Error
@@ -117,20 +122,9 @@ export function RegisterForm() {
   }
 
   return (
-    <Panel className="w-full max-w-3xl p-8 sm:p-10">
-      <div className="mb-8 space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--ink-muted)]">
-          Role-Based Onboarding
-        </p>
-        <h1 className="text-3xl font-semibold tracking-[-0.05em]">Register your business</h1>
-        <p className="max-w-2xl text-sm leading-6 text-[var(--ink-muted)]">
-          Every account enters manual review before dashboard access. Provide the operational details
-          admins need to verify the business and route the right lots.
-        </p>
-      </div>
-
-      <form className="grid gap-6" onSubmit={onSubmit}>
-        <div className="grid gap-6 sm:grid-cols-2">
+    <div className="grid gap-6">
+      <form className="grid gap-5" onSubmit={onSubmit}>
+        <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Role">
             <Select
               value={state.role}
@@ -154,7 +148,7 @@ export function RegisterForm() {
           </Field>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Email">
             <Input
               type="email"
@@ -175,7 +169,7 @@ export function RegisterForm() {
           </Field>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Password" hint="Minimum 8 characters.">
             <Input
               type="password"
@@ -197,7 +191,7 @@ export function RegisterForm() {
         </div>
 
         {state.role === "supplier" ? (
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Company Name">
               <Input
                 value={state.companyName}
@@ -231,7 +225,7 @@ export function RegisterForm() {
         ) : null}
 
         {state.role === "buyer" ? (
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Business Name">
               <Input
                 value={state.businessName}
@@ -251,7 +245,7 @@ export function RegisterForm() {
         ) : null}
 
         {state.role === "agent" ? (
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Agent Full Name">
               <Input
                 value={state.fullName}
@@ -285,12 +279,16 @@ export function RegisterForm() {
           </div>
         ) : null}
 
-        {error ? <p className="text-sm">{error}</p> : null}
+        {error ? (
+          <p className="rounded-md bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {error}
+          </p>
+        ) : null}
 
-        <Button disabled={isPending} type="submit">
-          {isPending ? "Submitting" : "Submit For Review"}
+        <Button disabled={isPending} type="submit" className="mt-1">
+          {isPending ? "Submitting…" : "Submit for review"}
         </Button>
       </form>
-    </Panel>
+    </div>
   );
 }

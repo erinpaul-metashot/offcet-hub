@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button } from "@/components/ui";
+import { authClient } from "@/lib/auth-client";
+import { Button, Spinner } from "@/components/ui";
 import {
   DashboardHero,
   DashboardMetricCard,
@@ -16,13 +17,14 @@ import {
 import { formatCurrency, formatDate, sentenceCase } from "@/lib/utils";
 
 export default function AdminOverview() {
-  const dashboard = useQuery(api.admin.getDashboardOverview);
+  const { data: session } = authClient.useSession();
+  const dashboard = useQuery(api.admin.getDashboardOverview, session ? undefined : "skip");
 
   if (dashboard === undefined) {
     return (
       <div className="flex min-h-[420px] items-center justify-center">
         <div className="space-y-3 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-green)] border-t-transparent" />
+          <Spinner size="md" />
           <p className="text-sm text-[var(--ink-muted)]">Loading admin dashboard...</p>
         </div>
       </div>

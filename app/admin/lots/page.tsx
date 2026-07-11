@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useDeferredValue, useMemo, useState, useTransition } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button, EmptyState, Input, StatusBadge } from "@/components/ui";
+import { Button, EmptyState, Input, StatusBadge, Spinner } from "@/components/ui";
 import { classNames, formatDate, sentenceCase } from "@/lib/utils";
 import { STATUS_LABELS, type LotStatus } from "@/types/domain";
 import { 
@@ -158,7 +158,7 @@ export default function SupplyManagementPage() {
   if (pendingLotsQuery === undefined || lotOverviewQuery === undefined) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[500px] gap-4 text-[var(--ink-muted)]">
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--brand-green)] border-t-transparent animate-spin"></div>
+        <Spinner size="md" />
         <p className="text-sm font-medium">Loading supply inventory and queue...</p>
       </div>
     );

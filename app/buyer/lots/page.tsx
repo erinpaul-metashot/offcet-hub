@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button, EmptyState, StatusBadge } from "@/components/ui";
+import { Button, EmptyState, StatusBadge, Spinner } from "@/components/ui";
 import { formatCurrency, formatDate, sentenceCase, classNames } from "@/lib/utils";
 import Link from "next/link";
 import { 
@@ -69,7 +69,7 @@ export default function AssignedLotsPage() {
       {/* Main Content Area */}
       {lots === undefined ? (
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-[var(--ink-muted)] bg-[var(--paper)] rounded-2xl border border-[var(--line)]">
-          <div className="w-8 h-8 rounded-full border-2 border-[var(--brand-green)] border-t-transparent animate-spin"></div>
+          <Spinner size="md" />
           <p className="text-sm font-medium">Loading your assignments...</p>
         </div>
       ) : !lots.length ? (

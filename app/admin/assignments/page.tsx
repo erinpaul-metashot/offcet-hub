@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition, useEffect } from "react";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button, Panel, Textarea } from "@/components/ui";
+import { Badge, Button, StatusBadge, Spinner, Panel, Textarea } from "@/components/ui";
 import { sentenceCase, formatDate, formatCurrency, classNames } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -507,7 +507,7 @@ export default function AssignmentsPage() {
                         <div className="flex-1 overflow-y-auto border border-[var(--line)] rounded-xl bg-[var(--surface)] p-2">
                           {assignableUsers === undefined ? (
                             <div className="flex flex-col items-center justify-center h-full text-sm text-[var(--ink-muted)] gap-3">
-                              <RefreshCw size={24} className="animate-spin text-[var(--brand-green)]" />
+                              <Spinner size="md" variant="black" />
                               <p>Syncing candidate roster...</p>
                             </div>
                           ) : filteredRecruits.length === 0 ? (
@@ -644,7 +644,7 @@ export default function AssignmentsPage() {
                                   >
                                     {isPending ? (
                                       <>
-                                        <RefreshCw size={16} className="animate-spin" />
+                                        <Spinner size="sm" variant="white" />
                                         Assigning...
                                       </>
                                     ) : (
@@ -672,7 +672,7 @@ export default function AssignmentsPage() {
                         <div className="flex-1 overflow-y-auto">
                           {currentAssignments === undefined ? (
                             <div className="flex flex-col items-center justify-center h-full text-sm text-[var(--ink-muted)] gap-3">
-                              <RefreshCw size={24} className="animate-spin text-[var(--brand-green)]" />
+                              <Spinner size="md" variant="black" />
                               <p>Loading active assignments...</p>
                             </div>
                           ) : currentAssignments.length === 0 ? (
