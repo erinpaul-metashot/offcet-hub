@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition, useEffect } from "react";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Badge, Button, StatusBadge, Spinner, Panel, Textarea } from "@/components/ui";
+import { Button, StatusBadge, Spinner, Panel, Textarea } from "@/components/ui";
 import { sentenceCase, formatDate, formatCurrency, classNames } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
