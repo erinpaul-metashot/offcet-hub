@@ -7,8 +7,8 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SurplusLink",
-  description: "Curated surplus inventory marketplace for suppliers, buyers, and agents.",
+  title: "Cirka",
+  description: "The missing infrastructure for secondary textile resources.",
 };
 
 export default async function RootLayout({

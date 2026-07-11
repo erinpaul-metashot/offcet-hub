@@ -25,7 +25,7 @@ export default async function PendingApprovalPage() {
           <p className="text-sm leading-6 text-[var(--ink-muted)]">
             {currentUser?.user?.status === "rejected"
               ? "An admin returned the account for changes. Review the note below before trying again."
-              : "A SurplusLink admin is verifying your profile and will unlock dashboard access after approval."}
+              : "A Cirka admin is verifying your profile and will unlock dashboard access after approval."}
           </p>
         </div>
 
