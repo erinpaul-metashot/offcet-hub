@@ -11,9 +11,14 @@ const easeOut = [0.23, 1, 0.32, 1] as const;
 interface NavbarProps {
   scrollContainerRef?: React.RefObject<HTMLElement | null>;
   showLoginButton?: boolean;
+  showDemoButton?: boolean;
 }
 
-export default function Navbar({ scrollContainerRef, showLoginButton = false }: NavbarProps) {
+export default function Navbar({ 
+  scrollContainerRef, 
+  showLoginButton = false,
+  showDemoButton = true 
+}: NavbarProps) {
   const router = useRouter();
   const navRef = useRef<HTMLElement>(null);
   const [navVisible, setNavVisible] = useState(true);
@@ -77,14 +82,24 @@ export default function Navbar({ scrollContainerRef, showLoginButton = false }: 
                <img src="/cirka-logo-white.png" alt="Cirka" className="absolute left-0 h-16 md:h-20 w-auto object-contain object-left scale-[1.5] origin-left" />
             </div>
           </div>
-          {showLoginButton && (
-            <button 
-              onClick={() => router.push('/login')}
-              className="bg-cirka-orange hover:bg-white hover:text-cirka-orange text-pure-white px-5 md:px-6 py-1.5 md:py-2 rounded-full font-bold uppercase tracking-wide text-xs md:text-sm transition-all duration-300 shadow-[0_0_10px_rgba(255,92,0,0.4)] hover:shadow-[0_0_15px_rgba(255,255,255,0.6)]"
-            >
-              Login
-            </button>
-          )}
+          <div className="flex items-center gap-3 md:gap-4">
+            {showDemoButton && (
+              <button 
+                onClick={() => router.push('/demo')}
+                className="bg-cirka-orange hover:bg-white hover:text-cirka-orange text-pure-white px-5 md:px-6 py-1.5 md:py-2 rounded-full font-bold uppercase tracking-wide text-xs md:text-sm transition-all duration-300 shadow-[0_0_10px_rgba(255,92,0,0.4)] hover:shadow-[0_0_15px_rgba(255,255,255,0.6)]"
+              >
+                Demo
+              </button>
+            )}
+            {showLoginButton && (
+              <button 
+                onClick={() => router.push('/login')}
+                className="border border-white/30 bg-white/10 hover:bg-white hover:text-charcoal text-pure-white px-4 md:px-5 py-1.5 md:py-2 rounded-full font-bold uppercase tracking-wide text-xs md:text-sm transition-all duration-300 backdrop-blur-sm"
+              >
+                Login
+              </button>
+            )}
+          </div>
         </motion.nav>
       </div>
     </>

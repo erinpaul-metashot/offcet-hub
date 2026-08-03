@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
+  // The mock demo tree runs without Convex or auth, so it is always public.
+  if (request.nextUrl.pathname.startsWith("/demo")) {
+    return NextResponse.next();
+  }
+
   const isAuthPage =
     request.nextUrl.pathname === "/login" ||
     request.nextUrl.pathname === "/register" ||

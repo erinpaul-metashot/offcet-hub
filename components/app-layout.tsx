@@ -5,7 +5,28 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/sign-out-button";
 import { classNames } from "@/lib/utils";
-import { Menu, X, LayoutDashboard, Package, FileText, Users, FilePlus } from "lucide-react";
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  Package,
+  FileText,
+  Users,
+  FilePlus,
+  Truck,
+  Factory,
+  FolderOpen,
+  Inbox,
+  Warehouse,
+  Upload,
+  Download,
+  Plug,
+  Building2,
+  MapPin,
+  Send,
+  Handshake,
+  ListChecks,
+} from "lucide-react";
 import { SignOutProvider, useSignOut } from "@/components/sign-out-context";
 import { Spinner } from "@/components/ui";
 
@@ -13,6 +34,7 @@ export interface NavItem {
   label: string;
   href: string;
   icon?: string;
+  group?: string;
 }
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -21,6 +43,22 @@ const ICONS: Record<string, React.ReactNode> = {
   new_lot: <FilePlus size={18} />,
   users: <Users size={18} />,
   requests: <FileText size={18} />,
+  // CIRKA vocabulary — used by the /demo route tree
+  batches: <Package size={18} />,
+  new_batch: <FilePlus size={18} />,
+  allocations: <Truck size={18} />,
+  dispatch: <Send size={18} />,
+  arrivals: <Inbox size={18} />,
+  stock: <Warehouse size={18} />,
+  production: <Factory size={18} />,
+  projects: <FolderOpen size={18} />,
+  matching: <Handshake size={18} />,
+  queue: <ListChecks size={18} />,
+  organisations: <Building2 size={18} />,
+  facilities: <MapPin size={18} />,
+  imports: <Upload size={18} />,
+  exports: <Download size={18} />,
+  integrations: <Plug size={18} />,
 };
 
 export function AppLayout(props: {
@@ -28,6 +66,8 @@ export function AppLayout(props: {
   roleTitle: string;
   navItems: NavItem[];
   pageTitle?: string;
+  /** Replaces the sidebar sign-out control (used by the mock demo tree). */
+  footerAction?: (collapsed: boolean) => React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -42,12 +82,14 @@ function AppLayoutInner({
   roleTitle,
   navItems,
   pageTitle,
+  footerAction,
   children,
 }: {
   user: { name: string; email: string };
   roleTitle: string;
   navItems: NavItem[];
   pageTitle?: string;
+  footerAction?: (collapsed: boolean) => React.ReactNode;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -115,45 +157,59 @@ function AppLayoutInner({
           </div>
         </div>
 
-        <nav className={classNames("flex-1 overflow-y-auto py-6 space-y-1", isCollapsed ? "px-2 lg:px-2" : "px-3")}>
-          {navItems.map((item) => {
-            const isBestMatch = navItems.reduce((best, current) => {
-              if (pathname === current.href || pathname.startsWith(current.href + "/")) {
-                if (!best || current.href.length > best.href.length) {
-                  return current;
+        <nav className={classNames("flex-1 overflow-y-auto py-4 space-y-0.5", isCollapsed ? "px-2 lg:px-2" : "px-3")}>
+          {(() => {
+            let lastGroup: string | undefined = undefined;
+            return navItems.map((item, idx) => {
+              const isBestMatch = navItems.reduce((best, current) => {
+                if (pathname === current.href || pathname.startsWith(current.href + "/")) {
+                  if (!best || current.href.length > best.href.length) {
+                    return current;
+                  }
                 }
-              }
-              return best;
-            }, null as NavItem | null);
-            
-            const isActive = isBestMatch?.href === item.href;
+                return best;
+              }, null as NavItem | null);
+              
+              const isActive = isBestMatch?.href === item.href;
+              const showGroupLabel = !isCollapsed && item.group && item.group !== lastGroup;
+              if (item.group) lastGroup = item.group;
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={classNames(
-                  "group flex items-center gap-3 rounded-lg py-2.5 text-[13px] font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-[var(--sidebar-active-bg)] text-[var(--brand-primary)]"
-                    : "text-[var(--sidebar-text-muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text)]",
-                  isCollapsed ? "px-2 lg:px-2 lg:justify-center" : "px-3"
-                )}
-                title={isCollapsed ? item.label : undefined}
-              >
-                {item.icon && ICONS[item.icon] ? (
-                  <span className="transition-transform duration-300 ease-[var(--ease-out)] group-active:scale-95">
-                    {ICONS[item.icon]}
-                  </span>
-                ) : (
-                  <span className="w-4" />
-                )}
-                <span className={classNames(isCollapsed ? "lg:hidden" : "block")}>
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
+              return (
+                <div key={item.href}>
+                  {showGroupLabel && (
+                    <p className={classNames(
+                      "text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--sidebar-text-muted)] px-3",
+                      idx > 0 ? "mt-5 mb-2 pt-4 border-t border-[var(--sidebar-border)]" : "mb-2"
+                    )}>
+                      {item.group}
+                    </p>
+                  )}
+                  <Link
+                    href={item.href}
+                    className={classNames(
+                      "group flex items-center gap-3 rounded-lg py-2 text-[12px] font-medium transition-[background-color,color,border-color] duration-200 ease-[var(--ease-out)]",
+                      isActive
+                        ? "bg-[var(--sidebar-active-bg)] text-[var(--brand-primary)] border-l-2 border-[var(--brand-primary)]"
+                        : "text-[var(--sidebar-text-muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text)] border-l-2 border-transparent",
+                      isCollapsed ? "px-2 lg:px-2 lg:justify-center lg:border-l-0" : "px-3"
+                    )}
+                    title={isCollapsed ? item.label : undefined}
+                  >
+                    {item.icon && ICONS[item.icon] ? (
+                      <span className="transition-transform duration-300 ease-[var(--ease-out)] group-active:scale-95">
+                        {ICONS[item.icon]}
+                      </span>
+                    ) : (
+                      <span className="w-4" />
+                    )}
+                    <span className={classNames(isCollapsed ? "lg:hidden" : "block")}>
+                      {item.label}
+                    </span>
+                  </Link>
+                </div>
+              );
+            });
+          })()}
         </nav>
 
         <div className={classNames(
@@ -166,7 +222,7 @@ function AppLayoutInner({
               <p className="text-xs text-[var(--sidebar-text-muted)] truncate">{user.email}</p>
             </div>
           )}
-          <SignOutButton collapsed={isCollapsed} />
+          {footerAction ? footerAction(isCollapsed) : <SignOutButton collapsed={isCollapsed} />}
         </div>
       </aside>
 

@@ -17,9 +17,9 @@ export function DashboardHero({
 }) {
   return (
     <Panel className="relative overflow-hidden border-transparent bg-[var(--sidebar-bg)] shadow-none rounded-[2rem]">
-      {/* Node / Network Graphic Hint (Constellation Motif) */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,92,0,0.15),transparent_40%)]" />
-      <div className="absolute right-0 top-0 h-full w-[40%] opacity-20 pointer-events-none">
+      {/* Subtle constellation motif — scaled down to avoid competing with content */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,92,0,0.1),transparent_35%)]" />
+      <div className="absolute right-0 top-0 h-full w-[20%] opacity-10 pointer-events-none">
         <svg viewBox="0 0 400 400" className="w-full h-full text-[var(--brand-primary)]">
           <circle cx="300" cy="100" r="4" fill="currentColor" />
           <circle cx="200" cy="200" r="6" fill="currentColor" />
@@ -28,19 +28,19 @@ export function DashboardHero({
         </svg>
       </div>
 
-      <div className="relative grid gap-6 p-8 sm:p-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
-        <div className="space-y-4">
+      <div className="relative p-8 sm:p-10 space-y-5">
+        <div className="space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--brand-primary)]">
             {eyebrow}
           </p>
-          <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
+          <h1 className="max-w-2xl text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">
             {title}
           </h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-[var(--sidebar-text-muted)] sm:text-base">
+          <p className="max-w-xl text-[13px] leading-relaxed text-[var(--sidebar-text-muted)]">
             {description}
           </p>
         </div>
-        {children ? <div className="grid gap-4">{children}</div> : null}
+        {children ? <div className="flex flex-wrap gap-3">{children}</div> : null}
       </div>
     </Panel>
   );
@@ -60,18 +60,18 @@ export function DashboardMetricCard({
   return (
     <Panel
       className={classNames(
-        "h-full p-6 transition-transform duration-300 ease-[var(--ease-out)] hover:-translate-y-1",
+        "h-full p-6 animate-stagger-in",
         accent
-          ? "border-[var(--brand-primary)]/20 bg-[var(--brand-primary-light)]/10"
+          ? "ring-1 ring-[var(--brand-primary)]/10 border-[var(--brand-primary)]/20 bg-[var(--brand-primary-light)]/10"
           : "bg-[var(--paper)]",
       )}
     >
       <div className="space-y-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
           {label}
         </p>
         <p className={classNames(
-          "text-4xl font-semibold tracking-[-0.05em]",
+          "text-4xl font-semibold tracking-[-0.05em] tabular-nums",
           accent ? "text-[var(--brand-primary)]" : "text-[var(--ink)]"
         )}>{value}</p>
         <p className="text-[13px] leading-5 text-[var(--ink-muted)]">{hint}</p>
@@ -93,7 +93,7 @@ export function DashboardSection({
 }) {
   return (
     <Panel className="overflow-hidden flex flex-col h-full">
-      <div className="flex flex-col gap-4 border-b border-[var(--line)] bg-[var(--paper)] px-6 py-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-[var(--line)] border-t-[3px] border-t-[var(--brand-primary)] bg-[var(--paper)] px-6 py-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1.5">
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
           {description ? (
@@ -250,11 +250,11 @@ export function SummaryPill({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-md">
+    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
       <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-semibold text-white">{value}</p>
+      <p className="mt-1 text-xl font-semibold text-white tabular-nums">{value}</p>
     </div>
   );
 }

@@ -42,3 +42,9 @@ next-env.d.ts
 
 # auto-generated files
 skills-lock.json
+.agents
+.claude
+docs/
+remotion.config.ts
+landing-page-rework
+cirka-SOT 

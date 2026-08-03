@@ -11,7 +11,7 @@ import { STATUS_LABELS } from "@/types/domain";
 import { classNames } from "@/lib/utils";
 
 const baseFieldStyles =
-  "w-full rounded-md border border-[var(--line-strong)] bg-[var(--paper)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition-all duration-200 ease-[var(--ease-out)] focus:border-[var(--brand-primary)] focus:ring-1 focus:ring-[var(--brand-primary)] placeholder:text-[var(--ink-muted)]";
+  "w-full rounded-md border border-[var(--line-strong)] bg-[var(--paper)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition-[border-color,box-shadow] duration-200 ease-[var(--ease-out)] focus:border-[var(--brand-primary)] focus:ring-1 focus:ring-[var(--brand-primary)] focus:shadow-[0_0_0_3px_var(--brand-primary-muted)] placeholder:text-[var(--ink-muted)]";
 
 export function Button<T extends ElementType = "button">({
   as,
@@ -38,9 +38,11 @@ export function Button<T extends ElementType = "button">({
   return (
     <Component
       className={classNames(
-        "inline-flex items-center justify-center font-bold uppercase tracking-[0.15em] transition-all duration-300 ease-[var(--ease-out)] rounded-full disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]",
+        "inline-flex items-center justify-center font-bold uppercase tracking-[0.15em] rounded-full disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]",
+        "transition-[transform,box-shadow,background-color] duration-[160ms] ease-[var(--ease-out)]",
         sizeStyles,
         variantStyles,
+        variant === "primary" ? "hover:shadow-[0_2px_12px_rgba(255,92,0,0.2)]" : "",
         className,
       )}
       style={
@@ -69,11 +71,14 @@ export function Field({
   label,
   error,
   hint,
+  required,
   children,
 }: {
   label: string;
   error?: string;
   hint?: string;
+  /** Marks the label so the requirement is visible before the form is submitted. */
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -83,6 +88,7 @@ export function Field({
         error ? "text-red-500" : "text-[var(--ink-muted)]"
       )}>
         {label}
+        {required ? <span className="ml-1 text-[var(--brand-primary)]" aria-hidden="true">*</span> : null}
       </span>
       {children}
       {hint && !error ? <span className="text-xs text-[var(--ink-muted)]">{hint}</span> : null}
@@ -123,13 +129,23 @@ export function StatusBadge({
 
 export function Panel({
   className,
+  interactive = false,
   children,
+  ...props
 }: {
   className?: string;
+  interactive?: boolean;
   children: React.ReactNode;
-}) {
+} & Omit<React.HTMLAttributes<HTMLElement>, "className" | "children">) {
   return (
-    <section className={classNames("rounded-[1.5rem] border border-[var(--line)] bg-[var(--paper)] shadow-[0_4px_24px_-8px_rgba(0,0,0,0.05)]", className)}>
+    <section
+      className={classNames(
+        "rounded-[1.5rem] border border-[var(--line)] bg-[var(--paper)] shadow-[0_4px_24px_-8px_rgba(0,0,0,0.05)]",
+        interactive && "transition-[transform,box-shadow] duration-300 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)]",
+        className,
+      )}
+      {...props}
+    >
       {children}
     </section>
   );

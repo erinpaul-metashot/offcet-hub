@@ -53,7 +53,7 @@ export default function Home() {
       <Script src="/liquid-glass.js" strategy="afterInteractive" />
 
       {/* TOP NAVBAR */}
-      <Navbar scrollContainerRef={mainRef} showLoginButton />
+      <Navbar scrollContainerRef={mainRef} showLoginButton showDemoButton />
 
       {/* SECTION 1: HERO */}
       <section className="relative w-full min-h-[100dvh] md:h-screen flex flex-col md:snap-start overflow-hidden bg-charcoal">

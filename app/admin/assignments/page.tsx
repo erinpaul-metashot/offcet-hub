@@ -261,14 +261,14 @@ export default function AssignmentsPage() {
           </div>
 
           {/* Lots Cards List */}
-          <div className="flex flex-col gap-3 overflow-y-auto pr-1 pb-4 flex-1">
+          <div className="flex flex-col gap-3 overflow-y-auto pr-1 pb-4 flex-1 min-h-0">
             <AnimatePresence mode="popLayout">
               {filteredLots.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="rounded-xl border border-dashed border-[var(--line)] p-8 text-center text-sm text-[var(--ink-muted)] bg-[var(--paper)]"
+                  className="shrink-0 rounded-xl border border-dashed border-[var(--line)] p-8 text-center text-sm text-[var(--ink-muted)] bg-[var(--paper)]"
                 >
                   <Inbox size={32} className="mx-auto mb-3 text-[var(--line-strong)] opacity-60" />
                   No lots found matching filters.
@@ -291,8 +291,8 @@ export default function AssignmentsPage() {
                         }
                       }}
                       className={classNames(
-                        "group cursor-pointer rounded-xl p-4 transition-all relative overflow-hidden",
-                        isSelected 
+                        "group shrink-0 cursor-pointer rounded-xl p-4 transition-all relative overflow-hidden",
+                        isSelected
                           ? "bg-[var(--brand-green-muted)]/40 border border-[var(--brand-green)]/30 ring-1 ring-[var(--brand-green)]/30" 
                           : "bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--line-strong)] hover:shadow-sm"
                       )}
@@ -452,7 +452,7 @@ export default function AssignmentsPage() {
                   </div>
 
                   {/* Tab Content Area */}
-                  <div className="flex-1 overflow-hidden flex flex-col p-6">
+                  <div className="flex-1 min-h-0 overflow-hidden flex flex-col p-6">
                     {activeTab === "recruit" ? (
                       /* RECRUIT TAB CONTENT */
                       <motion.div
@@ -504,7 +504,7 @@ export default function AssignmentsPage() {
                         </div>
 
                         {/* Candidates List */}
-                        <div className="flex-1 overflow-y-auto border border-[var(--line)] rounded-xl bg-[var(--surface)] p-2">
+                        <div className="flex-1 min-h-0 overflow-y-auto border border-[var(--line)] rounded-xl bg-[var(--surface)] p-2">
                           {assignableUsers === undefined ? (
                             <div className="flex flex-col items-center justify-center h-full text-sm text-[var(--ink-muted)] gap-3">
                               <Spinner size="md" variant="black" />
@@ -669,7 +669,7 @@ export default function AssignmentsPage() {
                         exit={{ opacity: 0, y: -10 }}
                         className="flex flex-col h-full"
                       >
-                        <div className="flex-1 overflow-y-auto">
+                        <div className="flex-1 min-h-0 overflow-y-auto">
                           {currentAssignments === undefined ? (
                             <div className="flex flex-col items-center justify-center h-full text-sm text-[var(--ink-muted)] gap-3">
                               <Spinner size="md" variant="black" />

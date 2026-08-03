@@ -31,6 +31,7 @@
 
     /* Page Colors */
     --surface: #F9FAFB; /* Off-white for structural contrast against pure white cards */
+    --surface-elevated: #F3F4F6; /* Subtle lift for grouping containers */
     --paper: var(--color-pure-white);
     
     /* Typography */
@@ -55,8 +56,20 @@
     color: var(--ink);
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
+    scroll-behavior: smooth;
     scrollbar-color: var(--color-cirka-orange) var(--color-charcoal);
     scrollbar-width: thin;
+  }
+
+  /* Accessible focus ring — visible on keyboard nav only */
+  :focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
   }
 
   a {
@@ -159,5 +172,89 @@
 .animate-cirka-dot {
   animation: cirka-dot-pulse 2s ease-in-out infinite;
   transform-origin: 50px 50px;
+}
+
+/* Stagger entry animation — used by dashboard cards, role cards, list items */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-stagger-in {
+  opacity: 0;
+  animation: fadeInUp 300ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.animate-stagger-in:nth-child(1) { animation-delay: 0ms; }
+.animate-stagger-in:nth-child(2) { animation-delay: 50ms; }
+.animate-stagger-in:nth-child(3) { animation-delay: 100ms; }
+.animate-stagger-in:nth-child(4) { animation-delay: 150ms; }
+.animate-stagger-in:nth-child(5) { animation-delay: 200ms; }
+.animate-stagger-in:nth-child(6) { animation-delay: 250ms; }
+.animate-stagger-in:nth-child(7) { animation-delay: 300ms; }
+.animate-stagger-in:nth-child(8) { animation-delay: 350ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-stagger-in {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+/* Dialog entry — the backdrop settles, the panel rises into it */
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Drawer entry — slides in from the trailing edge over the backdrop */
+@keyframes drawerIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-backdrop-in {
+  animation: backdropIn 160ms var(--ease-out) forwards;
+}
+
+.animate-dialog-in {
+  animation: dialogIn 220ms var(--ease-out) forwards;
+}
+
+.animate-drawer-in {
+  animation: drawerIn 240ms var(--ease-out) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-backdrop-in,
+  .animate-dialog-in,
+  .animate-drawer-in {
+    animation: none;
+  }
 }
 
