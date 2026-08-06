@@ -1,6 +1,6 @@
 "use client";
 
-/** The six-stage allocation lifecycle, rendered as a stepper — detail view only. */
+/** The six-stage allocation lifecycle, rendered as a stepper: detail view only. */
 
 import { AlertTriangle, Check, X } from "lucide-react";
 import { classNames } from "@/lib/utils";

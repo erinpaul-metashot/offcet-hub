@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Mail, Pencil, Phone, X } from "lucide-react";
 import { Button, EmptyState, Field, Input, Panel, Select } from "@/components/ui";
 import { classNames } from "@/lib/utils";
@@ -16,6 +17,8 @@ import {
 } from "../../_components/cirka-ui";
 import { useAction } from "../../_components/use-action";
 
+const TAB_TITLES = ["Awaiting review", "Approved", "Disabled", "Rejected"];
+
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   const first = parts[0]?.[0] ?? "";
@@ -25,13 +28,17 @@ function getInitials(name: string): string {
 
 export default function AdminUsersPage() {
   const store = useDemoStore();
+  const searchParams = useSearchParams();
   const { run, error, pending } = useAction();
   const view = getUserManagementView(store.db);
   const organisations = listOrganisations(store.db);
-  
+
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [activeAction, setActiveAction] = useState<Record<string, "reject" | "disable" | null>>({});
-  const [activeTab, setActiveTab] = useState("Awaiting review");
+  const [activeTab, setActiveTab] = useState(() => {
+    const requested = searchParams.get("tab");
+    return TAB_TITLES.find((title) => title.toLowerCase() === requested?.toLowerCase()) ?? "Awaiting review";
+  });
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -115,11 +122,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="People"
-        title="Accounts and access"
-        description="Users belong to organisations, and permission questions are asked of the organisation. Accounts are disabled rather than deleted, so project history and audit entries survive someone leaving."
-      />
+      <SectionHeading eyebrow="People" title="Accounts and access" />
 
       {error && <NoticeBanner tone="blocking" title="That change was refused">{error}</NoticeBanner>}
 

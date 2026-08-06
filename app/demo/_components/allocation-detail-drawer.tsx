@@ -273,7 +273,7 @@ export function AllocationDetailDrawer({
                 </Field>
               </div>
 
-              <Field label="Quality rating (1–5)">
+              <Field label="Quality rating (1-5)">
                 <Input
                   type="number"
                   min="1"

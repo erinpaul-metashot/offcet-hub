@@ -90,7 +90,7 @@ function OrganisationActions({
           View
         </Button>
         {/* Fixed-width slot: reserved whether Approve, Suspend, or nothing renders, so
-            the rail's total width — and therefore the View button's position — never
+            the rail's total width: and therefore the View button's position: never
             shifts between rows. */}
         <div className="flex w-26 shrink-0">
           {showApprove && (
@@ -238,11 +238,7 @@ export default function AdminOrganisationsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="Organisations"
-        title="Who is in the network"
-        description="Organisation, not user, is the unit of ownership and access. Every operational record belongs to one, and permission questions are asked of it."
-      />
+      <SectionHeading eyebrow="Organisations" title="Who is in the network" />
 
       {error && <NoticeBanner tone="blocking" title="That change was refused">{error}</NoticeBanner>}
 
@@ -392,14 +388,6 @@ export default function AdminOrganisationsPage() {
         <Modal
           eyebrow={editing.organisation ? "Edit organisation" : "New organisation"}
           title={editing.organisation?.name ?? "Register a company in the network"}
-          description={
-            editing.organisation ? undefined : (
-              <>
-                It joins as <span className="text-[var(--ink)]">pending</span> and needs approving
-                before it can trade.
-              </>
-            )
-          }
           onClose={closeForm}
         >
           <OrganisationForm
@@ -422,13 +410,7 @@ export default function AdminOrganisationsPage() {
           pending={removal.pending}
           onCancel={closeRemoval}
           onConfirm={() => handleRemove(removing)}
-          body={
-            <>
-              It stops appearing anywhere in the network, along with its people and sites. Its
-              batches, allocations and audit history stay intact — nothing already recorded
-              changes.
-            </>
-          }
+          body="People and sites go with it. Ledger history stays."
         />
       )}
     </div>

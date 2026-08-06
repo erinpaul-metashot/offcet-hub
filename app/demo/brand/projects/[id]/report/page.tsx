@@ -88,7 +88,7 @@ export default function BrandProjectReportPage() {
               value={
                 operational.demandToMatchDays !== undefined
                   ? `${operational.demandToMatchDays} days`
-                  : "—"
+                  : "-"
               }
             />
             <DataRow label="Delivery accuracy" value={formatPercent(operational.deliveryAccuracy)} />
@@ -136,7 +136,7 @@ export default function BrandProjectReportPage() {
                   <td className="py-2 pr-4 text-[var(--ink-muted)]">{row.responsible}</td>
                   <td className="py-2 pr-4 text-[var(--ink-muted)]">{formatDate(row.plannedDate)}</td>
                   <td className="py-2 pr-4 text-[var(--ink-muted)]">{formatDate(row.actualDate)}</td>
-                  <td className="py-2 text-[var(--ink-muted)]">{row.note ?? "—"}</td>
+                  <td className="py-2 text-[var(--ink-muted)]">{row.note ?? "-"}</td>
                 </tr>
               ))}
             </tbody>
@@ -168,10 +168,8 @@ export default function BrandProjectReportPage() {
               }
             />
           </dl>
-          <p className="rounded-2xl bg-[var(--surface)] p-4 text-xs leading-relaxed text-[var(--ink-muted)]">
-            This report contains no carbon or water figures. CIRKA publishes environmental indicators
-            only where an agreed methodology and source factors exist. Maker cost breakdowns, labour
-            rates, supplier prices and margins are excluded by design.
+          <p className="border-t border-[var(--line)] pt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+            Excluded by design — carbon, water, maker costs
           </p>
         </section>
       </Panel>

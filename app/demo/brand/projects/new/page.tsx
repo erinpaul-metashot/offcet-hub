@@ -75,7 +75,7 @@ export default function NewBriefPage() {
       if (demand.include) {
         await store.createResourceRequest("brand", {
           projectId,
-          title: demand.title || `${project.title} — material request`,
+          title: demand.title || `${project.title}: material request`,
           materialCategory: demand.materialCategory,
           materialDescription: demand.materialDescription || undefined,
           compositionRequirements: demand.compositionRequirements || undefined,
@@ -105,11 +105,7 @@ export default function NewBriefPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="New brief"
-        title="Tell CIRKA what you want to make"
-        description="The brief is the top of the proof view. Fill out the project parameters on the left while watching your live dashboard proof card render on the right."
-      />
+      <SectionHeading eyebrow="New brief" title="Tell CIRKA what you want to make" />
 
       {error && <NoticeBanner tone="blocking" title="The brief was not created">{error}</NoticeBanner>}
 
@@ -137,7 +133,7 @@ export default function NewBriefPage() {
               />
             </Field>
 
-            <Field label="Objective" required hint="What are you trying to prove or achieve?">
+            <Field label="Objective" required>
               <Textarea
                 required
                 value={project.objective}
@@ -231,10 +227,6 @@ export default function NewBriefPage() {
 
             {demand.include && (
               <div className="space-y-5 pt-1">
-                <p className="text-xs text-[var(--ink-muted)]">
-                  CIRKA starts matching across verified craft facilities as soon as this brief is submitted.
-                </p>
-
                 <Field label="Request title">
                   <Input
                     value={demand.title}
@@ -437,19 +429,19 @@ export default function NewBriefPage() {
               <div className="grid grid-cols-2 gap-4 text-xs text-[var(--ink-muted)] bg-[var(--surface)] p-3 rounded-lg border border-[var(--line)]">
                 <div>
                   <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink)] mb-0.5">Intended Product</span>
-                  <span className="text-[var(--ink-muted)]">{project.intendedProduct || "—"}</span>
+                  <span className="text-[var(--ink-muted)]">{project.intendedProduct || "-"}</span>
                 </div>
                 <div>
                   <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink)] mb-0.5">Design Intent</span>
-                  <span className="text-[var(--ink-muted)]">{project.designIntent || "—"}</span>
+                  <span className="text-[var(--ink-muted)]">{project.designIntent || "-"}</span>
                 </div>
                 <div>
                   <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink)] mb-0.5">Commercial Objectives</span>
-                  <span className="text-[var(--ink-muted)]">{project.commercialObjectives || "—"}</span>
+                  <span className="text-[var(--ink-muted)]">{project.commercialObjectives || "-"}</span>
                 </div>
                 <div>
                   <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink)] mb-0.5">Impact Objectives</span>
-                  <span className="text-[var(--ink-muted)]">{project.impactObjectives || "—"}</span>
+                  <span className="text-[var(--ink-muted)]">{project.impactObjectives || "-"}</span>
                 </div>
               </div>
 
@@ -479,20 +471,20 @@ export default function NewBriefPage() {
                     </div>
                     <div>
                       <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-0.5">Needed By</span>
-                      <span className="text-[var(--ink)] font-medium">{demand.neededBy ? formatDate(toTimestamp(demand.neededBy)) : "—"}</span>
+                      <span className="text-[var(--ink)] font-medium">{demand.neededBy ? formatDate(toTimestamp(demand.neededBy)) : "-"}</span>
                     </div>
                     <div className="col-span-2">
                       <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-0.5">Requirements (Desc · Comp · Quality)</span>
                       <span className="text-[var(--ink)] leading-snug block">
                         {[demand.materialDescription, demand.compositionRequirements, demand.qualityRequirements].filter(Boolean).length > 0 
                           ? [demand.materialDescription, demand.compositionRequirements, demand.qualityRequirements].filter(Boolean).join(" · ") 
-                          : "—"}
+                          : "-"}
                       </span>
                     </div>
                     <div className="col-span-2">
                       <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-0.5">Location Preference</span>
                       <span className="text-[var(--ink)]">
-                        {demand.productionLocationPreference || "—"}
+                        {demand.productionLocationPreference || "-"}
                         {demand.maxDistanceKm ? ` (Max ${demand.maxDistanceKm}km)` : ""}
                       </span>
                     </div>

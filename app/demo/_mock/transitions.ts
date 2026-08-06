@@ -54,7 +54,9 @@ export const PRODUCTION_TRANSITIONS: Record<ProductionStatus, ProductionStatus[]
 
 export const REQUEST_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   draft: ["submitted", "cancelled"],
-  submitted: ["under_review", "cancelled"],
+  /* Closing straight from submitted: CIRKA can look, find nothing, and say so
+     without first opening a review the matching workspace already offers. */
+  submitted: ["under_review", "unfulfillable", "cancelled"],
   under_review: ["matched", "partially_matched", "unfulfillable"],
   partially_matched: ["matched", "in_delivery"],
   matched: ["in_delivery"],
@@ -119,7 +121,7 @@ export function assertProjectTransition(from: ProjectStatus, to: ProjectStatus) 
 }
 
 /* ------------------------------------------------------------------ *
- * The production balance check — 05_SYSTEM_DESIGN §4
+ * The production balance check: 05_SYSTEM_DESIGN §4
  * ------------------------------------------------------------------ *
  *   received = used + reusable remaining + returned
  *   used     = incorporated + prototypes + offcuts + loss
@@ -159,7 +161,7 @@ export function checkMaterialBalance(production: ProductionBatch): BalanceCheck 
     const gap = round(received - accountedFor);
     problems.push(
       gap > 0
-        ? `${gap} ${production.unit} of the received material is unaccounted for — used, reusable remaining and returned must add up to ${received}.`
+        ? `${gap} ${production.unit} of the received material is unaccounted for: used, reusable remaining and returned must add up to ${received}.`
         : `Used, reusable remaining and returned add up to ${accountedFor} ${production.unit}, which is more than the ${received} ${production.unit} received.`,
     );
   }
@@ -168,7 +170,7 @@ export function checkMaterialBalance(production: ProductionBatch): BalanceCheck 
     const gap = round(used - usedBreakdown);
     problems.push(
       gap > 0
-        ? `${gap} ${production.unit} of the material used is not broken down — incorporated, prototypes, offcuts and loss must add up to ${used}.`
+        ? `${gap} ${production.unit} of the material used is not broken down: incorporated, prototypes, offcuts and loss must add up to ${used}.`
         : `Incorporated, prototypes, offcuts and loss add up to ${usedBreakdown} ${production.unit}, which is more than the ${used} ${production.unit} used.`,
     );
   }

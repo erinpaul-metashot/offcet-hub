@@ -12,11 +12,7 @@ export default function AdminProductionPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="Production"
-        title="Every run in the network"
-        description="Open a batch to check the material balance, the outputs and the evidence before marking it CIRKA reviewed. Cost data is visible here and to the maker only."
-      />
+      <SectionHeading eyebrow="Production" title="Every run in the network" />
 
       {rows.length === 0 ? (
         <EmptyState title="No production yet" body="Makers create a batch against an allocation." />
@@ -29,7 +25,7 @@ export default function AdminProductionPage() {
               title={`${production.reference} · ${production.productName}`}
               meta={
                 <>
-                  {makerName} · from {batch?.reference ?? "—"}
+                  {makerName} · from {batch?.reference ?? "-"}
                   {project ? ` · ${project.title}` : ""} ·{" "}
                   {outputs.reduce((total, output) => total + (output.numberCompleted ?? 0), 0)} units
                   {production.materialYield !== undefined

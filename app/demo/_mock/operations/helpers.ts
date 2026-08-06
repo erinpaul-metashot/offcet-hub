@@ -25,7 +25,7 @@ export function requireRow<T extends TableName>(
   return row as Row<T>;
 }
 
-/** Immutable row patch — returns a new database, never mutates the old one. */
+/** Immutable row patch: returns a new database, never mutates the old one. */
 export function patchRow<T extends TableName>(
   db: MockDatabase,
   table: T,
@@ -72,7 +72,7 @@ export function requireText(value: string | undefined, message: string): string 
 /* ------------------------------------------------------------------ *
  * Shared field validators
  *
- * Organisations and facilities record the same kinds of value — an address,
+ * Organisations and facilities record the same kinds of value: an address,
  * a country, a coordinate pair, a contact email. They are validated in one
  * place so the two forms cannot drift apart on what counts as valid.
  * ------------------------------------------------------------------ */
@@ -135,6 +135,15 @@ export function requirePositive(value: number | undefined, message: string): num
   }
 
   return value;
+}
+
+/** Same as `requirePositive`, but absent stays absent instead of failing. */
+export function optionalPositive(value: number | undefined, message: string): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return requirePositive(value, message);
 }
 
 /** Next sequence number for a human-readable reference. */

@@ -16,16 +16,12 @@ export default function BrandApprovalsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="Approvals"
-        title="Proposed matches waiting on you"
-        description="CIRKA shortlists, a person decides, and the reason is written down. Approving reserves the quantity and creates the allocation to the custodian."
-      />
+      <SectionHeading eyebrow="Approvals" title="Proposed matches waiting on you" />
 
       {view.pendingApprovals.length === 0 ? (
         <EmptyState
           title="Nothing waiting"
-          body="When CIRKA proposes a resource against one of your requests, it appears here with the reasoning."
+          body="Proposed matches appear here."
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--paper)]">
@@ -81,7 +77,7 @@ export default function BrandApprovalsPage() {
                         {formatQuantity(match.quantityProposed, match.unit)}
                       </p>
                       <p className="text-xs text-[var(--ink-muted)]">
-                        of {request ? formatQuantity(request.quantityNeeded, request.unit) : "—"}
+                        of {request ? formatQuantity(request.quantityNeeded, request.unit) : "-"}
                       </p>
                     </td>
                     <td className="px-5 py-4 text-right text-[var(--ink-muted)]">

@@ -8,6 +8,7 @@
 
 import { emptyPots } from "../ledger";
 import type { MovementInput } from "../ledger";
+import { RETEXCIR } from "../domain";
 import type { ResourceBatch } from "../types";
 import {
   DEMO_ADMIN_ID,
@@ -54,7 +55,7 @@ function batch(entry: Omit<ResourceBatch, "pots" | "quantityOriginal">): Resourc
 
 export const batchSeeds: BatchSeed[] = [
   /* ---------------------------------------------------------------- *
-   * The golden thread — the 500 kg worked example from 06_DATA_MODEL §3
+   * The golden thread: the 500 kg worked example from 06_DATA_MODEL §3
    * ---------------------------------------------------------------- */
   {
     batch: batch({
@@ -79,7 +80,7 @@ export const batchSeeds: BatchSeed[] = [
       locationText: "Hamnvägen 3, 602 33 Norrköping, Sweden",
       latitude: 58.5921,
       longitude: 16.2077,
-      status: "available",
+      status: "awaiting_allocation",
       dataSource: "manual_entry",
       assuranceLevel: "cirka_reviewed",
       reviewedAt: monthsAgo(2),
@@ -212,7 +213,7 @@ export const batchSeeds: BatchSeed[] = [
     ],
   },
 
-  /* Denim — dispatched, waiting for the custodian to confirm receipt. */
+  /* Denim: dispatched, waiting for the custodian to confirm receipt. */
   {
     batch: batch({
       _id: BATCH_DENIM,
@@ -220,7 +221,7 @@ export const batchSeeds: BatchSeed[] = [
       ownerOrgId: ORG_NORDVAST,
       sourceFacilityId: FAC_NORDVAST_SOURCE,
       createdByUserId: DEMO_MANUFACTURER_ID,
-      name: "Selvedge denim panels — B-grade",
+      name: "Selvedge denim panels: B-grade",
       description:
         "14 oz selvedge denim panels rejected on shade tolerance. Fully usable for accessories and patchwork. Sorted into three shade groups, on pallets.",
       materialCategory: "denim",
@@ -236,7 +237,7 @@ export const batchSeeds: BatchSeed[] = [
       locationText: "Industrigatan 14, 602 28 Norrköping, Sweden",
       latitude: 58.5877,
       longitude: 16.192,
-      status: "available",
+      status: "awaiting_allocation",
       dataSource: "manual_entry",
       assuranceLevel: "cirka_reviewed",
       reviewedAt: monthsAgo(1),
@@ -288,7 +289,7 @@ export const batchSeeds: BatchSeed[] = [
     ],
   },
 
-  /* Merino — reserved against a match the brand has not decided on yet. */
+  /* Merino: reserved against a match the brand has not decided on yet. */
   {
     batch: batch({
       _id: BATCH_MERINO,
@@ -296,7 +297,7 @@ export const batchSeeds: BatchSeed[] = [
       ownerOrgId: ORG_NORDVAST,
       sourceFacilityId: FAC_NORDVAST_STORE,
       createdByUserId: "user_manufacturer_2",
-      name: "Merino knit panels — winter surplus",
+      name: "Merino knit panels: winter surplus",
       description:
         "Unused merino knit panels from a cancelled winter order. Charcoal and deep navy, machine washable treatment, mothproof storage since production.",
       materialCategory: "knitwear",
@@ -312,7 +313,7 @@ export const batchSeeds: BatchSeed[] = [
       locationText: "Hamnvägen 3, 602 33 Norrköping, Sweden",
       latitude: 58.5921,
       longitude: 16.2077,
-      status: "available",
+      status: "awaiting_allocation",
       dataSource: "manual_entry",
       assuranceLevel: "cirka_reviewed",
       reviewedAt: daysAgo(18),
@@ -346,7 +347,7 @@ export const batchSeeds: BatchSeed[] = [
     ],
   },
 
-  /* Twill — fully available, nothing committed. */
+  /* Twill: fully available, nothing committed. */
   {
     batch: batch({
       _id: BATCH_TWILL,
@@ -354,7 +355,7 @@ export const batchSeeds: BatchSeed[] = [
       ownerOrgId: ORG_NORDVAST,
       sourceFacilityId: FAC_NORDVAST_SOURCE,
       createdByUserId: DEMO_MANUFACTURER_ID,
-      name: "Cotton twill roll ends — mixed colours",
+      name: "Cotton twill roll ends: mixed colours",
       description:
         "Roll ends between 4 and 18 metres, 260 gsm cotton twill. Twelve colourways, no visible faults. Suited to small-batch workwear production.",
       materialCategory: "cotton_offcuts",
@@ -370,7 +371,7 @@ export const batchSeeds: BatchSeed[] = [
       locationText: "Industrigatan 14, 602 28 Norrköping, Sweden",
       latitude: 58.5877,
       longitude: 16.192,
-      status: "available",
+      status: "awaiting_allocation",
       dataSource: "manual_entry",
       assuranceLevel: "cirka_reviewed",
       reviewedAt: daysAgo(11),
@@ -392,10 +393,19 @@ export const batchSeeds: BatchSeed[] = [
         performedByOrgId: ORG_NORDVAST,
         occurredAt: daysAgo(14),
       },
+      {
+        fromBucket: "available",
+        toBucket: "reserved",
+        quantity: 200,
+        reason: "reserved",
+        performedByUserId: DEMO_ADMIN_ID,
+        occurredAt: daysAgo(2),
+        notes: "Reserved against a small-batch workwear order for Malmö Node to hold.",
+      },
     ],
   },
 
-  /* Linen seconds — recorded but not yet released for matching. */
+  /* Linen seconds: recorded but not yet released for matching. */
   {
     batch: batch({
       _id: BATCH_LINEN_SECONDS,
@@ -416,7 +426,7 @@ export const batchSeeds: BatchSeed[] = [
       availableFrom: daysAhead(7),
       availableUntil: daysAhead(70),
       locationText: "Hamnvägen 3, 602 33 Norrköping, Sweden",
-      status: "recorded",
+      status: "draft",
       dataSource: "manual_entry",
       assuranceLevel: "self_reported",
       imageUrls: [PHOTO.patternMaker],
@@ -437,7 +447,7 @@ export const batchSeeds: BatchSeed[] = [
     ],
   },
 
-  /* Webbing — arrived by CSV import. */
+  /* Webbing: arrived by CSV import. */
   {
     batch: batch({
       _id: BATCH_WEBBING,
@@ -457,7 +467,7 @@ export const batchSeeds: BatchSeed[] = [
       availableUntil: daysAhead(80),
       releasedAt: daysAgo(6),
       locationText: "Industrigatan 14, 602 28 Norrköping, Sweden",
-      status: "available",
+      status: "awaiting_allocation",
       dataSource: "csv_import",
       assuranceLevel: "self_reported",
       importJobId: "import_1",
@@ -479,10 +489,28 @@ export const batchSeeds: BatchSeed[] = [
         occurredAt: daysAgo(6),
         notes: "Created by CSV import job.",
       },
+      {
+        fromBucket: "available",
+        toBucket: "reserved",
+        quantity: 90,
+        reason: "reserved",
+        performedByUserId: DEMO_ADMIN_ID,
+        occurredAt: daysAgo(4),
+        notes: "Reserved for a trim reinforcement order bound for Malmö Node.",
+      },
+      {
+        fromBucket: "reserved",
+        toBucket: "allocated",
+        quantity: 90,
+        reason: "allocated",
+        performedByUserId: DEMO_CUSTODIAN_ID,
+        performedByOrgId: ORG_MALMO_NODE,
+        occurredAt: daysAgo(3),
+      },
     ],
   },
 
-  /* Fleece — held at the custodian, part of it with two makers. */
+  /* Fleece: held at the custodian, part of it with two makers. */
   {
     batch: batch({
       _id: BATCH_FLEECE,
@@ -506,7 +534,7 @@ export const batchSeeds: BatchSeed[] = [
       locationText: "Bulltoftavägen 42, 212 23 Malmö, Sweden",
       latitude: 55.6,
       longitude: 13.036,
-      status: "available",
+      status: "awaiting_allocation",
       dataSource: "manual_entry",
       assuranceLevel: "cirka_reviewed",
       reviewedAt: monthsAgo(2),
@@ -626,7 +654,7 @@ export const batchSeeds: BatchSeed[] = [
     ],
   },
 
-  /* Wool coating — allocation accepted, manufacturer still to dispatch. */
+  /* Wool coating: allocation accepted, manufacturer still to dispatch. */
   {
     batch: batch({
       _id: BATCH_WOOL_COATING,
@@ -634,7 +662,7 @@ export const batchSeeds: BatchSeed[] = [
       ownerOrgId: ORG_VASTKUST,
       sourceFacilityId: FAC_VASTKUST_SOURCE,
       createdByUserId: "user_manufacturer_3",
-      name: "Carded wool blend — coating weight",
+      name: "Carded wool blend: coating weight",
       description:
         "Carded wool blend at 480 gsm, coating weight, in four natural shades. Held in climate-controlled storage since the spring season.",
       materialCategory: "wool",
@@ -650,7 +678,7 @@ export const batchSeeds: BatchSeed[] = [
       locationText: "Varvsgatan 8, 411 04 Göteborg, Sweden",
       latitude: 57.6996,
       longitude: 11.9424,
-      status: "available",
+      status: "awaiting_allocation",
       dataSource: "manual_entry",
       assuranceLevel: "cirka_reviewed",
       reviewedAt: monthsAgo(2),
@@ -692,7 +720,7 @@ export const batchSeeds: BatchSeed[] = [
     ],
   },
 
-  /* Curtain linen — arrived from an upstream sorting system. */
+  /* Curtain linen: arrived from an upstream sorting system. */
   {
     batch: batch({
       _id: BATCH_LINEN_CURTAIN,
@@ -714,16 +742,16 @@ export const batchSeeds: BatchSeed[] = [
       locationText: "Varvsgatan 8, 411 04 Göteborg, Sweden",
       latitude: 57.6996,
       longitude: 11.9424,
-      status: "available",
+      status: "awaiting_allocation",
       dataSource: "sorting_system",
       assuranceLevel: "self_reported",
-      externalSystemName: "Fibre sorting line",
-      externalRecordId: "SORT-2026-114-778",
-      externalRecordUrl: "https://sorting.example/records/SORT-2026-114-778",
+      externalSystemName: RETEXCIR.systemName,
+      externalRecordId: "RET-2026-114-778",
+      externalRecordUrl: RETEXCIR.recordUrl("RET-2026-114-778"),
       importedAt: daysAgo(2),
       lastSyncedAt: daysAgo(2),
       imageUrls: [PHOTO.patternMaker],
-      documentNames: ["sorting-line-composition-scan.json"],
+      documentNames: ["retexcir-composition-scan.json"],
       createdAt: daysAgo(2),
       updatedAt: daysAgo(2),
     }),
@@ -740,7 +768,7 @@ export const batchSeeds: BatchSeed[] = [
     ],
   },
 
-  /* Wool felt — part of it written off after storage damage. */
+  /* Wool felt: part of it written off after storage damage. */
   {
     batch: batch({
       _id: BATCH_WOOL_FELT,
@@ -761,7 +789,7 @@ export const batchSeeds: BatchSeed[] = [
       availableUntil: daysAhead(15),
       releasedAt: monthsAgo(3),
       locationText: "Varvsgatan 8, 411 04 Göteborg, Sweden",
-      status: "available",
+      status: "awaiting_allocation",
       exceptionStatus: "damaged",
       exceptionNote: "20 kg water damaged in storage and written off on the manufacturer's report.",
       dataSource: "manual_entry",
@@ -791,12 +819,12 @@ export const batchSeeds: BatchSeed[] = [
         performedByUserId: "user_manufacturer_3",
         performedByOrgId: ORG_VASTKUST,
         occurredAt: daysAgo(20),
-        notes: "Water damage in storage — unusable.",
+        notes: "Water damage in storage: unusable.",
       },
     ],
   },
 
-  /* Lining — pushed in by an ERP, waiting for someone to release it. */
+  /* Lining: pushed in by an ERP, waiting for someone to release it. */
   {
     batch: batch({
       _id: BATCH_LINING,
@@ -813,7 +841,7 @@ export const batchSeeds: BatchSeed[] = [
       qualityClass: "a_grade",
       unit: "kg",
       locationText: "Varvsgatan 8, 411 04 Göteborg, Sweden",
-      status: "imported",
+      status: "draft",
       dataSource: "erp_import",
       assuranceLevel: "self_reported",
       externalSystemName: "Västkust ERP",
@@ -840,7 +868,7 @@ export const batchSeeds: BatchSeed[] = [
     ],
   },
 
-  /* Rib trims — recorded by an organisation still under review. */
+  /* Rib trims: recorded by an organisation still under review. */
   {
     batch: batch({
       _id: BATCH_RIB_TRIMS,
@@ -857,7 +885,7 @@ export const batchSeeds: BatchSeed[] = [
       qualityClass: "mixed",
       unit: "kg",
       locationText: "Rua da Boavista 221, 4050-107 Porto, Portugal",
-      status: "recorded",
+      status: "draft",
       dataSource: "manual_entry",
       assuranceLevel: "self_reported",
       imageUrls: [],
@@ -878,7 +906,7 @@ export const batchSeeds: BatchSeed[] = [
     ],
   },
 
-  /* Second jersey batch — open receipt discrepancy awaiting an admin decision. */
+  /* Second jersey batch: open receipt discrepancy awaiting an admin decision. */
   {
     batch: batch({
       _id: BATCH_JERSEY_SECOND,
@@ -886,7 +914,7 @@ export const batchSeeds: BatchSeed[] = [
       ownerOrgId: ORG_NORDVAST,
       sourceFacilityId: FAC_NORDVAST_SOURCE,
       createdByUserId: DEMO_MANUFACTURER_ID,
-      name: "Cotton jersey offcuts — second run",
+      name: "Cotton jersey offcuts: second run",
       description:
         "Second run of organic cotton jersey offcuts for the Bythorn capsule. Baled, dry stored.",
       materialCategory: "cotton_offcuts",
@@ -899,7 +927,7 @@ export const batchSeeds: BatchSeed[] = [
       availableUntil: daysAhead(35),
       releasedAt: daysAgo(25),
       locationText: "Bulltoftavägen 42, 212 23 Malmö, Sweden",
-      status: "received",
+      status: "completely_assigned",
       exceptionStatus: "receipt_discrepancy",
       exceptionNote: "5 kg short on arrival at Malmö Resource Node. Awaiting manufacturer response.",
       dataSource: "manual_entry",

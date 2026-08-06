@@ -65,18 +65,14 @@ export default function NewProductionBatchPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="New production batch"
-        title="Plan a run against an allocation"
-        description="A production batch is always tied to one allocation, so the material that goes in can be traced back to the batch it came from."
-      />
+      <SectionHeading eyebrow="New production batch" title="Plan a run against an allocation" />
 
       {error && <NoticeBanner tone="blocking" title="The batch was not created">{error}</NoticeBanner>}
 
       {available.length === 0 ? (
         <EmptyState
           title="No allocation available"
-          body="Accept an allocation first — each allocation can carry one production batch."
+          body="Accept an allocation first. One batch per allocation."
         />
       ) : (
         <form onSubmit={submit} className="space-y-6">
@@ -159,7 +155,7 @@ export default function NewProductionBatchPage() {
                   }
                 />
               </Field>
-              <Field label="Planned completion" hint="Drives the overdue queue.">
+              <Field label="Planned completion">
                 <Input
                   type="date"
                   value={form.plannedCompletionDate}

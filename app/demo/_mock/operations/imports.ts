@@ -14,6 +14,7 @@ import type { Id, ImportJob, ImportRowError, MockDatabase } from "../types";
 import type { ViewerScope } from "../visibility";
 import { createResourceBatch } from "./batches";
 import { insertRow, patchRow } from "./helpers";
+import { now as currentTime } from "../clock";
 
 export const IMPORT_COLUMNS = [
   "name",
@@ -36,7 +37,7 @@ export interface ValidatedRow extends ParsedRow {
   errors: ImportRowError[];
 }
 
-/** Deliberately small CSV reader — quoted fields with commas are supported. */
+/** Deliberately small CSV reader: quoted fields with commas are supported. */
 export function parseCsv(text: string): ParsedRow[] {
   const lines = text
     .split(/\r?\n/)
@@ -90,7 +91,7 @@ export interface DelimitedSheet {
 
 /**
  * Reads a pasted or uploaded sheet without assuming its columns already match
- * CIRKA's schema — that mapping happens client-side in the mapping wizard.
+ * CIRKA's schema: that mapping happens client-side in the mapping wizard.
  * Sniffs `;` vs `,` from the header line so sheets exported by locales that
  * use a comma decimal separator still parse correctly.
  */
@@ -144,7 +145,7 @@ export function validateRows(rows: ParsedRow[]): ValidatedRow[] {
       errors.push({
         rowNumber,
         field: "quantity",
-        message: `Quantity must be a positive number — found "${values.quantity || "(blank)"}".`,
+        message: `Quantity must be a positive number: found "${values.quantity || "(blank)"}".`,
       });
     }
 
@@ -194,7 +195,7 @@ export function commitImport(
     validCount: validRows.length,
     failedCount: failedRows.length,
     rowErrors: failedRows.flatMap((row) => row.errors),
-    createdAt: Date.now(),
+    createdAt: currentTime(),
   };
 
   const startingCount = db.resourceBatches.length;
@@ -225,7 +226,7 @@ export function commitImport(
     status: failedRows.length === validRows.length && validRows.length === 0 ? "failed" : "completed",
     createdCount: created,
     updatedCount: updated,
-    completedAt: Date.now(),
+    completedAt: currentTime(),
   });
 
   return {
@@ -245,7 +246,7 @@ export function commitImport(
   };
 }
 
-/** Queues an outbound transfer for a record — the partner system is not built. */
+/** Queues an outbound transfer for a record: the partner system is not built. */
 export function queueOutboundTransfer(
   db: MockDatabase,
   actor: ViewerScope,
@@ -260,7 +261,7 @@ export function queueOutboundTransfer(
     status: "pending",
     attemptCount: 0,
     payloadSummary: args.payloadSummary,
-    createdAt: Date.now(),
+    createdAt: currentTime(),
   });
 
   return appendAudit(withTransfer, {

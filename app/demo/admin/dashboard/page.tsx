@@ -10,11 +10,11 @@ import { useDemoStore } from "../../_mock/store";
 import {
   CirkaBadge,
   NoticeBanner,
-  QuantityPotsBar,
   SectionHeading,
   formatDate,
 } from "../../_components/cirka-ui";
-import { AuditTrail } from "../../_components/records";
+import { NetworkLedgerNodes } from "../../_components/network-ledger-nodes";
+import { RoleActivityFeed } from "../../_components/trace-timeline";
 import { useAction } from "../../_components/use-action";
 
 const SEVERITY_STYLES = {
@@ -31,15 +31,11 @@ export default function AdminDashboardPage() {
   const [resolution, setResolution] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const actorName = (userId?: string) =>
-    store.db.users.find((user) => user._id === userId)?.name ?? "System";
-
   return (
     <div className="space-y-8">
       <DashboardHero
         eyebrow="CIRKA admin"
         title="What needs a decision today"
-        description="The admin queue derives every row directly from current ledger state — zero stale data, zero missed exceptions."
       >
         <SummaryPill label="Open actions" value={String(view.metrics.openActions)} />
         <SummaryPill label="Blocking" value={String(view.metrics.blocking)} />
@@ -52,7 +48,7 @@ export default function AdminDashboardPage() {
 
       {error && <NoticeBanner tone="blocking" title="That action was refused">{error}</NoticeBanner>}
 
-      <Panel className="space-y-5 p-6 sm:p-8">
+      <section className="space-y-5 border-t border-[var(--line)] pt-6">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
             Network ledger · {view.metrics.batchCount} recorded batches
@@ -61,16 +57,12 @@ export default function AdminDashboardPage() {
             {formatQuantity(view.metrics.recorded, "kg")} recorded
           </p>
         </div>
-        <QuantityPotsBar slices={view.potSlices} total={view.metrics.recorded} unit="kg" />
-      </Panel>
+        <NetworkLedgerNodes slices={view.potSlices} unit="kg" />
+      </section>
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-5">
-          <SectionHeading
-            eyebrow="Action queue"
-            title="Ordered by severity, then by age"
-            description="Every row links straight to the decision flow."
-          />
+          <SectionHeading eyebrow="Action queue" title="Ordered by severity, then by age" />
 
           {view.queueBySeverity.map((group) => (
             <div key={group.severity} className="space-y-2">
@@ -174,9 +166,7 @@ export default function AdminDashboardPage() {
           ))}
 
           {view.queue.length === 0 && (
-            <NoticeBanner tone="info" title="Nothing needs a decision">
-              The queue is empty — every request is matched, every allocation has moved, and all evidence has been reviewed.
-            </NoticeBanner>
+            <NoticeBanner tone="info" title="Nothing needs a decision" />
           )}
         </div>
 
@@ -211,12 +201,7 @@ export default function AdminDashboardPage() {
             <HorizontalBarChart items={view.categories} emptyLabel="Nothing recorded yet." />
           </Panel>
 
-          <Panel className="space-y-4 p-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--ink-muted)]">
-              Recent activity
-            </p>
-            <AuditTrail entries={view.recentAudit.map((row) => row.entry)} actorName={actorName} limit={5} />
-          </Panel>
+          <RoleActivityFeed role="admin" limit={8} />
         </div>
       </div>
     </div>

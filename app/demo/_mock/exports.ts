@@ -1,8 +1,8 @@
 /**
  * Exports (05_SYSTEM_DESIGN §8.1).
  *
- * Every export carries the same provenance columns — `data_source`,
- * `assurance_level`, `recorded_by_org`, `recorded_at`, `last_reviewed_at` — so
+ * Every export carries the same provenance columns: `data_source`,
+ * `assurance_level`, `recorded_by_org`, `recorded_at`, `last_reviewed_at`: so
  * a funder reading a spreadsheet can see which rows were checked and which were
  * self-reported.
  */
@@ -98,7 +98,7 @@ export const EXPORTS: ExportDefinition[] = [
         qty_unexplained: batch.pots.unexplained,
         status: batch.status,
         exception: batch.exceptionStatus,
-        /* estimatedValue is protected — excluded from every non-owner export. */
+        /* estimatedValue is protected: excluded from every non-owner export. */
         estimated_value:
           viewer.role === "admin" || viewer.orgId === batch.ownerOrgId
             ? batch.estimatedValue
@@ -185,7 +185,7 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "quantity-movements",
     label: "Quantity movements",
-    description: "The append-only ledger — every pour between pots.",
+    description: "The append-only ledger: every pour between pots.",
     build: (db) =>
       db.quantityMovements.map((movement) => ({
         batch: db.resourceBatches.find((entry) => entry._id === movement.batchId)?.reference,
@@ -319,7 +319,7 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "production-costs",
     label: "Production costs",
-    description: "Restricted — the maker and CIRKA only. Blocked entirely for a brand.",
+    description: "Restricted: the maker and CIRKA only. Blocked entirely for a brand.",
     restricted: true,
     build: (db, viewer) =>
       db.productionCosts
@@ -426,7 +426,7 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "project-summary",
     label: "Project summary",
-    description: "One row per project — the funder-facing roll-up.",
+    description: "One row per project: the funder-facing roll-up.",
     build: (db) =>
       db.projects.map((project) => {
         const requests = db.resourceRequests.filter((entry) => entry.projectId === project._id);

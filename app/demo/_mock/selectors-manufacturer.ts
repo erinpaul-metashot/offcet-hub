@@ -1,4 +1,4 @@
-/** Manufacturer views — what I have recorded, what I owe, what went wrong. */
+/** Manufacturer views: what I have recorded, what I owe, what went wrong. */
 
 import { buildMonthBuckets } from "./buckets";
 import { round } from "./ledger";

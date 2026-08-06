@@ -13,8 +13,8 @@ function messageFor(error: unknown): string {
 /**
  * Runs a store mutation and surfaces the rule it broke.
  *
- * The mock store throws the same errors the backend will return — over
- * allocation, an illegal status jump, an unbalanced production batch — so
+ * The mock store throws the same errors the backend will return: over
+ * allocation, an illegal status jump, an unbalanced production batch: so
  * screens show them rather than failing silently.
  */
 export function useAction() {

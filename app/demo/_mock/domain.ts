@@ -8,7 +8,7 @@
  */
 
 /* ------------------------------------------------------------------ *
- * Group A — who is involved
+ * Group A: who is involved
  * ------------------------------------------------------------------ */
 
 export const ORGANISATION_TYPES = [
@@ -33,7 +33,7 @@ export const PUBLIC_CIRKA_ROLES = ["manufacturer", "custodian", "maker", "brand"
 export const ORG_ROLES = ["owner", "member"] as const;
 export type OrgRole = (typeof ORG_ROLES)[number];
 
-/** `disabled` is new — §20 requires disabling a user without deleting history. */
+/** `disabled` is new: §20 requires disabling a user without deleting history. */
 export const ACCOUNT_STATUSES = ["pending", "approved", "rejected", "disabled"] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
@@ -41,10 +41,10 @@ export const FACILITY_TYPES = ["source", "storage", "production"] as const;
 export type FacilityType = (typeof FACILITY_TYPES)[number];
 
 /* ------------------------------------------------------------------ *
- * Group B — what the material is
+ * Group B: what the material is
  * ------------------------------------------------------------------ */
 
-/** Controlled list — free text makes matching and reporting unreliable. */
+/** Controlled list: free text makes matching and reporting unreliable. */
 export const MATERIAL_CATEGORIES = [
   "cotton_offcuts",
   "denim",
@@ -71,7 +71,7 @@ export const COMPOSITION_CONFIDENCES = ["stated", "tested", "estimated"] as cons
 export type CompositionConfidence = (typeof COMPOSITION_CONFIDENCES)[number];
 
 /* ------------------------------------------------------------------ *
- * Provenance — 04_ARCHITECTURE §6.4
+ * Provenance: 04_ARCHITECTURE §6.4
  * ------------------------------------------------------------------ */
 
 export const DATA_SOURCES = [
@@ -87,7 +87,7 @@ export const ASSURANCE_LEVELS = ["self_reported", "cirka_reviewed", "externally_
 export type AssuranceLevel = (typeof ASSURANCE_LEVELS)[number];
 
 /**
- * The five intake channels of 05_SYSTEM_DESIGN §7 — static vocabulary, not a
+ * The five intake channels of 05_SYSTEM_DESIGN §7: static vocabulary, not a
  * mutable entity. Connectors (erp/sorting) queue a `PendingArrival` for
  * confirmation; manual and csv write straight to a `ResourceBatch`; api has
  * no backend to connect to in the demo.
@@ -100,46 +100,65 @@ export interface IntakeChannelConfig {
   description: string;
 }
 
+/**
+ * The sorting partner behind the `sorting_system` channel
+ * (docs/retexcir_data_requirements.md). Material is uploaded and graded in
+ * Retexcir; CIRKA pulls the finished batches once the account is connected.
+ */
+export const RETEXCIR = {
+  systemName: "Retexcir",
+  /** Host from docs/retexcir_data_requirements.md: swap it when the partner ships a live app. */
+  appUrl: "https://retexcir.example.com",
+  /** What an account reference looks like in Retexcir's own dashboard. */
+  accountRefExample: "RETEXCIR-FAC-01",
+  accountRefPattern: /^RETEXCIR-[A-Z0-9]+(-[A-Z0-9]+)*$/,
+  recordUrl: (recordId: string) => `https://retexcir.example.com/batches/${recordId}`,
+  /** Where Retexcir POSTs a sorted batch once the handshake has run. */
+  webhookUrl: (accountRef: string) =>
+    `https://api.cirka.example/integrations/retexcir/${accountRef.toLowerCase()}`,
+  /** The events CIRKA subscribes to at connect time. */
+  events: ["batch.sorted", "batch.updated"],
+  /** The steps the connect handshake runs through, in order. */
+  handshakeSteps: [
+    "Authorising the account with Retexcir",
+    "Exchanging signing keys",
+    "Registering the CIRKA push endpoint",
+  ],
+} as const;
+
 export const INTAKE_CHANNELS: IntakeChannelConfig[] = [
   {
     id: "manual_entry",
     name: "Manual entry",
     kind: "manual",
     dataSource: "manual_entry",
-    description: "Record a batch by hand, one at a time.",
+    description: "One at a time",
   },
   {
     id: "csv_import",
     name: "Spreadsheet import",
     kind: "upload",
     dataSource: "csv_import",
-    description: "Paste or upload a sheet and map its columns to CIRKA's fields.",
+    description: "Paste or upload, then map columns",
   },
   {
     id: "erp_import",
     name: "ERP system",
     kind: "connector",
     dataSource: "erp_import",
-    description: "Records your ERP pushes over wait here for confirmation before becoming batches.",
+    description: "Pushed records await confirmation",
   },
   {
     id: "sorting_system",
-    name: "Sorting technology",
+    name: `${RETEXCIR.systemName} sorting`,
     kind: "connector",
     dataSource: "sorting_system",
-    description: "Records your sorting line pushes over wait here for confirmation before becoming batches.",
-  },
-  {
-    id: "api_import",
-    name: "API integration",
-    kind: "unavailable",
-    dataSource: "api_import",
-    description: "Connect a system to push records directly over the CIRKA API.",
+    description: "Connect the account, then pull sorted batches",
   },
 ];
 
 /* ------------------------------------------------------------------ *
- * Quantity pots — 06_DATA_MODEL §3
+ * Quantity pots: 06_DATA_MODEL §3
  * ------------------------------------------------------------------ */
 
 export const QUANTITY_BUCKETS = [
@@ -176,22 +195,20 @@ export const MOVEMENT_REASONS = [
 export type MovementReason = (typeof MOVEMENT_REASONS)[number];
 
 /* ------------------------------------------------------------------ *
- * Status journeys — 05_SYSTEM_DESIGN §2–§5
+ * Status journeys: 05_SYSTEM_DESIGN §2-§5
  * ------------------------------------------------------------------ */
 
+/**
+ * One journey, six steps. Movement detail lives in the pots and in the
+ * allocation status; the batch badge answers only "how far through is it?".
+ */
 export const BATCH_STATUSES = [
-  "recorded",
-  "imported",
-  "available",
-  "reserved",
-  "assigned",
-  "awaiting_dispatch",
-  "in_transit",
-  "received",
-  "partially_allocated",
-  "fully_allocated",
-  "in_transformation",
-  "completed",
+  "draft",
+  "awaiting_review",
+  "awaiting_allocation",
+  "partially_assigned",
+  "completely_assigned",
+  "closed",
 ] as const;
 export type BatchStatus = (typeof BATCH_STATUSES)[number];
 
@@ -244,6 +261,20 @@ export const ALLOCATION_STATUSES = [
 ] as const;
 export type AllocationStatus = (typeof ALLOCATION_STATUSES)[number];
 
+/**
+ * What a custodian can report about a consignment that the weight alone does
+ * not say. Quantity shortfalls are not here: those are raised by
+ * `confirmReceipt` and resolved through the discrepancy path.
+ */
+export const ARRIVAL_ISSUES = [
+  "damaged",
+  "contaminated",
+  "wrong_material",
+  "missing_paperwork",
+  "late",
+] as const;
+export type ArrivalIssue = (typeof ARRIVAL_ISSUES)[number];
+
 export const DISCREPANCY_RESOLUTIONS = [
   "loss_confirmed",
   "count_corrected",
@@ -280,7 +311,7 @@ export const PROJECT_VISIBILITIES = [
 export type ProjectVisibility = (typeof PROJECT_VISIBILITIES)[number];
 
 /* ------------------------------------------------------------------ *
- * Group E — production detail
+ * Group E: production detail
  * ------------------------------------------------------------------ */
 
 export const PRODUCT_CATEGORIES = [
@@ -338,7 +369,7 @@ export const EASE_OF_USE = ["easy", "moderate", "difficult"] as const;
 export type EaseOfUse = (typeof EASE_OF_USE)[number];
 
 /* ------------------------------------------------------------------ *
- * Group F — proof and plumbing
+ * Group F: proof and plumbing
  * ------------------------------------------------------------------ */
 
 export const AUDIT_ACTIONS = [
@@ -424,6 +455,7 @@ export const ACTION_KINDS = [
   "awaiting_dispatch",
   "awaiting_receipt",
   "quantity_discrepancy",
+  "arrival_issue",
   "production_stalled",
   "missing_evidence",
   "awaiting_review",
@@ -565,17 +597,16 @@ export const STATUS_LABELS: Record<string, string> = {
   disabled: "Disabled",
   suspended: "Suspended",
   // resource batch
-  recorded: "Recorded",
-  imported: "Imported",
+  awaiting_review: "Awaiting review",
+  awaiting_allocation: "Awaiting allocation",
+  partially_assigned: "Partially assigned",
+  completely_assigned: "Completely assigned",
+  // quantity pots + allocations
   available: "Available",
   reserved: "Reserved",
-  assigned: "Assigned",
   awaiting_dispatch: "Awaiting dispatch",
   in_transit: "In transit",
   received: "Received",
-  partially_allocated: "Partially allocated",
-  fully_allocated: "Fully allocated",
-  in_transformation: "In transformation",
   completed: "Completed",
   // batch exceptions
   receipt_discrepancy: "Receipt discrepancy",
@@ -629,12 +660,21 @@ export const STATUS_LABELS: Record<string, string> = {
   dismissed: "Dismissed",
 };
 
+export const ARRIVAL_ISSUE_LABELS: Record<ArrivalIssue, string> = {
+  damaged: "Damaged in transit",
+  contaminated: "Contaminated or soiled",
+  wrong_material: "Not the material described",
+  missing_paperwork: "Paperwork missing or wrong",
+  late: "Arrived outside the expected window",
+};
+
 export const ACTION_KIND_LABELS: Record<ActionKind, string> = {
   awaiting_match: "Requests awaiting matching",
   awaiting_acceptance: "Allocations awaiting acceptance",
   awaiting_dispatch: "Resources awaiting dispatch",
   awaiting_receipt: "Receipts awaiting confirmation",
   quantity_discrepancy: "Quantity discrepancies",
+  arrival_issue: "Issues reported on arrival",
   production_stalled: "Production batches with no recent update",
   missing_evidence: "Evidence missing",
   awaiting_review: "Records awaiting CIRKA review",

@@ -17,6 +17,7 @@ import type {
   ResourceBatch,
   User,
 } from "./types";
+import { now as currentTime } from "./clock";
 
 export function findOrganisation(db: MockDatabase, orgId?: Id): Organisation | undefined {
   return orgId ? db.organisations.find((org) => org._id === orgId) : undefined;
@@ -70,7 +71,7 @@ export function formatNumber(value: number): string {
 
 export function formatCurrency(value?: number, currency = "SEK"): string {
   if (value === undefined) {
-    return "—";
+    return "-";
   }
 
   return `${Math.round(value).toLocaleString("en-GB")} ${currency}`;
@@ -78,13 +79,13 @@ export function formatCurrency(value?: number, currency = "SEK"): string {
 
 export function formatPercent(fraction?: number): string {
   if (fraction === undefined) {
-    return "—";
+    return "-";
   }
 
   return `${(fraction * 100).toFixed(1)}%`;
 }
 
-/** Quantity that is still in play — used across the dashboards. */
+/** Quantity that is still in play: used across the dashboards. */
 export function batchActiveQuantity(batch: ResourceBatch): number {
   return activeQuantity(batch.pots);
 }
@@ -132,7 +133,7 @@ export function transfersFor(db: MockDatabase, entityTable: string, entityId: Id
 }
 
 export function isOverdue(date?: number): boolean {
-  return date !== undefined && date < Date.now();
+  return date !== undefined && date < currentTime();
 }
 
 export function daysBetween(from: number, to: number): number {
@@ -145,7 +146,7 @@ export function scheduleNote(planned?: number, actual?: number): string | undefi
     return undefined;
   }
 
-  const reference = actual ?? Date.now();
+  const reference = actual ?? currentTime();
   const difference = daysBetween(planned, reference);
 
   if (difference <= 0) {

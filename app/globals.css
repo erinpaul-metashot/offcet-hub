@@ -10,6 +10,8 @@
 
 @layer base {
   :root {
+    --charcoal: var(--color-charcoal);
+
     /* Brand Palette Mapping */
     --brand-primary: var(--color-cirka-orange);
     --brand-primary-light: color-mix(in srgb, var(--color-cirka-orange) 85%, white);

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { Button, Field, Input } from "@/components/ui";
+import { Button, Field, Input, Select } from "@/components/ui";
+import { ARRIVAL_ISSUES, ARRIVAL_ISSUE_LABELS, type ArrivalIssue } from "../_mock/domain";
 import type { ExpectedArrival } from "../_mock/selectors-custodian";
 import { formatQuantity } from "../_mock/selectors-shared";
 import type { useAction } from "./use-action";
@@ -66,7 +67,7 @@ function ScaleComparison({
                   : "text-[var(--brand-primary)]",
             ].join(" ")}
           >
-            {hasReceived ? received : "—"}
+            {hasReceived ? received : "-"}
             <span className="ml-1 text-sm font-semibold">{unit}</span>
           </p>
         </div>
@@ -84,9 +85,9 @@ function ScaleComparison({
           ].join(" ")}
         >
           {delta > 0
-            ? `${delta} ${unit} short of dispatch note — held as unexplained`
+            ? `${delta} ${unit} short of dispatch note: held as unexplained`
             : delta < 0
-              ? `${Math.abs(delta)} ${unit} over the dispatch note — also flagged`
+              ? `${Math.abs(delta)} ${unit} over the dispatch note: also flagged`
               : "Matches the dispatch note exactly"}
         </p>
       )}
@@ -113,8 +114,11 @@ export function CustodianArrivalDrawer({
   error: string | null;
   onClose: () => void;
 }) {
-  const { allocation, batch, fromName, late } = entry;
+  const { allocation, batch, fromName, late, openIssue } = entry;
   const dispatched = allocation.quantityDispatched ?? allocation.quantityAllocated;
+  const canReportIssue =
+    !openIssue && ["in_transit", "received", "discrepancy"].includes(allocation.status);
+  const [issueForm, setIssueForm] = useState<{ issue: ArrivalIssue; note: string } | null>(null);
   const receivedNum = draft.received !== "" ? Number(draft.received) : null;
   const shortfall =
     receivedNum !== null && !isNaN(receivedNum)
@@ -209,14 +213,14 @@ export function CustodianArrivalDrawer({
               <>
                 <DataRow
                   label="Consignment ref"
-                  value={allocation.dispatchReference ?? "—"}
+                  value={allocation.dispatchReference ?? "-"}
                 />
                 <DataRow
                   label="Dispatched"
                   value={
                     allocation.quantityDispatched !== undefined
                       ? `${formatQuantity(allocation.quantityDispatched, allocation.unit)} · ${formatDate(allocation.dispatchedAt)}`
-                      : "—"
+                      : "-"
                   }
                 />
                 <DataRow
@@ -229,7 +233,7 @@ export function CustodianArrivalDrawer({
               <>
                 <DataRow
                   label="Consignment ref"
-                  value={allocation.dispatchReference ?? "—"}
+                  value={allocation.dispatchReference ?? "-"}
                 />
                 <DataRow
                   label="Dispatched"
@@ -268,7 +272,7 @@ export function CustodianArrivalDrawer({
 
           {/* Status-specific content */}
 
-          {/* Proposed — accept / decline */}
+          {/* Proposed: accept / decline */}
           {allocation.status === "proposed" && (
             <div className="flex flex-wrap gap-3 border-t border-[var(--line)] pt-4">
               <Button
@@ -306,12 +310,10 @@ export function CustodianArrivalDrawer({
           {/* Accepted / awaiting dispatch */}
           {(allocation.status === "accepted" ||
             allocation.status === "awaiting_dispatch") && (
-            <NoticeBanner tone="info" title={`Waiting on ${fromName}`}>
-              Not dispatched yet. Nothing for you to do here until it moves.
-            </NoticeBanner>
+            <NoticeBanner tone="info" title={`Waiting on ${fromName}`} />
           )}
 
-          {/* In transit — receipt form */}
+          {/* In transit: receipt form */}
           {allocation.status === "in_transit" && (
             <div className="space-y-4 rounded-2xl bg-[var(--surface)] p-5">
               <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
@@ -370,6 +372,88 @@ export function CustodianArrivalDrawer({
               unexplained until an admin closes it.
             </NoticeBanner>
           )}
+
+          {/* Reported issue: open with CIRKA, no quantity moved */}
+          {openIssue && (
+            <NoticeBanner
+              tone={openIssue.severity === "blocking" ? "blocking" : "warning"}
+              title={openIssue.title}
+            >
+              <p>{allocation.arrivalIssueNote}</p>
+              <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.14em]">
+                Reported {formatDate(allocation.arrivalIssueReportedAt)} · with CIRKA
+              </p>
+            </NoticeBanner>
+          )}
+
+          {/* Report a problem the weight does not show */}
+          {canReportIssue &&
+            (issueForm === null ? (
+              <button
+                type="button"
+                onClick={() => setIssueForm({ issue: "damaged", note: "" })}
+                className="w-full rounded-2xl border border-dashed border-[var(--line-strong)] px-5 py-4 text-left text-sm text-[var(--ink-muted)] transition-colors duration-150 ease-[var(--ease-out)] hover:border-[var(--brand-primary)] hover:text-[var(--ink)]"
+              >
+                <span className="font-semibold">Something else wrong with it?</span> Report
+                damage, contamination or the wrong material →
+              </button>
+            ) : (
+              <div className="space-y-4 rounded-2xl border border-[var(--line-strong)] bg-[var(--surface)] p-5">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                  Report an issue
+                </p>
+                <Field label="What is wrong">
+                  <Select
+                    value={issueForm.issue}
+                    onChange={(e) =>
+                      setIssueForm({ ...issueForm, issue: e.target.value as ArrivalIssue })
+                    }
+                  >
+                    {ARRIVAL_ISSUES.map((issue) => (
+                      <option key={issue} value={issue}>
+                        {ARRIVAL_ISSUE_LABELS[issue]}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field
+                  label="What did you find"
+                  hint="CIRKA takes this up with the sender. Quantities do not move."
+                >
+                  <Input
+                    value={issueForm.note}
+                    onChange={(e) => setIssueForm({ ...issueForm, note: e.target.value })}
+                    placeholder="Two bales soaked through on the top layer"
+                  />
+                </Field>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    size="sm"
+                    disabled={pending || issueForm.note.trim() === ""}
+                    onClick={async () => {
+                      const ok = await run(() =>
+                        store.reportArrivalIssue("custodian", {
+                          allocationId: allocation._id,
+                          issue: issueForm.issue,
+                          note: issueForm.note,
+                        }),
+                      );
+                      if (ok) setIssueForm(null);
+                    }}
+                  >
+                    Report issue
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={pending}
+                    onClick={() => setIssueForm(null)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ))}
         </div>
 
         {/* ── Sticky footer ── */}

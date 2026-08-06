@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Button, EmptyState, Field, Input, Panel, Select } from "@/components/ui";
 import { MATERIAL_CATEGORIES, UNITS, type MaterialCategory, type Unit } from "../../../../_mock/domain";
 import { categoryLabel, formatQuantity } from "../../../../_mock/selectors-shared";
@@ -31,9 +31,17 @@ export default function ArrivalsInboxPage() {
       <SectionHeading
         eyebrow="Intake · Arrivals"
         title="Confirm what came in"
-        description="Every record here was pushed by a connected system. Confirming creates the batch through the same write path as the manual form; skipping discards it."
         action={
-          <Button as={Link} href="/demo/manufacturer/batches/import" variant="secondary" size="sm">
+          <Button
+            as={Link}
+            href={
+              channel === "sorting_system"
+                ? "/demo/manufacturer/batches/import/retexcir"
+                : "/demo/manufacturer/batches/import"
+            }
+            variant="secondary"
+            size="sm"
+          >
             <ArrowLeft size={15} />
             Back to intake
           </Button>
@@ -43,7 +51,7 @@ export default function ArrivalsInboxPage() {
       {arrivals.length === 0 ? (
         <EmptyState
           title="Nothing left to review"
-          body="Every pushed record has been confirmed or skipped. Check back after the next sync."
+          body="Every pushed record has been handled."
         />
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[20rem_1fr]">
@@ -97,7 +105,7 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
     <Panel className="flex flex-col gap-5 p-6">
       {arrival.updateOf && (
         <NoticeBanner tone="info" title="This will update an existing batch">
-          {arrival.externalSystemName} already sent record {arrival.externalRecordId} — confirming
+          {arrival.externalSystemName} already sent record {arrival.externalRecordId}: confirming
           will update <strong>{arrival.updateOf.reference}</strong> ({arrival.updateOf.name}) rather
           than create a new batch.
         </NoticeBanner>
@@ -112,6 +120,17 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
             Pushed {formatDateTime(arrival.arrivedAt)} · {arrival.externalRecordId ?? "no reference"}
           </p>
         </div>
+        {arrival.externalRecordUrl && (
+          <a
+            href={arrival.externalRecordUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex shrink-0 items-center gap-1.5 text-sm text-[var(--ink-muted)] transition-colors duration-200 ease-[var(--ease-out)] hover:text-[var(--brand-primary)]"
+          >
+            Open in {arrival.externalSystemName}
+            <ExternalLink size={14} />
+          </a>
+        )}
       </div>
 
       {confirmAction.error && (
@@ -262,7 +281,7 @@ function ArrivalField({
     return (
       <DataRow
         label={label}
-        value={<GapNote>CIRKA needs this — {source} did not send it</GapNote>}
+        value={<GapNote>CIRKA needs this: {source} did not send it</GapNote>}
       />
     );
   }

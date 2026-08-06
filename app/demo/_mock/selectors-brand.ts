@@ -1,5 +1,5 @@
 /**
- * The brand and funder proof view (05_SYSTEM_DESIGN §10) — one page telling one
+ * The brand and funder proof view (05_SYSTEM_DESIGN §10): one page telling one
  * story: brief, resource, activation, journey, outputs, results, evidence.
  *
  * These selectors deliberately never join to `productionCosts`. The only figure
@@ -12,6 +12,7 @@ import { materialYield } from "./transitions";
 import type { Id, Match, MockDatabase, Project, ResourceBatch, ResourceRequest } from "./types";
 import { sharedCostPerUnit, stripBatch, type ViewerScope } from "./visibility";
 import { daysBetween, orgName, scheduleNote } from "./selectors-shared";
+import { now as currentTime } from "./clock";
 
 export function listBrandProjects(db: MockDatabase, orgId: Id): Project[] {
   return db.projects
@@ -300,7 +301,7 @@ export function getBrandDashboard(db: MockDatabase, viewer: ViewerScope) {
       match,
       request: db.resourceRequests.find((request) => request._id === match.requestId),
       batch: db.resourceBatches.find((batch) => batch._id === match.batchId),
-      waitingDays: daysBetween(match.proposedAt, Date.now()),
+      waitingDays: daysBetween(match.proposedAt, currentTime()),
     }))
     .filter((entry) => entry.request?.requesterOrgId === viewer.orgId);
 

@@ -25,11 +25,7 @@ export default function AdminBatchesPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="Resource batches"
-        title="Everything in the system"
-        description="Across every manufacturer, however the data arrived. The provenance chip on each row says where it came from and whether anyone has checked it."
-      />
+      <SectionHeading eyebrow="Resource batches" title="Everything in the system" />
 
       <Panel className="p-5">
         <div className="grid gap-4 sm:grid-cols-3">

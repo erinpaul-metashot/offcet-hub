@@ -12,6 +12,8 @@ import { useAction } from "../../../_components/use-action";
 const CHANNEL_HREF: Partial<Record<string, string>> = {
   manual_entry: "/demo/manufacturer/batches/new",
   csv_import: "/demo/manufacturer/batches/import/map",
+  /** Retexcir has its own connect-then-pull flow. */
+  sorting_system: "/demo/manufacturer/batches/import/retexcir",
 };
 
 export default function ImportBatchesPage() {
@@ -27,7 +29,6 @@ export default function ImportBatchesPage() {
       <SectionHeading
         eyebrow="Intake"
         title="Where your material data comes in"
-        description="Five ways a batch can reach CIRKA. Connected systems queue their records here for a human to confirm before anything becomes a batch."
         action={
           <Button as={Link} href="/demo/manufacturer/batches" variant="secondary" size="sm">
             All batches
@@ -41,9 +42,8 @@ export default function ImportBatchesPage() {
             <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--brand-primary)]">
               Waiting on you
             </p>
-            <p className="mt-1 text-sm text-[var(--ink)]">
-              {totalPending} record{totalPending === 1 ? "" : "s"} pushed by a connected system need
-              {totalPending === 1 ? "s" : ""} confirmation before becoming a batch.
+            <p className="mt-1 text-sm tabular-nums text-[var(--ink)]">
+              {totalPending} pushed record{totalPending === 1 ? "" : "s"} awaiting confirmation
             </p>
           </div>
           <Button as={Link} href="/demo/manufacturer/batches/import/inbox" size="sm">
@@ -51,9 +51,7 @@ export default function ImportBatchesPage() {
           </Button>
         </div>
       ) : (
-        <NoticeBanner tone="info" title="Nothing waiting on you">
-          Every record a connected system has pushed has been confirmed or skipped.
-        </NoticeBanner>
+        <NoticeBanner tone="info" title="Nothing waiting on you" />
       )}
 
       <Panel className="divide-y divide-[var(--line)] p-0">
@@ -115,10 +113,7 @@ export default function ImportBatchesPage() {
       <div className="space-y-3">
         <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Recent intake</h2>
         {jobs.length === 0 ? (
-          <EmptyState
-            title="No imports yet"
-            body="Once you commit a spreadsheet import, it will show up here with its row counts."
-          />
+          <EmptyState title="No imports yet" body="Committed imports appear here." />
         ) : (
           <Panel className="divide-y divide-[var(--line)] p-0">
             {jobs.map((job) => (
@@ -159,7 +154,8 @@ function ConnectorRow({
 }) {
   const store = useDemoStore();
   const { run, error, pending } = useAction();
-  const externalSystemName = channelId === "erp_import" ? "Nordväst ERP" : "Fibre sorting line";
+  /** Only the ERP channel lands here: Retexcir has its own page. */
+  const externalSystemName = "Nordväst ERP";
 
   return (
     <div className="space-y-3 px-6 py-4">
@@ -185,7 +181,7 @@ function ConnectorRow({
           onClick={() =>
             run(async () => {
               await store.receiveArrival("manufacturer", {
-                channel: channelId as "erp_import" | "sorting_system",
+                channel: "erp_import",
                 externalSystemName,
               });
             })

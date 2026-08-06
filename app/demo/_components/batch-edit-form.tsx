@@ -35,7 +35,7 @@ function toTimestamp(value: string): number | undefined {
 }
 
 /**
- * Editing a batch changes only its description — never its quantity. Quantity
+ * Editing a batch changes only its description: never its quantity. Quantity
  * moves through the ledger, so there is deliberately no field for it here.
  */
 export function BatchEditForm({
@@ -82,15 +82,13 @@ export function BatchEditForm({
 
   return (
     <Panel className="space-y-5 p-6">
-      <div className="space-y-1">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
           Edit batch details
         </h2>
-        <p className="text-sm text-[var(--ink-muted)]">
-          Quantity is not editable here — it only ever moves through the ledger, and every change is
-          a recorded movement. Everything you change below is written to the audit log with a
-          before and after.
-        </p>
+        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+          Quantity moves through the ledger only
+        </span>
       </div>
 
       {error && <NoticeBanner tone="blocking" title="The change was refused">{error}</NoticeBanner>}
@@ -207,7 +205,7 @@ export function BatchEditForm({
             onChange={(event) => update("locationText", event.target.value)}
           />
         </Field>
-        <Field label="Estimated value (SEK)" hint="Protected — never shown to brands.">
+        <Field label="Estimated value (SEK)" hint="Protected">
           <Input
             type="number"
             min="0"

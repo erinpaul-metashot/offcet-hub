@@ -29,7 +29,6 @@ export default function AdminRequestsPage() {
       <SectionHeading
         eyebrow="Demand"
         title="Requests and matching"
-        description="Demand from brands and makers. Open a request to see the shortlist and record a match — the system suggests candidates, a person decides and writes the reason."
         action={
           <div className="flex flex-col gap-1.5">
             <Field label="Status">

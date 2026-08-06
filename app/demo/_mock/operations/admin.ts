@@ -16,6 +16,7 @@ import {
   requireRow,
   requireText,
 } from "./helpers";
+import { now as currentTime } from "../clock";
 
 export function reviewUser(
   db: MockDatabase,
@@ -34,7 +35,7 @@ export function reviewUser(
 
   const updated = patchRow(db, "users", args.userId, {
     status: args.status,
-    reviewedAt: Date.now(),
+    reviewedAt: currentTime(),
     reviewedBy: actor.userId,
     reviewNotes: args.reviewNotes?.trim() || undefined,
   });
@@ -51,7 +52,7 @@ export function reviewUser(
 }
 
 /**
- * Users are disabled, never deleted — §20 requires history to survive the
+ * Users are disabled, never deleted: §20 requires history to survive the
  * person leaving.
  */
 export function setUserDisabled(
@@ -73,7 +74,7 @@ export function setUserDisabled(
 
   const updated = patchRow(db, "users", args.userId, {
     status,
-    reviewedAt: Date.now(),
+    reviewedAt: currentTime(),
     reviewedBy: actor.userId,
     reviewNotes: args.note?.trim() || user.reviewNotes,
   });
@@ -114,7 +115,7 @@ export function updateUserDetails(
 
 export interface UserInput {
   name: string;
-  /** Protected — stripped for anyone outside the person's own organisation (§6). */
+  /** Protected: stripped for anyone outside the person's own organisation (§6). */
   email: string;
   /** Protected in the same way. Optional: data minimisation, per the compliance report. */
   phone?: string;
@@ -183,8 +184,8 @@ export function createUser(
     role: input.role,
     orgRole: input.orgRole,
     status: "approved",
-    createdAt: Date.now(),
-    reviewedAt: Date.now(),
+    createdAt: currentTime(),
+    reviewedAt: currentTime(),
     reviewedBy: actor.userId,
   };
 
@@ -202,7 +203,7 @@ export function createUser(
 }
 
 /**
- * Key-presence patch, like `updateOrganisation` — a key sent as `undefined`
+ * Key-presence patch, like `updateOrganisation`: a key sent as `undefined`
  * clears the column, an absent key leaves it alone.
  */
 export function adminUpdateUser(
@@ -276,7 +277,7 @@ export function adminUpdateUser(
  * so the row stays and every read model filters on `deletedAt`. The account is
  * also disabled, so a status-only query never treats it as live.
  *
- * `setUserDisabled` is the lighter action — use it when someone is expected
+ * `setUserDisabled` is the lighter action: use it when someone is expected
  * back. This one is for a person who has left the organisation for good.
  */
 export function removeUser(
@@ -302,8 +303,8 @@ export function removeUser(
 
   const updated = patchRow(db, "users", args.userId, {
     status: "disabled",
-    deletedAt: Date.now(),
-    reviewedAt: Date.now(),
+    deletedAt: currentTime(),
+    reviewedAt: currentTime(),
     reviewedBy: actor.userId,
     reviewNotes: optionalText(args.note) ?? user.reviewNotes,
   });
@@ -330,7 +331,7 @@ export function reviewOrganisation(
 
   const updated = patchRow(db, "organisations", args.orgId, {
     status: args.status,
-    updatedAt: Date.now(),
+    updatedAt: currentTime(),
   });
 
   return appendAudit(updated, {
@@ -345,7 +346,7 @@ export function reviewOrganisation(
 }
 
 /* ------------------------------------------------------------------ *
- * Organisations — 06_DATA_MODEL §organisations
+ * Organisations: 06_DATA_MODEL §organisations
  * ------------------------------------------------------------------ */
 
 /**
@@ -356,7 +357,7 @@ export function reviewOrganisation(
 export interface OrganisationInput {
   name: string;
   type: OrganisationType;
-  /** Company number. Protected — stripped for anyone but the org and CIRKA (§6). */
+  /** Company number. Protected: stripped for anyone but the org and CIRKA (§6). */
   registrationNumber?: string;
   /** VAT / tax reference. Protected in the same way. */
   taxId?: string;
@@ -467,7 +468,7 @@ export function createOrganisation(
     websiteUrl: optionalWebsite(input.websiteUrl),
     description: optionalText(input.description),
     capabilityTags: normaliseCapabilityTags(input.capabilityTags),
-    createdAt: Date.now(),
+    createdAt: currentTime(),
   };
 
   return {
@@ -485,7 +486,7 @@ export function createOrganisation(
 
 /**
  * Only the keys present on the patch are touched, so a screen can send a
- * partial edit. A key present with `undefined` clears the column — that is how
+ * partial edit. A key present with `undefined` clears the column: that is how
  * an optional field is emptied.
  */
 export function updateOrganisation(
@@ -568,7 +569,7 @@ export function updateOrganisation(
 
   const updated = patchRow(db, "organisations", args.orgId, {
     ...patch,
-    updatedAt: Date.now(),
+    updatedAt: currentTime(),
   });
 
   return appendAudit(updated, {
@@ -603,7 +604,7 @@ export function deleteOrganisation(
     throw new OperationError("That organisation has already been removed.");
   }
 
-  const now = Date.now();
+  const now = currentTime();
   const updated = patchRow(db, "organisations", args.orgId, { deletedAt: now, updatedAt: now });
 
   return appendAudit(updated, {
@@ -630,7 +631,7 @@ export function closeActionItem(
 
   const updated = patchRow(db, "actionItems", args.actionItemId, {
     status: args.dismiss ? "dismissed" : "resolved",
-    resolvedAt: Date.now(),
+    resolvedAt: currentTime(),
     resolvedByUserId: actor.userId,
     resolutionNote: note,
   });
@@ -662,13 +663,13 @@ export function retryTransfer(
   const updated = patchRow(db, "integrationTransfers", args.transferId, {
     status: "success",
     attemptCount: transfer.attemptCount + 1,
-    lastAttemptAt: Date.now(),
-    succeededAt: Date.now(),
+    lastAttemptAt: currentTime(),
+    succeededAt: currentTime(),
     errorMessage: undefined,
-    externalRecordId: transfer.externalRecordId ?? `TP-${Date.now().toString().slice(-6)}`,
+    externalRecordId: transfer.externalRecordId ?? `TP-${currentTime().toString().slice(-6)}`,
     externalRecordUrl:
       transfer.externalRecordUrl ??
-      `https://traceability.example/records/TP-${Date.now().toString().slice(-6)}`,
+      `https://traceability.example/records/TP-${currentTime().toString().slice(-6)}`,
   });
 
   const withClosedAction: MockDatabase = {
@@ -678,7 +679,7 @@ export function retryTransfer(
         ? {
             ...item,
             status: "resolved" as const,
-            resolvedAt: Date.now(),
+            resolvedAt: currentTime(),
             resolvedByUserId: actor.userId,
             resolutionNote: "Transfer retried and succeeded.",
           }
@@ -711,6 +712,6 @@ export function recordExport(
     action: "exported",
     actorUserId: actor.userId,
     actorOrgId: actor.orgId,
-    notes: `${args.exportName} exported as ${args.format.toUpperCase()} — ${args.rowCount} rows.`,
+    notes: `${args.exportName} exported as ${args.format.toUpperCase()}: ${args.rowCount} rows.`,
   });
 }

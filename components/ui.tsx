@@ -156,13 +156,14 @@ export function EmptyState({
   body,
 }: {
   title: string;
-  body: string;
+  /** Only the next action to take. Never a sentence explaining the empty list. */
+  body?: string;
 }) {
   return (
     <div className="grid min-h-48 place-items-center rounded-[1.5rem] border border-dashed border-[var(--line-strong)] bg-[var(--paper)] p-8 text-center">
       <div className="max-w-sm space-y-2">
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--ink)]">{title}</p>
-        <p className="text-sm leading-6 text-[var(--ink-muted)]">{body}</p>
+        {body ? <p className="text-sm leading-6 text-[var(--ink-muted)]">{body}</p> : null}
       </div>
     </div>
   );

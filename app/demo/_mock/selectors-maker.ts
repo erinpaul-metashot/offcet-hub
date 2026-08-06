@@ -1,4 +1,4 @@
-/** Maker views — allocations to respond to, production to run, evidence to submit. */
+/** Maker views: allocations to respond to, production to run, evidence to submit. */
 
 import { auditForEntity } from "./audit";
 import { round } from "./ledger";
@@ -6,6 +6,7 @@ import { checkMaterialBalance } from "./transitions";
 import type { Allocation, Id, Match, MockDatabase, ProductionBatch, ResourceRequest } from "./types";
 import { costsForViewer, type ViewerScope } from "./visibility";
 import { evidenceFor, findFacility, orgName, transfersFor } from "./selectors-shared";
+import { now as currentTime } from "./clock";
 
 export interface MakerAllocation {
   allocation: Allocation;
@@ -25,7 +26,7 @@ export function listMakerAllocations(db: MockDatabase, orgId: Id): MakerAllocati
       return {
         allocation,
         batchName: batch?.name ?? "Resource batch",
-        batchReference: batch?.reference ?? "—",
+        batchReference: batch?.reference ?? "-",
         fromName: orgName(db, allocation.fromOrgId),
         hasFeedback: db.suitabilityFeedback.some(
           (entry) => entry.allocationId === allocation._id,
@@ -64,7 +65,7 @@ export function listMakerProduction(db: MockDatabase, orgId: Id) {
       ),
       overdue:
         production.plannedCompletionDate !== undefined &&
-        production.plannedCompletionDate < Date.now() &&
+        production.plannedCompletionDate < currentTime() &&
         !production.actualCompletionDate,
     }))
     .sort((left, right) => right.production.updatedAt - left.production.updatedAt);

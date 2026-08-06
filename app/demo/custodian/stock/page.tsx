@@ -96,11 +96,7 @@ export default function CustodianStockPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading
-        eyebrow="Stock"
-        title="What is physically here"
-        description="You hold this material; you do not own it. Allocate part of a holding to an approved maker — CIRKA will not let you promise more than is uncommitted."
-      />
+      <SectionHeading eyebrow="Stock" title="What is physically here" />
 
       {error && (
         <NoticeBanner tone="blocking" title="That allocation was refused">
@@ -111,7 +107,7 @@ export default function CustodianStockPage() {
       {view.holdings.length === 0 ? (
         <EmptyState
           title="Nothing held"
-          body="Once you confirm receipt of an allocation, the material appears here."
+          body="Confirmed receipts appear here."
         />
       ) : (
         <>

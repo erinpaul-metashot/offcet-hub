@@ -21,7 +21,7 @@ export default function OrganisationDetailPage() {
         <Button variant="secondary" onClick={() => router.back()}>
           &larr; Back
         </Button>
-        <EmptyState title="Organisation Not Found" body="The organisation you are looking for does not exist or has been deleted." />
+        <EmptyState title="Organisation not found" body="It may have been removed." />
       </div>
     );
   }
@@ -37,7 +37,6 @@ export default function OrganisationDetailPage() {
         <SectionHeading
           eyebrow="Organisation Details"
           title={organisation.name}
-          description={organisation.description || "No description provided."}
         />
         <div className="mt-4 flex flex-wrap gap-2 items-center">
           <CirkaBadge status={organisation.status} />
@@ -84,12 +83,12 @@ export default function OrganisationDetailPage() {
               <DataRow
                 label="Company number"
                 value={organisation.registrationNumber ?? "Not recorded"}
-                hint="Protected — CIRKA and the organisation only."
+                hint="Protected"
               />
               <DataRow
                 label="Tax / VAT reference"
                 value={organisation.taxId ?? "Not recorded"}
-                hint="Protected — CIRKA and the organisation only."
+                hint="Protected"
               />
               <DataRow
                 label="Website"
@@ -127,7 +126,6 @@ export default function OrganisationDetailPage() {
                     ? `${organisation.latitude.toFixed(4)}, ${organisation.longitude.toFixed(4)}`
                     : "Not recorded"
                 }
-                hint="Used to rank custodians by distance."
               />
               <DataRow
                 label="Capability tags"

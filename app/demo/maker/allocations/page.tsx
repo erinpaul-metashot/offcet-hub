@@ -72,11 +72,7 @@ export default function MakerAllocationsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="Allocations"
-        title="Material offered to you"
-        description="Accept or decline, confirm what actually arrived, then record what the material was really like. That assessment stays linked to the batch and improves future matching."
-      />
+      <SectionHeading eyebrow="Allocations" title="Material offered to you" />
 
       {error && !openEntry && (
         <NoticeBanner tone="blocking" title="That step was refused">
@@ -87,7 +83,7 @@ export default function MakerAllocationsPage() {
       {allocations.length === 0 ? (
         <EmptyState
           title="Nothing allocated yet"
-          body="When a custodian allocates material to you, it appears here."
+          body="Allocations to you appear here."
         />
       ) : (
         <>

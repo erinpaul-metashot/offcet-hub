@@ -21,7 +21,6 @@ export default function AdminAllocationsPage() {
       <SectionHeading
         eyebrow="Allocations"
         title="Every hand-off in the network"
-        description="One shape covers both hops — manufacturer to custodian, and custodian to maker. Open one to see the full journey and resolve a discrepancy."
         action={
           <Select value={status} onChange={(event) => setStatus(event.target.value)} className="w-56">
             <option value="">All statuses</option>
@@ -35,7 +34,7 @@ export default function AdminAllocationsPage() {
       />
 
       {rows.length === 0 ? (
-        <EmptyState title="No allocations" body="Approved matches create the first allocation." />
+        <EmptyState title="No allocations" body="Approved matches create the first one." />
       ) : (
         <Panel className="overflow-hidden">
           {rows.map(({ allocation, batch, fromName, toName, project }) => (
@@ -45,7 +44,7 @@ export default function AdminAllocationsPage() {
               title={`${allocation.reference} · ${fromName} → ${toName}`}
               meta={
                 <>
-                  {batch?.name ?? "—"}
+                  {batch?.name ?? "-"}
                   {project ? ` · ${project.title}` : ""} ·{" "}
                   {formatQuantity(allocation.quantityAllocated, allocation.unit)} ·{" "}
                   {formatDate(allocation.updatedAt)}

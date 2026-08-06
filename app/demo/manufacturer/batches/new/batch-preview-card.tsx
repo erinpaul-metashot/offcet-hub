@@ -65,7 +65,7 @@ function availabilityText(availableFrom: string, availableUntil: string): string
   const until = toTimestamp(availableUntil);
 
   if (from && until) {
-    return `${formatDate(from)} – ${formatDate(until)}`;
+    return `${formatDate(from)}: ${formatDate(until)}`;
   }
   if (from) {
     return `From ${formatDate(from)}`;
@@ -151,7 +151,7 @@ function AvailablePot({ quantity, unit }: { quantity: number; unit: Unit }) {
     return (
       <div className="flex items-center gap-2 text-xs text-[var(--ink-muted)]">
         <Lock size={13} className="shrink-0" />
-        Not yet recorded — type a quantity to open the ledger
+        Ledger opens at first quantity
       </div>
     );
   }
@@ -190,9 +190,6 @@ function EmptyPreview() {
     >
       <Package size={28} strokeWidth={1.5} className="mx-auto mb-3 text-[var(--ink-muted)]" />
       <p className="text-sm font-semibold text-[var(--ink)]">Nothing recorded yet</p>
-      <p className="mt-1 text-xs leading-relaxed text-[var(--ink-muted)]">
-        Name the batch or type a quantity — the ledger preview opens as soon as either exists.
-      </p>
     </motion.div>
   );
 }
@@ -221,7 +218,7 @@ function PopulatedPreview(props: BatchPreviewCardProps) {
           <span className="inline-flex items-center rounded-full border border-[var(--line)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
             {categoryLabel(props.materialCategory)}
           </span>
-          <CirkaBadge status={props.releaseImmediately ? "available" : "recorded"} />
+          <CirkaBadge status={props.releaseImmediately ? "awaiting_review" : "draft"} />
         </div>
 
         <h3 className="text-lg font-semibold tracking-[-0.02em] text-[var(--ink)]">
@@ -269,7 +266,7 @@ function PopulatedPreview(props: BatchPreviewCardProps) {
 
         <div className="flex items-center gap-2 border-t border-[var(--line)] pt-3 text-xs text-[var(--ink-muted)]">
           <Lock size={13} className="shrink-0" />
-          Estimated value — protected, excluded from preview.
+          Estimated value withheld
         </div>
 
         <ProvenanceChip dataSource="manual_entry" assuranceLevel="self_reported" />
@@ -279,7 +276,7 @@ function PopulatedPreview(props: BatchPreviewCardProps) {
 }
 
 /**
- * The live "hang tag" preview beside the record-batch form — the quantity the
+ * The live "hang tag" preview beside the record-batch form: the quantity the
  * manufacturer is about to record, read back as the ledger will see it.
  */
 export function BatchPreviewCard(props: BatchPreviewCardProps) {

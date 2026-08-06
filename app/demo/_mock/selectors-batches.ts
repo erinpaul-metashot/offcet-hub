@@ -1,4 +1,4 @@
-/** Resource batch views — list rows, the detail page, and the pot breakdown. */
+/** Resource batch views: list rows, the detail page, and the pot breakdown. */
 
 import { BUCKET_LABELS, QUANTITY_BUCKETS, type QuantityBucket } from "./domain";
 import { auditForEntity } from "./audit";
@@ -37,7 +37,7 @@ export function potSlices(batch: ResourceBatch): PotSlice[] {
   }));
 }
 
-/** The same stacked pot view, summed across every batch — the network-wide ledger. */
+/** The same stacked pot view, summed across every batch: the network-wide ledger. */
 export function aggregatePotSlices(batches: ResourceBatch[]): PotSlice[] {
   const total = batches.reduce((sum, batch) => sum + batch.quantityOriginal, 0) || 1;
 

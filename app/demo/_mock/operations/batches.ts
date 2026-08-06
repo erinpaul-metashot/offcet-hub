@@ -18,10 +18,11 @@ import type {
   Unit,
 } from "../domain";
 import { makeId, makeReference } from "../ids";
-import { applyMovement, emptyPots, refreshBatchStatus } from "../ledger";
+import { applyMovement, deriveBatchStatus, emptyPots, refreshBatchStatus } from "../ledger";
 import type { Id, MockDatabase, ResourceBatch } from "../types";
 import type { ViewerScope } from "../visibility";
 import { OperationError, nextSequence, patchRow, requirePositive, requireRow, requireText } from "./helpers";
+import { now as currentTime } from "../clock";
 
 export interface CreateBatchInput {
   name: string;
@@ -84,7 +85,7 @@ export function createResourceBatch(
   const description = requireText(input.description, "Add a description of the material.");
   const quantity = requirePositive(input.quantity, "Quantity must be greater than zero.");
   const ownerOrgId = input.ownerOrgId ?? actor.orgId;
-  const now = Date.now();
+  const now = currentTime();
 
   const duplicate = findByExternalKey(db, input);
 
@@ -147,7 +148,7 @@ export function createResourceBatch(
     availableUntil: input.availableUntil,
     releasedAt: input.releaseImmediately ? now : undefined,
     locationText: input.locationText,
-    status: input.dataSource === "manual_entry" ? "recorded" : "imported",
+    status: "draft",
     dataSource: input.dataSource,
     assuranceLevel: "self_reported",
     externalSystemName: input.externalSystemName,
@@ -185,7 +186,7 @@ export function createResourceBatch(
       actorUserId: actor.userId,
       actorOrgId: ownerOrgId,
       actorType: input.dataSource === "manual_entry" ? "user" : "import",
-      notes: `Recorded ${quantity} ${input.unit} — source: ${input.dataSource.replace(/_/g, " ")}.`,
+      notes: `Recorded ${quantity} ${input.unit}: source: ${input.dataSource.replace(/_/g, " ")}.`,
     }),
     batchId,
   };
@@ -218,7 +219,7 @@ export function updateResourceBatch(
   args: { batchId: Id; patch: UpdateBatchPatch },
 ): MockDatabase {
   const batch = requireRow(db, "resourceBatches", args.batchId, "Resource batch");
-  const patch = { ...args.patch, updatedAt: Date.now() };
+  const patch = { ...args.patch, updatedAt: currentTime() };
   const updated = patchRow(db, "resourceBatches", args.batchId, patch);
 
   return appendAudit(updated, {
@@ -231,7 +232,7 @@ export function updateResourceBatch(
   });
 }
 
-/** Recorded → Available: details complete, released for matching. */
+/** Draft → Awaiting review: details complete, released for matching. */
 export function releaseBatchForMatching(
   db: MockDatabase,
   actor: ViewerScope,
@@ -243,10 +244,12 @@ export function releaseBatchForMatching(
     throw new OperationError("This batch has already been released for matching.");
   }
 
+  const now = currentTime();
   const released = patchRow(db, "resourceBatches", args.batchId, {
-    releasedAt: Date.now(),
-    updatedAt: Date.now(),
+    releasedAt: now,
+    updatedAt: now,
   });
+  const nextStatus = deriveBatchStatus({ ...batch, releasedAt: now });
 
   return appendAudit(refreshBatchStatus(released, args.batchId), {
     entityTable: "resourceBatches",
@@ -254,7 +257,7 @@ export function releaseBatchForMatching(
     action: "status_changed",
     actorUserId: actor.userId,
     actorOrgId: actor.orgId,
-    fieldChanges: [{ field: "status", previousValue: batch.status, newValue: "available" }],
+    fieldChanges: [{ field: "status", previousValue: batch.status, newValue: nextStatus }],
     notes: "Released for matching.",
   });
 }
@@ -268,13 +271,13 @@ export function reviewBatch(
 
   const reviewed = patchRow(db, "resourceBatches", args.batchId, {
     assuranceLevel: args.assuranceLevel,
-    reviewedAt: Date.now(),
+    reviewedAt: currentTime(),
     reviewedByUserId: actor.userId,
     reviewNotes: args.reviewNotes?.trim() || undefined,
-    updatedAt: Date.now(),
+    updatedAt: currentTime(),
   });
 
-  return appendAudit(reviewed, {
+  return appendAudit(refreshBatchStatus(reviewed, args.batchId), {
     entityTable: "resourceBatches",
     entityId: args.batchId,
     action: "reviewed",
@@ -306,7 +309,7 @@ export function setBatchException(
     exceptionStatus: args.exceptionStatus,
     exceptionNote: args.exceptionStatus ? args.note?.trim() : undefined,
     holdReason: args.exceptionStatus === "on_hold" ? args.note?.trim() : undefined,
-    updatedAt: Date.now(),
+    updatedAt: currentTime(),
   });
 
   return appendAudit(updated, {
@@ -326,7 +329,7 @@ export function setBatchException(
   });
 }
 
-/** Write material off before it is committed anywhere — damage in storage, contamination. */
+/** Write material off before it is committed anywhere: damage in storage, contamination. */
 export function writeOffAvailableQuantity(
   db: MockDatabase,
   actor: ViewerScope,
@@ -352,6 +355,6 @@ export function writeOffAvailableQuantity(
     action: "quantity_moved",
     actorUserId: actor.userId,
     actorOrgId: actor.orgId,
-    notes: `${quantity} written off — ${reason}`,
+    notes: `${quantity} written off: ${reason}`,
   });
 }

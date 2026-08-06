@@ -43,7 +43,7 @@ const ICONS: Record<string, React.ReactNode> = {
   new_lot: <FilePlus size={18} />,
   users: <Users size={18} />,
   requests: <FileText size={18} />,
-  // CIRKA vocabulary — used by the /demo route tree
+  // CIRKA vocabulary: used by the /demo route tree
   batches: <Package size={18} />,
   new_batch: <FilePlus size={18} />,
   allocations: <Truck size={18} />,

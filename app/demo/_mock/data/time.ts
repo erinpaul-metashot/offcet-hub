@@ -14,7 +14,7 @@ export const DEMO_NOW = anchorTimestamp();
 export const daysAgo = (days: number) => DEMO_NOW - days * DAY;
 export const daysAhead = (days: number) => DEMO_NOW + days * DAY;
 
-/** Mid-month timestamp N months back — keeps trend buckets stable. */
+/** Mid-month timestamp N months back: keeps trend buckets stable. */
 export function monthsAgo(months: number) {
   const anchor = new Date(DEMO_NOW);
   return Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth() - months, 15, 12);

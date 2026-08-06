@@ -149,11 +149,7 @@ export default function CustodianDispatchesPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading
-        eyebrow="Out to makers"
-        title="Sub-allocations from this node"
-        description="Once a maker accepts, record the hand-over. The quantity leaves your holding and only reaches the maker's pot when they confirm receipt."
-      />
+      <SectionHeading eyebrow="Out to makers" title="Sub-allocations from this node" />
 
       {error && (
         <NoticeBanner tone="blocking" title="That step was refused">
@@ -164,7 +160,7 @@ export default function CustodianDispatchesPage() {
       {view.outgoing.length === 0 ? (
         <EmptyState
           title="Nothing allocated to makers"
-          body="Allocate part of a holding from the Stock screen to get started."
+          body="Allocate a holding from the Stock screen."
         />
       ) : (
         <>

@@ -35,7 +35,7 @@ export default function BrandApprovalDetailPage() {
         <BackLink />
         <EmptyState
           title="Match not found"
-          body="This match may have been withdrawn, or the demo data has been reset."
+          body="It may have been withdrawn."
         />
       </div>
     );
@@ -95,7 +95,7 @@ export default function BrandApprovalDetailPage() {
           {formatQuantity(match.quantityProposed, match.unit)} proposed
           {request &&
             (match.quantityProposed >= request.quantityNeeded
-              ? " — covers the full request"
+              ? ": covers the full request"
               : ` of ${formatQuantity(request.quantityNeeded, request.unit)} needed`)}
         </p>
       </div>
@@ -112,10 +112,10 @@ export default function BrandApprovalDetailPage() {
           <dl>
             <DataRow
               label="Category"
-              value={batch ? categoryLabel(batch.materialCategory) : "—"}
+              value={batch ? categoryLabel(batch.materialCategory) : "-"}
             />
             <DataRow label="Composition" value={batch?.composition ?? "Not recorded"} />
-            <DataRow label="Source" value={batch ? orgName(store.db, batch.ownerOrgId) : "—"} />
+            <DataRow label="Source" value={batch ? orgName(store.db, batch.ownerOrgId) : "-"} />
             <DataRow label="Location" value={batch?.locationText ?? "Not recorded"} />
             {batch && (
               <DataRow
@@ -154,7 +154,7 @@ export default function BrandApprovalDetailPage() {
             />
             <DataRow
               label="Distance"
-              value={match.distanceKm !== undefined ? `${match.distanceKm} km` : "—"}
+              value={match.distanceKm !== undefined ? `${match.distanceKm} km` : "-"}
             />
             <DataRow label="Proposed" value={formatDate(match.proposedAt)} />
           </dl>
@@ -166,7 +166,7 @@ export default function BrandApprovalDetailPage() {
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
             Your decision
           </p>
-          <Field label="Note (optional)" hint="Recorded alongside the decision.">
+          <Field label="Note (optional)">
             <Input
               value={note}
               onChange={(event) => setNote(event.target.value)}
@@ -186,7 +186,7 @@ export default function BrandApprovalDetailPage() {
         <NoticeBanner tone="info" title="This match has already been decided">
           {match.status === "approved" ? "Approved" : "Rejected"}
           {match.decidedAt ? ` on ${formatDate(match.decidedAt)}` : ""}
-          {match.decisionNote ? ` — ${match.decisionNote}` : ""}
+          {match.decisionNote ? `: ${match.decisionNote}` : ""}
         </NoticeBanner>
       )}
     </div>

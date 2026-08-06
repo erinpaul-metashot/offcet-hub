@@ -47,11 +47,7 @@ export default function ManufacturerDispatchPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="Dispatch"
-        title="Material leaving your site"
-        description="Confirm readiness, then record the dispatch. Recording a dispatch moves the quantity out of the Allocated pot and into In transit — the custodian confirms what actually arrives."
-      />
+      <SectionHeading eyebrow="Dispatch" title="Material leaving your site" />
 
       {error && <NoticeBanner tone="blocking" title="That step was refused">{error}</NoticeBanner>}
 
@@ -62,8 +58,7 @@ export default function ManufacturerDispatchPage() {
               {entry.allocation.reference}: {entry.counterpartyName} received{" "}
               {formatQuantity(entry.allocation.quantityReceived ?? 0, entry.allocation.unit)} against{" "}
               {formatQuantity(entry.allocation.quantityDispatched ?? 0, entry.allocation.unit)}{" "}
-              dispatched. CIRKA closes the difference as a loss or a counting correction once you
-              have replied.
+              dispatched.
             </p>
           ))}
         </NoticeBanner>
@@ -72,7 +67,7 @@ export default function ManufacturerDispatchPage() {
       {view.dispatchQueue.length === 0 ? (
         <EmptyState
           title="Nothing to dispatch"
-          body="When CIRKA allocates one of your batches to a custodian, it appears here."
+          body="Allocations to custodians appear here."
         />
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
@@ -144,14 +139,11 @@ export default function ManufacturerDispatchPage() {
                     label="Expected arrival"
                     value={formatDate(allocation.expectedArrivalDate)}
                   />
-                  <DataRow label="Consignment" value={allocation.dispatchReference ?? "—"} />
+                  <DataRow label="Consignment" value={allocation.dispatchReference ?? "-"} />
                 </dl>
 
                 {allocation.status === "accepted" && (
                   <div className="flex flex-wrap items-center gap-3 border-t border-[var(--line)] pt-4">
-                    <p className="text-sm text-[var(--ink-muted)]">
-                      Confirm the material is packed and ready to leave.
-                    </p>
                     <Button
                       size="sm"
                       disabled={pending}
@@ -222,13 +214,13 @@ export default function ManufacturerDispatchPage() {
                 {allocation.status === "in_transit" && (
                   <p className="border-t border-[var(--line)] pt-4 text-sm text-[var(--ink-muted)]">
                     {formatQuantity(allocation.quantityDispatched ?? 0, allocation.unit)} left on{" "}
-                    {formatDate(allocation.dispatchedAt)}. Waiting for {toName} to confirm receipt.
+                    {formatDate(allocation.dispatchedAt)} · awaiting receipt at {toName}
                   </p>
                 )}
 
                 {allocation.status === "proposed" && (
                   <p className="border-t border-[var(--line)] pt-4 text-sm text-[var(--ink-muted)]">
-                    Waiting for {toName} to accept the allocation before dispatch can be confirmed.
+                    Awaiting acceptance from {toName}
                   </p>
                 )}
               </Panel>

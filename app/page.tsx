@@ -917,7 +917,7 @@ export default function Home() {
             <motion.p variants={fadeUp} className="text-[3.5vw] sm:text-[2vw] md:text-sm lg:text-base xl:text-lg font-medium text-pure-white max-w-4xl leading-relaxed px-4 md:px-0">
               Whether you are a manufacturer, a brand, a university, a government agency, an innovator, a<br className="hidden md:block" />
               technology provider, a recycler, or an organization working closely with any aspect of the built<br className="hidden md:block" />
-              environment—your expertise and engagement are crucial.
+              environment: your expertise and engagement are crucial.
             </motion.p>
 
             <motion.button onClick={() => router.push('/login')} variants={fadeUp} className="mt-6 md:mt-10 lg:mt-12 group relative inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold text-pure-white transition-all duration-200 bg-cirka-orange border-2 border-cirka-orange hover:bg-transparent hover:text-cirka-orange focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cirka-orange overflow-hidden shadow-lg z-20 pointer-events-auto cursor-pointer">

@@ -1,8 +1,8 @@
 /**
- * Field-level visibility — 05_SYSTEM_DESIGN §6.2 and 06_DATA_MODEL §6.
+ * Field-level visibility: 05_SYSTEM_DESIGN §6.2 and 06_DATA_MODEL §6.
  *
  * Role decides which *records* you see; visibility decides which *fields within
- * a record* you see. Cost data is not merely hidden here — brand-scoped
+ * a record* you see. Cost data is not merely hidden here: brand-scoped
  * selectors never join to `productionCosts` at all.
  */
 
@@ -35,7 +35,7 @@ function isPrivileged(viewer: ViewerScope, ownerOrgId: Id): boolean {
   return isAdmin(viewer) || ownsRecord(viewer, ownerOrgId);
 }
 
-/** Returns a copy without the named fields — the protected data is simply not there. */
+/** Returns a copy without the named fields: the protected data is simply not there. */
 function omit<T extends object, K extends keyof T>(record: T, fields: readonly K[]): T {
   const copy = { ...record };
 
@@ -46,7 +46,7 @@ function omit<T extends object, K extends keyof T>(record: T, fields: readonly K
   return copy;
 }
 
-/** `estimatedValue` is protected — never shown to brands. */
+/** `estimatedValue` is protected: never shown to brands. */
 export function stripBatch(batch: ResourceBatch, viewer: ViewerScope): ResourceBatch {
   return isPrivileged(viewer, batch.ownerOrgId) ? batch : omit(batch, ["estimatedValue"]);
 }

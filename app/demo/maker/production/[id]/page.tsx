@@ -29,7 +29,8 @@ import {
   SectionHeading,
   formatDate,
 } from "../../../_components/cirka-ui";
-import { AuditTrail, EvidenceGrid } from "../../../_components/records";
+import { EvidenceGrid } from "../../../_components/records";
+import { ThreadTimelinePanel } from "../../../_components/trace-timeline";
 import { useAction } from "../../../_components/use-action";
 
 const EVIDENCE_CHOICES = [
@@ -80,9 +81,6 @@ export default function MakerProductionDetailPage() {
 
   const { production, balance, costs } = detail;
   const unit = production.unit;
-  const actorName = (userId?: string) =>
-    store.db.users.find((user) => user._id === userId)?.name ?? "System";
-
   const materialValue = (field: string, current?: number) =>
     material[field] ?? (current !== undefined ? String(current) : "");
 
@@ -121,11 +119,11 @@ export default function MakerProductionDetailPage() {
           <dl>
             <DataRow
               label="Resource batch"
-              value={`${detail.batch?.name ?? "—"} · ${detail.batch?.reference ?? ""}`}
+              value={`${detail.batch?.name ?? "-"} · ${detail.batch?.reference ?? ""}`}
             />
-            <DataRow label="Allocation" value={detail.allocation?.reference ?? "—"} />
+            <DataRow label="Allocation" value={detail.allocation?.reference ?? "-"} />
             <DataRow label="Project" value={detail.project?.title ?? "Standalone"} />
-            <DataRow label="Production site" value={detail.facility?.name ?? "—"} />
+            <DataRow label="Production site" value={detail.facility?.name ?? "-"} />
             <DataRow
               label="Category"
               value={PRODUCT_CATEGORY_LABELS[production.productCategory]}
@@ -159,7 +157,6 @@ export default function MakerProductionDetailPage() {
                   ? formatPercent(production.materialYield)
                   : "Not calculated yet"
               }
-              hint="Incorporated into finished outputs ÷ total used"
             />
           </dl>
 
@@ -212,9 +209,8 @@ export default function MakerProductionDetailPage() {
             <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
               Material use
             </h2>
-            <p className="text-sm text-[var(--ink-muted)]">
-              Received must equal used + reusable remaining + returned. Used must equal incorporated
-              + prototypes + offcuts + loss. The batch cannot complete until both lines balance.
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+              Received = used + reusable + returned · Used = incorporated + prototypes + offcuts + loss
             </p>
           </div>
 
@@ -389,7 +385,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="Supplier" hint="Protected — never shown to brands.">
+            <Field label="Supplier" hint="Protected">
               <Input
                 value={inputDraft.supplierName}
                 onChange={(event) =>
@@ -397,7 +393,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="Cost (SEK)" hint="Protected.">
+            <Field label="Cost (SEK)" hint="Protected">
               <Input
                 type="number"
                 min="0"
@@ -455,9 +451,6 @@ export default function MakerProductionDetailPage() {
             <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
               Production time
             </h2>
-            <p className="text-sm text-[var(--ink-muted)]">
-              Recorded by hand — no live timer. Estimated entries are flagged as estimates.
-            </p>
           </div>
 
           {detail.timeEntries.length === 0 ? (
@@ -501,7 +494,7 @@ export default function MakerProductionDetailPage() {
                   : undefined
               }
             />
-            <DataRow label="People involved" value={production.peopleInvolved ?? "—"} />
+            <DataRow label="People involved" value={production.peopleInvolved ?? "-"} />
           </dl>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -613,13 +606,13 @@ export default function MakerProductionDetailPage() {
                     </td>
                     <td className="py-3 pr-4 text-right tabular-nums">{output.numberPlanned}</td>
                     <td className="py-3 pr-4 text-right tabular-nums">
-                      {output.numberCompleted ?? "—"}
+                      {output.numberCompleted ?? "-"}
                     </td>
                     <td className="py-3 pr-4 text-right tabular-nums">
-                      {output.numberRejected ?? "—"}
+                      {output.numberRejected ?? "-"}
                     </td>
                     <td className="py-3 text-right tabular-nums">
-                      {output.numberRequiringRework ?? "—"}
+                      {output.numberRequiringRework ?? "-"}
                     </td>
                   </tr>
                 ))}
@@ -740,9 +733,8 @@ export default function MakerProductionDetailPage() {
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
             Costs and commercial data
           </h2>
-          <p className="text-sm text-[var(--ink-muted)]">
-            Private to you and CIRKA. These figures live in a separate record that brand-facing
-            queries cannot reach — the only thing you can choose to share is the cost per unit.
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+            Private · never reaches brand queries
           </p>
         </div>
 
@@ -839,10 +831,6 @@ export default function MakerProductionDetailPage() {
       <Panel className="space-y-4 p-6">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Evidence</h2>
-          <p className="text-sm text-[var(--ink-muted)]">
-            Photos of work in progress, the finished products and what material is left. Check
-            before uploading whether people are visible in the frame.
-          </p>
         </div>
 
         <EvidenceGrid items={detail.evidence} />
@@ -879,7 +867,7 @@ export default function MakerProductionDetailPage() {
               <Textarea
                 value={makerNotes}
                 onChange={(event) => setMakerNotes(event.target.value)}
-                placeholder="Anything the reviewer should know — rework cycles, material behaviour, delays."
+                placeholder="Anything the reviewer should know: rework cycles, material behaviour, delays."
               />
             </Field>
             <Button
@@ -919,17 +907,18 @@ export default function MakerProductionDetailPage() {
               label="Received as described"
               value={detail.suitability.receivedAsDescribed ? "Yes" : "No"}
             />
-            <DataRow label="Recommended for" value={detail.suitability.recommendedApplications ?? "—"} />
-            <DataRow label="Limitations" value={detail.suitability.limitations ?? "—"} />
-            <DataRow label="Notes" value={detail.suitability.notes ?? "—"} />
+            <DataRow label="Recommended for" value={detail.suitability.recommendedApplications ?? "-"} />
+            <DataRow label="Limitations" value={detail.suitability.limitations ?? "-"} />
+            <DataRow label="Notes" value={detail.suitability.notes ?? "-"} />
           </dl>
         </Panel>
       )}
 
-      <Panel className="space-y-4 p-6">
-        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">History</h2>
-        <AuditTrail entries={detail.audit} actorName={actorName} limit={10} />
-      </Panel>
+      <ThreadTimelinePanel
+        role="maker"
+        anchor={{ table: "productionBatches", id: production._id }}
+        description="Where this material came from before it reached the workshop."
+      />
     </div>
   );
 }

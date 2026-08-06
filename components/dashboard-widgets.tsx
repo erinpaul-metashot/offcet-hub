@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { Panel, StatusBadge } from "@/components/ui";
 import { classNames, formatCurrency, formatDate } from "@/lib/utils";
 
@@ -12,37 +14,26 @@ export function DashboardHero({
 }: {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   children?: ReactNode;
 }) {
   return (
-    <Panel className="relative overflow-hidden border-transparent bg-[var(--sidebar-bg)] shadow-none rounded-[2rem]">
-      {/* Subtle constellation motif — scaled down to avoid competing with content */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,92,0,0.1),transparent_35%)]" />
-      <div className="absolute right-0 top-0 h-full w-[20%] opacity-10 pointer-events-none">
-        <svg viewBox="0 0 400 400" className="w-full h-full text-[var(--brand-primary)]">
-          <circle cx="300" cy="100" r="4" fill="currentColor" />
-          <circle cx="200" cy="200" r="6" fill="currentColor" />
-          <circle cx="350" cy="250" r="3" fill="currentColor" />
-          <path d="M 300 100 L 200 200 L 350 250" stroke="currentColor" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-        </svg>
-      </div>
-
-      <div className="relative p-8 sm:p-10 space-y-5">
-        <div className="space-y-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--brand-primary)]">
-            {eyebrow}
-          </p>
-          <h1 className="max-w-2xl text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">
-            {title}
-          </h1>
-          <p className="max-w-xl text-[13px] leading-relaxed text-[var(--sidebar-text-muted)]">
+    <div className="relative space-y-5 py-2">
+      <div className="space-y-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--brand-primary)]">
+          {eyebrow}
+        </p>
+        <h1 className="max-w-3xl text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)] sm:text-3xl">
+          {title}
+        </h1>
+        {description ? (
+          <p className="max-w-2xl text-[13px] leading-relaxed text-[var(--ink-muted)]">
             {description}
           </p>
-        </div>
-        {children ? <div className="flex flex-wrap gap-3">{children}</div> : null}
+        ) : null}
       </div>
-    </Panel>
+      {children ? <div className="flex flex-wrap gap-3 pt-1">{children}</div> : null}
+    </div>
   );
 }
 
@@ -51,22 +42,33 @@ export function DashboardMetricCard({
   value,
   hint,
   accent = false,
+  href,
 }: {
   label: string;
   value: string | number;
-  hint: string;
+  /** Only a number that adds to the headline figure. Never a sentence explaining the label. */
+  hint?: string;
   accent?: boolean;
+  href?: string;
 }) {
-  return (
+  const card = (
     <Panel
+      interactive={Boolean(href)}
       className={classNames(
-        "h-full p-6 animate-stagger-in",
+        "relative h-full p-6 animate-stagger-in",
         accent
           ? "ring-1 ring-[var(--brand-primary)]/10 border-[var(--brand-primary)]/20 bg-[var(--brand-primary-light)]/10"
           : "bg-[var(--paper)]",
+        href && "group-hover:border-[var(--brand-primary)]/40",
       )}
     >
-      <div className="space-y-3">
+      {href ? (
+        <ArrowUpRight
+          size={15}
+          className="absolute right-5 top-5 opacity-0 transition-opacity duration-200 ease-[var(--ease-out)] group-hover:opacity-100 text-[var(--brand-primary)]"
+        />
+      ) : null}
+      <div className="space-y-2">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
           {label}
         </p>
@@ -74,9 +76,22 @@ export function DashboardMetricCard({
           "text-4xl font-semibold tracking-[-0.05em] tabular-nums",
           accent ? "text-[var(--brand-primary)]" : "text-[var(--ink)]"
         )}>{value}</p>
-        <p className="text-[13px] leading-5 text-[var(--ink-muted)]">{hint}</p>
+        {hint ? (
+          <p className="text-[13px] leading-5 tabular-nums text-[var(--ink-muted)]">{hint}</p>
+        ) : null}
       </div>
     </Panel>
+  );
+
+  if (!href) return card;
+
+  return (
+    <Link
+      href={href}
+      className="group block rounded-[1.5rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]"
+    >
+      {card}
+    </Link>
   );
 }
 
@@ -250,11 +265,11 @@ export function SummaryPill({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
+    <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] px-4 py-3 shadow-xs">
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
         {label}
       </p>
-      <p className="mt-1 text-xl font-semibold text-white tabular-nums">{value}</p>
+      <p className="mt-1 text-xl font-semibold text-[var(--ink)] tabular-nums">{value}</p>
     </div>
   );
 }

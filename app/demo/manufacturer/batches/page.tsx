@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Button, Input, Panel, Select } from "@/components/ui";
 import { BATCH_STATUSES, MATERIAL_CATEGORIES, statusLabel } from "../../_mock/domain";
 import { categoryLabel } from "../../_mock/selectors-shared";
@@ -14,8 +15,13 @@ export default function ManufacturerBatchesPage() {
   const { db } = useDemoStore();
   const { scope } = useDemoPersona("manufacturer");
 
+  const searchParams = useSearchParams();
+
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(() => {
+    const requested = searchParams.get("status") ?? "";
+    return (BATCH_STATUSES as readonly string[]).includes(requested) ? requested : "";
+  });
   const [category, setCategory] = useState("");
 
   const rows = listBatches(db, scope, {
@@ -30,7 +36,6 @@ export default function ManufacturerBatchesPage() {
       <SectionHeading
         eyebrow="Resource batches"
         title="Everything your organisation has recorded"
-        description="One row per batch, with the quantity split across its pots. The status badge is derived from those numbers, so it can never disagree with them."
         action={
           <div className="flex gap-3">
             <Button as={Link} href="/demo/manufacturer/batches/import" variant="secondary" size="sm">

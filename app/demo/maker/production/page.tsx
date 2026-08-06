@@ -19,7 +19,6 @@ export default function MakerProductionPage() {
       <SectionHeading
         eyebrow="Production"
         title="What you are making"
-        description="A lightweight operational record — material use, inputs, time, outputs and evidence. Not an ERP, and not a manufacturing execution system."
         action={
           <div className="flex items-center gap-3">
             <ViewModeToggle value={view} onChange={setView} />
@@ -33,7 +32,7 @@ export default function MakerProductionPage() {
       {rows.length === 0 ? (
         <EmptyState
           title="No production batches"
-          body="Create one against an allocation you have received."
+          body="Create one against a received allocation."
         />
       ) : view === "list" ? (
         <div className="overflow-hidden rounded-[1.5rem] border border-[var(--line)] bg-[var(--paper)]">

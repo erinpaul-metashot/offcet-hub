@@ -26,7 +26,8 @@ import {
   SectionHeading,
   formatDate,
 } from "../../../_components/cirka-ui";
-import { AuditTrail, EvidenceGrid } from "../../../_components/records";
+import { EvidenceGrid } from "../../../_components/records";
+import { ThreadTimelinePanel } from "../../../_components/trace-timeline";
 import { useAction } from "../../../_components/use-action";
 
 export default function AdminProductionDetailPage() {
@@ -104,7 +105,7 @@ export default function AdminProductionDetailPage() {
               value={
                 production.materialYield !== undefined
                   ? formatPercent(production.materialYield)
-                  : "—"
+                  : "-"
               }
             />
           </dl>
@@ -128,9 +129,9 @@ export default function AdminProductionDetailPage() {
           </h2>
           <dl>
             <DataRow label="Maker" value={detail.makerName} />
-            <DataRow label="Site" value={detail.facility?.name ?? "—"} />
-            <DataRow label="Resource batch" value={detail.batch?.reference ?? "—"} />
-            <DataRow label="Allocation" value={detail.allocation?.reference ?? "—"} />
+            <DataRow label="Site" value={detail.facility?.name ?? "-"} />
+            <DataRow label="Resource batch" value={detail.batch?.reference ?? "-"} />
+            <DataRow label="Allocation" value={detail.allocation?.reference ?? "-"} />
             <DataRow label="Project" value={detail.project?.title ?? "Standalone"} />
             <DataRow
               label="Category"
@@ -197,7 +198,7 @@ export default function AdminProductionDetailPage() {
 
         <Panel className="p-6">
           <h2 className="mb-3 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Costs — CIRKA and maker only
+            Costs: CIRKA and maker only
           </h2>
           {costs ? (
             <dl>
@@ -212,7 +213,6 @@ export default function AdminProductionDetailPage() {
               <DataRow
                 label="Shared with the brand"
                 value={costs.shareCostPerUnitWithBrand ? "Cost per unit only" : "Nothing"}
-                hint="The maker's own decision, recorded in the audit log"
               />
             </dl>
           ) : (
@@ -241,8 +241,8 @@ export default function AdminProductionDetailPage() {
               value={detail.suitability.receivedAsDescribed ? "Yes" : "No"}
             />
             <DataRow label="Damage" value={detail.suitability.damageNote ?? "None reported"} />
-            <DataRow label="Recommended for" value={detail.suitability.recommendedApplications ?? "—"} />
-            <DataRow label="Limitations" value={detail.suitability.limitations ?? "—"} />
+            <DataRow label="Recommended for" value={detail.suitability.recommendedApplications ?? "-"} />
+            <DataRow label="Limitations" value={detail.suitability.limitations ?? "-"} />
           </dl>
         </Panel>
       )}
@@ -253,10 +253,7 @@ export default function AdminProductionDetailPage() {
 
         {production.status === "evidence_submitted" && (
           <div className="space-y-4 border-t border-[var(--line)] pt-4">
-            <Field
-              label="Review notes"
-              hint="Required when sending a batch back for more detail."
-            >
+            <Field label="Review notes" hint="Required to send back">
               <Textarea
                 value={reviewNotes}
                 onChange={(event) => setReviewNotes(event.target.value)}
@@ -335,10 +332,11 @@ export default function AdminProductionDetailPage() {
         </Panel>
       )}
 
-      <Panel className="space-y-4 p-6">
-        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">History</h2>
-        <AuditTrail entries={detail.audit} actorName={actorName} limit={12} />
-      </Panel>
+      <ThreadTimelinePanel
+        role="admin"
+        anchor={{ table: "productionBatches", id: production._id }}
+        description="What this run was made from, and everything that happened to the material first."
+      />
     </div>
   );
 }

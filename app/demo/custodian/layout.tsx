@@ -9,6 +9,7 @@ const navItems: NavItem[] = [
   { label: "Expected arrivals", href: "/demo/custodian/arrivals", icon: "arrivals" },
   { label: "Stock held", href: "/demo/custodian/stock", icon: "stock" },
   { label: "Out to makers", href: "/demo/custodian/dispatches", icon: "allocations" },
+  { label: "Sites", href: "/demo/custodian/facilities", icon: "facilities" },
 ];
 
 export default function DemoCustodianLayout({

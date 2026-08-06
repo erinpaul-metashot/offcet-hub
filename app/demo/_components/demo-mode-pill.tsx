@@ -15,7 +15,7 @@ export function DemoModePill() {
   return (
     <Link
       href="/demo"
-      title="Demo mode — mock data only. Click to switch role."
+      title="Demo mode: mock data only. Click to switch role."
       className="fixed bottom-5 right-5 z-[200] inline-flex items-center gap-2 rounded-full border border-[var(--brand-primary)] bg-[var(--sidebar-bg)] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-transform duration-300 ease-[var(--ease-out)] hover:-translate-y-0.5"
     >
       <FlaskConical size={14} className="text-[var(--brand-primary)]" />

@@ -53,17 +53,16 @@ const STATUS_TONE: Record<string, Tone> = {
   disabled: "muted",
   suspended: "warning",
   // resource batches
-  recorded: "neutral",
-  imported: "neutral",
+  awaiting_review: "progress",
+  awaiting_allocation: "positive",
+  partially_assigned: "progress",
+  completely_assigned: "terminal",
+  // quantity pots and allocations
   available: "positive",
   reserved: "progress",
-  assigned: "progress",
   awaiting_dispatch: "progress",
   in_transit: "progress",
   received: "progress",
-  partially_allocated: "progress",
-  fully_allocated: "progress",
-  in_transformation: "terminal",
   completed: "positive",
   // exceptions
   receipt_discrepancy: "warning",
@@ -128,8 +127,7 @@ export function CirkaBadge({ status, label }: { status: string; label?: string }
 }
 
 /**
- * Grid/list switcher. The active option is filled with --brand-primary —
- * same "this is the active one" language as the active nav item and tab.
+ * Grid/list switcher. The active option is filled with --brand-primary:  * same "this is the active one" language as the active nav item and tab.
  */
 export function ViewModeToggle({
   value,
@@ -196,7 +194,8 @@ export function ProvenanceChip({
   );
 }
 
-const BUCKET_COLOUR: Record<string, string> = {
+/** Shared with `NetworkLedgerNodes`: one bucket, one colour, everywhere it's drawn. */
+export const BUCKET_COLOUR: Record<string, string> = {
   available: "bg-[var(--brand-secondary)]",
   reserved: "bg-[#C8A96B]",
   allocated: "bg-[#B4531A]",
@@ -208,7 +207,7 @@ const BUCKET_COLOUR: Record<string, string> = {
   unexplained: "bg-[#D14343]",
 };
 
-/** The stacked pot view — the invariant made visible. */
+/** The stacked pot view: the invariant made visible. */
 export function QuantityPotsBar({
   slices,
   total,
@@ -281,7 +280,7 @@ const ROUTE_FILL_STYLES: Record<RouteTone, string> = {
   warn: "bg-[#B4531A]",
 };
 
-/** Two endpoints and a positioned marker — where a consignment actually is between origin and destination. */
+/** Two endpoints and a positioned marker: where a consignment actually is between origin and destination. */
 export function RouteProgress({
   fromLabel,
   toLabel,
@@ -335,7 +334,7 @@ export interface FlowSegment {
   colourClass: string;
 }
 
-/** A quantity relationship as a segmented bar — dispatched against allocated, received against dispatched. */
+/** A quantity relationship as a segmented bar: dispatched against allocated, received against dispatched. */
 export function FlowBar({
   segments,
   max,
@@ -386,7 +385,7 @@ const LIFECYCLE_STATUSES = [
 ] as const;
 
 /**
- * The production lifecycle as a stepped ladder — where a batch actually sits
+ * The production lifecycle as a stepped ladder: where a batch actually sits
  * across its 8 linear stages. `on_hold`/`cancelled` fall outside the ladder
  * and render as an exception band instead of a false stage position.
  */
@@ -556,7 +555,7 @@ export function LinkRow({
 }
 
 /**
- * A dialog over the screen it was opened from — used wherever an admin edits a
+ * A dialog over the screen it was opened from: used wherever an admin edits a
  * record without losing the list they picked it out of. Escape and a backdrop
  * click both close it, and the page behind stops scrolling while it is open.
  */
@@ -637,7 +636,7 @@ export function Modal({
 
 /**
  * Confirmation for something that cannot be undone from the UI. It states what
- * survives the action rather than asking "are you sure" — and stays open on a
+ * survives the action rather than asking "are you sure": and stays open on a
  * refusal so the rule that blocked it is readable next to the button.
  */
 export function ConfirmDialog({
@@ -692,7 +691,7 @@ export function ConfirmDialog({
   );
 }
 
-/** A titled group of fields. Dividers, not cards — a form is one object. */
+/** A titled group of fields. Dividers, not cards: a form is one object. */
 export function FormSection({
   title,
   hint,
@@ -717,7 +716,7 @@ export function FormSection({
 
 export function formatDate(timestamp?: number): string {
   if (!timestamp) {
-    return "—";
+    return "-";
   }
 
   return new Intl.DateTimeFormat("en-GB", {
@@ -730,7 +729,7 @@ export function formatDate(timestamp?: number): string {
 
 export function formatDateTime(timestamp?: number): string {
   if (!timestamp) {
-    return "—";
+    return "-";
   }
 
   return new Intl.DateTimeFormat("en-GB", {

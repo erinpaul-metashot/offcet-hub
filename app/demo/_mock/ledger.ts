@@ -1,5 +1,5 @@
 /**
- * The quantity ledger — 04_ARCHITECTURE §6.2 and 06_DATA_MODEL §3.
+ * The quantity ledger: 04_ARCHITECTURE §6.2 and 06_DATA_MODEL §3.
  *
  * Quantity is a set of pots. Material is poured from one pot to another; it is
  * never created or destroyed except by an explicit correction, and every pour
@@ -16,8 +16,9 @@ import type {
   ResourceBatch,
   Timestamp,
 } from "./types";
+import { now as currentTime } from "./clock";
 
-/** Quantities are stored to three decimals — enough for kg and tonnes alike. */
+/** Quantities are stored to three decimals: enough for kg and tonnes alike. */
 export function round(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
@@ -44,7 +45,7 @@ export function potsTotal(pots: QuantityPots): number {
   return round(QUANTITY_BUCKETS.reduce((total, bucket) => total + pots[bucket], 0));
 }
 
-/** Quantity still moving through the system — everything except the terminal pots. */
+/** Quantity still moving through the system: everything except the terminal pots. */
 export function activeQuantity(pots: QuantityPots): number {
   return round(
     pots.available +
@@ -58,7 +59,7 @@ export function activeQuantity(pots: QuantityPots): number {
 }
 
 /* ------------------------------------------------------------------ *
- * Legal moves — anything not on this list is not a legal move
+ * Legal moves: anything not on this list is not a legal move
  * ------------------------------------------------------------------ */
 
 interface LegalMove {
@@ -131,7 +132,7 @@ export interface IntegrityIssue {
   message: string;
 }
 
-/** Runs the invariant across the whole database — surfaced on the demo home page. */
+/** Runs the invariant across the whole database: surfaced on the demo home page. */
 export function checkLedgerIntegrity(db: MockDatabase): IntegrityIssue[] {
   return db.resourceBatches.flatMap((batch) => {
     const total = potsTotal(batch.pots);
@@ -160,70 +161,47 @@ export function checkLedgerIntegrity(db: MockDatabase): IntegrityIssue[] {
 }
 
 /* ------------------------------------------------------------------ *
- * Derived status — 05_SYSTEM_DESIGN §2
+ * Derived status: 05_SYSTEM_DESIGN §2
  * ------------------------------------------------------------------ */
 
-export interface StatusHints {
-  awaitingDispatch?: boolean;
-  activeProduction?: boolean;
+/** Quantity that has left the available pot but has not finished its journey. */
+export function assignedQuantity(pots: QuantityPots): number {
+  return round(
+    pots.reserved + pots.allocated + pots.in_transit + pots.at_custodian + pots.with_maker,
+  );
 }
 
 /**
  * The headline status is derived from the pots, so the badge on screen can
- * never disagree with the numbers underneath it.
+ * never disagree with the numbers underneath it. Where the material physically
+ * is lives in the pots and in the allocation's own status: the batch badge
+ * only says how far through the journey the batch as a whole is.
  */
 export function deriveBatchStatus(
-  batch: Pick<ResourceBatch, "pots" | "releasedAt" | "dataSource">,
-  hints: StatusHints = {},
+  batch: Pick<ResourceBatch, "pots" | "releasedAt" | "reviewedAt">,
 ): ResourceBatch["status"] {
   const { pots } = batch;
 
   if (!batch.releasedAt) {
-    return batch.dataSource === "manual_entry" ? "recorded" : "imported";
+    return "draft";
+  }
+
+  const assigned = assignedQuantity(pots);
+
+  /** Released but untouched: CIRKA has not checked it over yet. */
+  if (!batch.reviewedAt && assigned === 0 && pots.consumed === 0 && pots.written_off === 0) {
+    return "awaiting_review";
   }
 
   if (activeQuantity(pots) === 0) {
-    return "completed";
+    return "closed";
   }
 
-  if (pots.with_maker > 0) {
-    return hints.activeProduction ? "in_transformation" : "fully_allocated";
+  if (pots.available === 0) {
+    return "completely_assigned";
   }
 
-  if (pots.at_custodian > 0) {
-    const uncommitted =
-      pots.available > 0 || pots.reserved > 0 || pots.allocated > 0 || pots.in_transit > 0;
-    return uncommitted ? "partially_allocated" : "received";
-  }
-
-  if (pots.in_transit > 0) {
-    return "in_transit";
-  }
-
-  if (pots.allocated > 0) {
-    return hints.awaitingDispatch ? "awaiting_dispatch" : "assigned";
-  }
-
-  if (pots.reserved > 0) {
-    return "reserved";
-  }
-
-  return "available";
-}
-
-function hintsFor(db: MockDatabase, batchId: Id): StatusHints {
-  return {
-    awaitingDispatch: db.allocations.some(
-      (allocation) =>
-        allocation.batchId === batchId &&
-        (allocation.status === "accepted" || allocation.status === "awaiting_dispatch"),
-    ),
-    activeProduction: db.productionBatches.some(
-      (production) =>
-        production.batchId === batchId &&
-        !["cancelled", "cirka_reviewed"].includes(production.status),
-    ),
-  };
+  return assigned > 0 ? "partially_assigned" : "awaiting_allocation";
 }
 
 /** Recomputes the derived status of one batch against the current database. */
@@ -231,9 +209,7 @@ export function refreshBatchStatus(db: MockDatabase, batchId: Id): MockDatabase 
   return {
     ...db,
     resourceBatches: db.resourceBatches.map((batch) =>
-      batch._id === batchId
-        ? { ...batch, status: deriveBatchStatus(batch, hintsFor(db, batchId)) }
-        : batch,
+      batch._id === batchId ? { ...batch, status: deriveBatchStatus(batch) } : batch,
     ),
   };
 }
@@ -253,7 +229,7 @@ export interface MovementInput {
   allocationId?: Id;
   productionBatchId?: Id;
   occurredAt?: Timestamp;
-  /** Defaults to now — the seed passes it so historic rows read correctly. */
+  /** Defaults to now: the seed passes it so historic rows read correctly. */
   recordedAt?: Timestamp;
   notes?: string;
 }
@@ -275,7 +251,7 @@ export function applyMovement(db: MockDatabase, input: MovementInput): MockDatab
 
   if (!move) {
     throw new LedgerError(
-      `Not a legal move: ${input.fromBucket ?? "—"} → ${input.toBucket ?? "—"} (${input.reason}).`,
+      `Not a legal move: ${input.fromBucket ?? "-"} → ${input.toBucket ?? "-"} (${input.reason}).`,
     );
   }
 
@@ -286,7 +262,7 @@ export function applyMovement(db: MockDatabase, input: MovementInput): MockDatab
 
     if (quantity > round(availableInPot) + 0.001) {
       throw new LedgerError(
-        `Only ${round(availableInPot)} ${batch.unit} is in ${input.fromBucket.replace(/_/g, " ")} — cannot move ${quantity} ${batch.unit}.`,
+        `Only ${round(availableInPot)} ${batch.unit} is in ${input.fromBucket.replace(/_/g, " ")}: cannot move ${quantity} ${batch.unit}.`,
       );
     }
 
@@ -307,7 +283,7 @@ export function applyMovement(db: MockDatabase, input: MovementInput): MockDatab
     ...batch,
     pots,
     quantityOriginal,
-    updatedAt: input.occurredAt ?? Date.now(),
+    updatedAt: input.occurredAt ?? currentTime(),
   };
 
   assertInvariant(nextBatch);
@@ -324,8 +300,8 @@ export function applyMovement(db: MockDatabase, input: MovementInput): MockDatab
     reason: input.reason,
     performedByUserId: input.performedByUserId,
     performedByOrgId: input.performedByOrgId,
-    occurredAt: input.occurredAt ?? Date.now(),
-    recordedAt: input.recordedAt ?? input.occurredAt ?? Date.now(),
+    occurredAt: input.occurredAt ?? currentTime(),
+    recordedAt: input.recordedAt ?? input.occurredAt ?? currentTime(),
     notes: input.notes,
     balanceAfter: pots,
   };
@@ -341,7 +317,7 @@ export function applyMovement(db: MockDatabase, input: MovementInput): MockDatab
   return refreshBatchStatus(next, batch._id);
 }
 
-/** Applies several moves as one step — e.g. a short receipt splits into two. */
+/** Applies several moves as one step: e.g. a short receipt splits into two. */
 export function applyMovements(db: MockDatabase, inputs: MovementInput[]): MockDatabase {
   return inputs.reduce((current, input) => applyMovement(current, input), db);
 }

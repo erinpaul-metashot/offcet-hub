@@ -13,6 +13,7 @@ import type {
   ActorType,
   AllocationHop,
   AllocationStatus,
+  ArrivalIssue,
   AssuranceLevel,
   AuditAction,
   BatchException,
@@ -59,7 +60,7 @@ export type Id = string;
 export type Timestamp = number;
 
 /* ------------------------------------------------------------------ *
- * Group A — who is involved
+ * Group A: who is involved
  * ------------------------------------------------------------------ */
 
 export interface Organisation {
@@ -68,7 +69,7 @@ export interface Organisation {
   type: OrganisationType;
   status: OrganisationStatus;
   registrationNumber?: string;
-  /** Protected — never shown to brands. */
+  /** Protected: never shown to brands. */
   taxId?: string;
   country: string;
   addressLine?: string;
@@ -114,16 +115,18 @@ export interface Facility {
   country: string;
   latitude?: number;
   longitude?: number;
-  /** Protected fields — never shown to brands. */
+  /** Protected fields: never shown to brands. */
   contactName?: string;
   contactEmail?: string;
+  /** Total storage volume this site can hold. Unset means no declared limit. */
+  storageCapacityKg?: number;
   isActive: boolean;
   createdAt: Timestamp;
   deletedAt?: Timestamp;
 }
 
 /* ------------------------------------------------------------------ *
- * Group B — what material exists
+ * Group B: what material exists
  * ------------------------------------------------------------------ */
 
 /** The nine pots. Their sum always equals `quantityOriginal`. */
@@ -159,7 +162,7 @@ export interface ResourceBatch {
   latitude?: number;
   longitude?: number;
 
-  /** Derived from the pots — never set directly. See `ledger.deriveBatchStatus`. */
+  /** Derived from the pots: never set directly. See `ledger.deriveBatchStatus`. */
   status: BatchStatus;
   exceptionStatus?: BatchException;
   exceptionNote?: string;
@@ -177,7 +180,7 @@ export interface ResourceBatch {
   reviewedByUserId?: Id;
   reviewNotes?: string;
 
-  /** Protected — never shown to brands. */
+  /** Protected: never shown to brands. */
   estimatedValue?: number;
   currency?: string;
   imageUrls: string[];
@@ -204,12 +207,12 @@ export interface QuantityMovement {
   occurredAt: Timestamp;
   recordedAt: Timestamp;
   notes?: string;
-  /** Snapshot of every pot after this move — auditing a single row needs no replay. */
+  /** Snapshot of every pot after this move: auditing a single row needs no replay. */
   balanceAfter: QuantityPots;
 }
 
 /* ------------------------------------------------------------------ *
- * Group C — what is wanted
+ * Group C: what is wanted
  * ------------------------------------------------------------------ */
 
 export interface Project {
@@ -260,7 +263,7 @@ export interface ResourceRequest {
   deletedAt?: Timestamp;
 }
 
-/** A recorded matching decision — the rationale is stored, not just the outcome. */
+/** A recorded matching decision: the rationale is stored, not just the outcome. */
 export interface Match {
   _id: Id;
   requestId: Id;
@@ -282,7 +285,7 @@ export interface Match {
 }
 
 /* ------------------------------------------------------------------ *
- * Group D — where it goes
+ * Group D: where it goes
  * ------------------------------------------------------------------ */
 
 /** One row = one hand-off of a specific quantity between two organisations. */
@@ -308,6 +311,10 @@ export interface Allocation {
   discrepancyResolvedAt?: Timestamp;
   discrepancyResolvedByUserId?: Id;
   discrepancyResolution?: DiscrepancyResolution;
+  /** Qualitative problem the receiver reported. Quantity gaps use the discrepancy fields above. */
+  arrivalIssue?: ArrivalIssue;
+  arrivalIssueNote?: string;
+  arrivalIssueReportedAt?: Timestamp;
   status: AllocationStatus;
   expectedDispatchDate?: Timestamp;
   dispatchReadyAt?: Timestamp;
@@ -326,7 +333,7 @@ export interface Allocation {
 }
 
 /* ------------------------------------------------------------------ *
- * Group E — what gets made
+ * Group E: what gets made
  * ------------------------------------------------------------------ */
 
 export interface ProductionBatch {
@@ -348,7 +355,7 @@ export interface ProductionBatch {
   actualCompletionDate?: Timestamp;
   status: ProductionStatus;
 
-  // Material use — §10
+  // Material use: §10
   qtyAllocated: number;
   qtyReceived?: number;
   qtyUsed?: number;
@@ -362,13 +369,13 @@ export interface ProductionBatch {
   materialYield?: number;
   unit: Unit;
 
-  // Time summary — §12
+  // Time summary: §12
   totalLabourHours?: number;
   peopleInvolved?: number;
   timeIsEstimated?: boolean;
   hoursPerSaleableUnit?: number;
 
-  // Evidence — §15
+  // Evidence: §15
   evidenceStatus: EvidenceStatus;
   evidenceSubmittedAt?: Timestamp;
   reviewedByUserId?: Id;
@@ -388,7 +395,7 @@ export interface ProductionInput {
   description: string;
   quantity: number;
   unit: string;
-  /** Protected — never shown to brands. */
+  /** Protected: never shown to brands. */
   supplierName?: string;
   /** Protected. */
   cost?: number;
@@ -479,7 +486,7 @@ export interface SuitabilityFeedback {
 }
 
 /* ------------------------------------------------------------------ *
- * Group F — proof and plumbing
+ * Group F: proof and plumbing
  * ------------------------------------------------------------------ */
 
 export interface FieldChange {
@@ -560,6 +567,8 @@ export interface PendingArrival {
   channel: DataSource;
   externalSystemName: string;
   externalRecordId?: string;
+  /** Deep link back to the record in the system that pushed it. */
+  externalRecordUrl?: string;
   name?: string;
   description?: string;
   materialCategory?: MaterialCategory;
@@ -569,10 +578,28 @@ export interface PendingArrival {
   locationText?: string;
   availableFrom?: Timestamp;
   format?: MaterialFormat;
+  /** The record exactly as the source system sent it, kept for the audit trail. */
+  sourcePayload?: Record<string, unknown>;
   arrivedAt: Timestamp;
   status: ArrivalStatus;
   resolvedBatchId?: Id;
   resolvedAt?: Timestamp;
+}
+
+/**
+ * An org's link to an external system it pulls records from (05_SYSTEM_DESIGN
+ * §7). One row per org per channel: the account reference is what the partner
+ * system calls this customer, and is echoed on every record it sends.
+ */
+export interface IntegrationConnection {
+  _id: Id;
+  orgId: Id;
+  channel: DataSource;
+  externalSystemName: string;
+  accountRef: string;
+  connectedAt: Timestamp;
+  connectedByUserId?: Id;
+  lastSyncedAt?: Timestamp;
 }
 
 export interface IntegrationTransfer {
@@ -648,6 +675,7 @@ export interface MockDatabase {
   auditLog: AuditEntry[];
   evidenceItems: EvidenceItem[];
   importJobs: ImportJob[];
+  integrationConnections: IntegrationConnection[];
   integrationTransfers: IntegrationTransfer[];
   projectMilestones: ProjectMilestone[];
   actionItems: ActionItem[];

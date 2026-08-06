@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Repeat } from "lucide-react";
 import { Button } from "@/components/ui";
 
-/** Demo replacement for `SignOutButton` — returns to the role selector. */
+/** Demo replacement for `SignOutButton`: returns to the role selector. */
 export function ExitDemoButton({ collapsed }: { collapsed?: boolean }) {
   if (collapsed) {
     return (

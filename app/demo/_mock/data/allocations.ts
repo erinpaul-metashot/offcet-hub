@@ -1,4 +1,4 @@
-/** Group D — one row per hand-off of a specific quantity between two organisations. */
+/** Group D: one row per hand-off of a specific quantity between two organisations. */
 
 import type { Allocation } from "../types";
 import {
@@ -6,6 +6,8 @@ import {
   BATCH_FLEECE,
   BATCH_JERSEY,
   BATCH_JERSEY_SECOND,
+  BATCH_TWILL,
+  BATCH_WEBBING,
   BATCH_WOOL_COATING,
 } from "./batches";
 import {
@@ -51,9 +53,11 @@ export const ALLOC_FLEECE_TO_REMADE = "allocation_fleece_remade";
 export const ALLOC_FLEECE_TO_RASK = "allocation_fleece_rask";
 export const ALLOC_JERSEY2_TO_NODE = "allocation_jersey2_node";
 export const ALLOC_FLEECE_PROPOSED = "allocation_fleece_proposed";
+export const ALLOC_TWILL_PROPOSED = "allocation_twill_node_proposed";
+export const ALLOC_WEBBING_ACCEPTED = "allocation_webbing_node_accepted";
 
 export const allocations: Allocation[] = [
-  /* Golden thread, hop 1 — completed, with the 5 kg shortfall resolved as a loss. */
+  /* Golden thread, hop 1: completed, with the 5 kg shortfall resolved as a loss. */
   {
     _id: ALLOC_JERSEY_TO_NODE,
     reference: "CIRKA-ALC-2026-0061",
@@ -90,7 +94,7 @@ export const allocations: Allocation[] = [
     createdAt: daysAgo(46),
     updatedAt: daysAgo(34),
   },
-  /* Golden thread, hop 2 — custodian to maker. */
+  /* Golden thread, hop 2: custodian to maker. */
   {
     _id: ALLOC_JERSEY_TO_MAKER,
     reference: "CIRKA-ALC-2026-0064",
@@ -120,7 +124,7 @@ export const allocations: Allocation[] = [
     createdAt: daysAgo(34),
     updatedAt: daysAgo(12),
   },
-  /* Denim — in transit, waiting for the Göteborg hub to confirm receipt. */
+  /* Denim: in transit, waiting for the Göteborg hub to confirm receipt. */
   {
     _id: ALLOC_DENIM_TO_HUB,
     reference: "CIRKA-ALC-2026-0072",
@@ -149,7 +153,7 @@ export const allocations: Allocation[] = [
     createdAt: daysAgo(12),
     updatedAt: daysAgo(4),
   },
-  /* Wool — accepted, manufacturer has not dispatched yet and is now past the expected date. */
+  /* Wool: accepted, manufacturer has not dispatched yet and is now past the expected date. */
   {
     _id: ALLOC_WOOL_TO_HUB,
     reference: "CIRKA-ALC-2026-0069",
@@ -175,7 +179,7 @@ export const allocations: Allocation[] = [
     createdAt: daysAgo(14),
     updatedAt: daysAgo(11),
   },
-  /* Fleece — hop 1 complete. */
+  /* Fleece: hop 1 complete. */
   {
     _id: ALLOC_FLEECE_TO_NODE,
     reference: "CIRKA-ALC-2026-0052",
@@ -205,7 +209,7 @@ export const allocations: Allocation[] = [
     createdAt: monthsAgo(2),
     updatedAt: daysAgo(9),
   },
-  /* Fleece — hop 2 to Remade Goods, production under way. */
+  /* Fleece: hop 2 to Remade Goods, production under way. */
   {
     _id: ALLOC_FLEECE_TO_REMADE,
     reference: "CIRKA-ALC-2026-0066",
@@ -232,7 +236,7 @@ export const allocations: Allocation[] = [
     createdAt: daysAgo(22),
     updatedAt: daysAgo(20),
   },
-  /* Fleece — hop 2 to Atelier Rask. */
+  /* Fleece: hop 2 to Atelier Rask. */
   {
     _id: ALLOC_FLEECE_TO_RASK,
     reference: "CIRKA-ALC-2026-0078",
@@ -259,7 +263,7 @@ export const allocations: Allocation[] = [
     createdAt: daysAgo(11),
     updatedAt: daysAgo(9),
   },
-  /* Second jersey run — open discrepancy sitting on the admin queue. */
+  /* Second jersey run: open discrepancy sitting on the admin queue. */
   {
     _id: ALLOC_JERSEY2_TO_NODE,
     reference: "CIRKA-ALC-2026-0074",
@@ -292,7 +296,7 @@ export const allocations: Allocation[] = [
     createdAt: daysAgo(18),
     updatedAt: daysAgo(5),
   },
-  /* Proposed — waiting on Atelier Rask to accept or decline. */
+  /* Proposed: waiting on Atelier Rask to accept or decline. */
   {
     _id: ALLOC_FLEECE_PROPOSED,
     reference: "CIRKA-ALC-2026-0081",
@@ -313,5 +317,48 @@ export const allocations: Allocation[] = [
     notes: "Remaining fleece offered for the lined pouch extension. 100 kg of the 300 kg still held here.",
     createdAt: daysAgo(1),
     updatedAt: daysAgo(1),
+  },
+  /* Twill: proposed, waiting on Malmö Node to accept or decline. */
+  {
+    _id: ALLOC_TWILL_PROPOSED,
+    reference: "CIRKA-ALC-2026-0083",
+    batchId: BATCH_TWILL,
+    hop: "manufacturer_to_custodian",
+    fromOrgId: ORG_NORDVAST,
+    fromFacilityId: FAC_NORDVAST_SOURCE,
+    toOrgId: ORG_MALMO_NODE,
+    toFacilityId: FAC_MALMO_STORE,
+    toUserId: DEMO_CUSTODIAN_ID,
+    quantityAllocated: 200,
+    unit: "kg",
+    status: "proposed",
+    expectedArrivalDate: daysAhead(7),
+    proposedByUserId: DEMO_ADMIN_ID,
+    notes: "Twill roll ends for a small-batch workwear order. Needs a site with room for two more pallets.",
+    createdAt: daysAgo(2),
+    updatedAt: daysAgo(2),
+  },
+  /* Webbing: accepted, manufacturer has not dispatched yet. */
+  {
+    _id: ALLOC_WEBBING_ACCEPTED,
+    reference: "CIRKA-ALC-2026-0079",
+    batchId: BATCH_WEBBING,
+    hop: "manufacturer_to_custodian",
+    fromOrgId: ORG_NORDVAST,
+    fromFacilityId: FAC_NORDVAST_SOURCE,
+    toOrgId: ORG_MALMO_NODE,
+    toFacilityId: FAC_MALMO_STORE,
+    toUserId: DEMO_CUSTODIAN_ID,
+    quantityAllocated: 90,
+    unit: "kg",
+    status: "accepted",
+    expectedDispatchDate: daysAhead(2),
+    expectedArrivalDate: daysAhead(5),
+    proposedByUserId: DEMO_ADMIN_ID,
+    respondedByUserId: DEMO_CUSTODIAN_ID,
+    respondedAt: daysAgo(3),
+    responseNote: "Space confirmed at Bulltofta.",
+    createdAt: daysAgo(4),
+    updatedAt: daysAgo(3),
   },
 ];

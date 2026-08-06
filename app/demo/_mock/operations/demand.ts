@@ -16,6 +16,7 @@ import {
   requireRow,
   requireText,
 } from "./helpers";
+import { now as currentTime } from "../clock";
 
 /* ------------------------------------------------------------------ *
  * Projects
@@ -62,7 +63,7 @@ export function createProject(
     targetCompletionDate: input.targetCompletionDate,
     status: "draft",
     visibility: "private",
-    createdAt: Date.now(),
+    createdAt: currentTime(),
   };
 
   const withProject = insertRow(db, "projects", project);
@@ -93,8 +94,8 @@ export function activateProject(
   const updated = patchRow(db, "projects", args.projectId, {
     status: "active",
     visibility: "shared_with_participants",
-    startDate: project.startDate ?? Date.now(),
-    updatedAt: Date.now(),
+    startDate: project.startDate ?? currentTime(),
+    updatedAt: currentTime(),
   });
 
   return appendAudit(updated, {
@@ -136,7 +137,7 @@ export function createResourceRequest(
   const title = requireText(input.title, "Give the request a title.");
   const quantityNeeded = requirePositive(input.quantityNeeded, "Quantity must be greater than zero.");
   const requestId = makeId("request");
-  const now = Date.now();
+  const now = currentTime();
 
   const request: ResourceRequest = {
     _id: requestId,
@@ -193,7 +194,7 @@ export function submitResourceRequest(
 
   const updated = patchRow(db, "resourceRequests", args.requestId, {
     status: "submitted",
-    submittedAt: Date.now(),
+    submittedAt: currentTime(),
   });
 
   return appendAudit(updated, {
@@ -229,7 +230,7 @@ export function markRequestUnfulfillable(
 }
 
 /* ------------------------------------------------------------------ *
- * Matching — a recorded decision, not a calculation
+ * Matching: a recorded decision, not a calculation
  * ------------------------------------------------------------------ */
 
 export interface ProposeMatchInput {
@@ -253,12 +254,18 @@ export function proposeMatch(
   const batch = requireRow(db, "resourceBatches", input.batchId, "Resource batch");
   const rationale = requireText(
     input.rationale,
-    "A match needs a written rationale — the brand is shown this.",
+    "A match needs a written rationale: the brand is shown this.",
   );
   const quantity = requirePositive(input.quantityProposed, "Quantity must be greater than zero.");
 
   if (!batch.releasedAt) {
     throw new OperationError("This batch has not been released for matching yet.");
+  }
+
+  if (!batch.reviewedAt) {
+    throw new OperationError(
+      `${batch.reference} is still awaiting CIRKA review: review it before proposing a match.`,
+    );
   }
 
   const matchId = makeId("match");
@@ -276,7 +283,7 @@ export function proposeMatch(
     availabilityFitNote: input.availabilityFitNote?.trim() || undefined,
     distanceKm: input.distanceKm,
     proposedByUserId: actor.userId,
-    proposedAt: Date.now(),
+    proposedAt: currentTime(),
     status: "proposed",
   };
 
@@ -331,7 +338,7 @@ export function withdrawMatch(
   const updated = patchRow(released, "matches", args.matchId, {
     status: "withdrawn",
     decidedByUserId: actor.userId,
-    decidedAt: Date.now(),
+    decidedAt: currentTime(),
     decisionNote: args.note?.trim() || undefined,
   });
 
@@ -350,7 +357,7 @@ export function withdrawMatch(
 
 /**
  * The brand (or an admin on their behalf) approves or rejects the match.
- * Approval creates the first allocation — manufacturer to custodian.
+ * Approval creates the first allocation: manufacturer to custodian.
  */
 export function decideMatch(
   db: MockDatabase,
@@ -372,13 +379,13 @@ export function decideMatch(
       reason: "reservation_released",
       performedByUserId: actor.userId,
       performedByOrgId: actor.orgId,
-      notes: args.note ?? "Match rejected — reservation released.",
+      notes: args.note ?? "Match rejected: reservation released.",
     });
 
     const rejected = patchRow(released, "matches", args.matchId, {
       status: "rejected",
       decidedByUserId: actor.userId,
-      decidedAt: Date.now(),
+      decidedAt: currentTime(),
       decisionNote: args.note?.trim() || undefined,
     });
 
@@ -405,7 +412,7 @@ export function decideMatch(
   const approved = patchRow(db, "matches", args.matchId, {
     status: "approved",
     decidedByUserId: actor.userId,
-    decidedAt: Date.now(),
+    decidedAt: currentTime(),
     decisionNote: args.note?.trim() || undefined,
   });
 
@@ -446,8 +453,8 @@ export function decideMatch(
     status: "proposed",
     proposedByUserId: actor.userId,
     notes: `Created from match on ${request.reference}.`,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
+    createdAt: currentTime(),
+    updatedAt: currentTime(),
   };
 
   const withAllocation = insertRow(withRequest, "allocations", allocation);

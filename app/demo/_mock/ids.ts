@@ -12,7 +12,7 @@ export function makeReference(kind: "RB" | "PRJ" | "REQ" | "ALC" | "PB", sequenc
   return `CIRKA-${kind}-${year}-${String(sequence).padStart(4, "0")}`;
 }
 
-/** Resets the counter — used by "Reset demo data" so ids stay stable per run. */
+/** Resets the counter: used by "Reset demo data" so ids stay stable per run. */
 export function resetIdCounter(): void {
   counter = 0;
 }

@@ -12,12 +12,13 @@ import { useAction } from "../../_components/use-action";
 import { CustodianArrivalDrawer } from "../../_components/custodian-arrival-drawer";
 
 /* ─────────────────────────────────────────────────────────────────────
-   Group logic — maps each arrival's status to one of three action groups
+   Group logic: maps each arrival's status to one of three action groups
    ───────────────────────────────────────────────────────────────────── */
 type GroupKey = "action" | "waiting" | "issue";
 
 function groupOf(entry: ExpectedArrival): GroupKey {
   const { allocation, late } = entry;
+  if (entry.openIssue) return "issue";
   if (allocation.status === "discrepancy") return "issue";
   if (allocation.status === "in_transit" && late) return "action";
   if (allocation.status === "proposed") return "action";
@@ -41,15 +42,15 @@ const GROUP_META: Record<
     emptyNote: "Nothing is pending with a manufacturer right now.",
   },
   issue: {
-    label: "Resolved with issues",
+    label: "Open with CIRKA",
     Icon: AlertTriangle,
     iconBg: "bg-[#C8A96B]",
-    emptyNote: "No open discrepancies.",
+    emptyNote: "No open discrepancies or reported issues.",
   },
 };
 
 /* ─────────────────────────────────────────────────────────────────────
-   Compact arrival row — no inline expand, just an arrow hint
+   Compact arrival row: no inline expand, just an arrow hint
    ───────────────────────────────────────────────────────────────────── */
 function ArrivalRow({
   entry,
@@ -60,7 +61,7 @@ function ArrivalRow({
   selected: boolean;
   onClick: () => void;
 }) {
-  const { allocation, batch, fromName, late } = entry;
+  const { allocation, batch, fromName, late, openIssue } = entry;
 
   return (
     <button
@@ -84,6 +85,9 @@ function ArrivalRow({
             {batch?.name ?? allocation.reference}
           </p>
           <p className="text-xs text-[var(--ink-muted)]">{fromName}</p>
+          {openIssue && (
+            <p className="text-xs font-semibold text-[#8A1F1F]">{openIssue.title}</p>
+          )}
         </div>
 
         {/* Right: qty + badges */}
@@ -164,11 +168,7 @@ export default function CustodianArrivalsPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading
-        eyebrow="Arrivals"
-        title="Confirm what actually arrived"
-        description="Grouped by what needs your attention. Click any arrival to open the reconciliation drawer and confirm receipt."
-      />
+      <SectionHeading eyebrow="Arrivals" title="Confirm what actually arrived" />
 
       {error && (
         <NoticeBanner tone="blocking" title="That step was refused">
@@ -179,7 +179,7 @@ export default function CustodianArrivalsPage() {
       {view.arrivals.length === 0 ? (
         <EmptyState
           title="Nothing expected"
-          body="Allocations routed to this node will appear here as soon as CIRKA proposes them."
+          body="Proposed allocations appear here."
         />
       ) : (
         <>
@@ -193,9 +193,7 @@ export default function CustodianArrivalsPage() {
               },
               { num: actionCount, label: "Needs action", accent: true },
               {
-                num: view.arrivals.filter(
-                  (a) => a.allocation.status === "discrepancy",
-                ).length,
+                num: view.arrivals.filter((a) => groupOf(a) === "issue").length,
                 label: "Open issues",
                 accent: false,
               },

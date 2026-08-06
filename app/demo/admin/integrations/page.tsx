@@ -21,11 +21,7 @@ export default function AdminIntegrationsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="Integrations"
-        title="Data moving in and out"
-        description="CIRKA does not build partner integrations yet, but it records every attempt with generic fields — no partner names in the schema. Failed transfers surface on the action queue and can be retried."
-      />
+      <SectionHeading eyebrow="Integrations" title="Data moving in and out" />
 
       {error && <NoticeBanner tone="blocking" title="The retry was refused">{error}</NoticeBanner>}
 
@@ -56,7 +52,7 @@ export default function AdminIntegrationsPage() {
               </div>
 
               <dl>
-                <DataRow label="External record" value={transfer.externalRecordId ?? "—"} />
+                <DataRow label="External record" value={transfer.externalRecordId ?? "-"} />
                 <DataRow
                   label="External link"
                   value={
@@ -70,11 +66,11 @@ export default function AdminIntegrationsPage() {
                         Open in the partner system
                       </a>
                     ) : (
-                      "—"
+                      "-"
                     )
                   }
                 />
-                <DataRow label="Payload" value={transfer.payloadSummary ?? "—"} />
+                <DataRow label="Payload" value={transfer.payloadSummary ?? "-"} />
                 <DataRow label="Attempts" value={transfer.attemptCount} />
                 <DataRow label="Last attempt" value={formatDateTime(transfer.lastAttemptAt)} />
                 <DataRow label="Succeeded" value={formatDateTime(transfer.succeededAt)} />

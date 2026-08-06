@@ -5,11 +5,11 @@ import Link from "next/link";
 import { Button, Field, Input, Panel, Select } from "@/components/ui";
 import { DISCREPANCY_RESOLUTIONS, statusLabel, type DiscrepancyResolution } from "../_mock/domain";
 import type { AllocationDetail } from "../_mock/selectors-admin";
-import { formatQuantity, userName } from "../_mock/selectors-shared";
+import { formatQuantity } from "../_mock/selectors-shared";
 import { useDemoStore } from "../_mock/store";
 import { AllocationJourney } from "./allocation-journey";
 import { CirkaBadge, DataRow, NoticeBanner, SectionHeading, formatDate } from "./cirka-ui";
-import { AuditTrail } from "./records";
+import { ThreadTimelinePanel } from "./trace-timeline";
 import { useAction } from "./use-action";
 
 export function AllocationDetailView({
@@ -75,7 +75,7 @@ export function AllocationDetailView({
               value={
                 allocation.quantityDispatched !== undefined
                   ? formatQuantity(allocation.quantityDispatched, allocation.unit)
-                  : "—"
+                  : "-"
               }
               hint={formatDate(allocation.dispatchedAt)}
             />
@@ -84,7 +84,7 @@ export function AllocationDetailView({
               value={
                 allocation.quantityReceived !== undefined
                   ? formatQuantity(allocation.quantityReceived, allocation.unit)
-                  : "—"
+                  : "-"
               }
               hint={formatDate(allocation.receivedAt)}
             />
@@ -108,7 +108,7 @@ export function AllocationDetailView({
             <DataRow label="From" value={fromName} hint={fromFacility?.name} />
             <DataRow label="To" value={toName} hint={toFacility?.name} />
             <DataRow label="Expected dispatch" value={formatDate(allocation.expectedDispatchDate)} />
-            <DataRow label="Dispatch reference" value={allocation.dispatchReference ?? "—"} />
+            <DataRow label="Dispatch reference" value={allocation.dispatchReference ?? "-"} />
             <DataRow label="Expected arrival" value={formatDate(allocation.expectedArrivalDate)} />
             <DataRow
               label="Proposed"
@@ -178,19 +178,18 @@ export function AllocationDetailView({
       )}
 
       {allocation.discrepancyResolvedAt && (
-        <NoticeBanner tone="info" title={`Discrepancy resolved — ${statusLabel(allocation.discrepancyResolution ?? "")}`}>
+        <NoticeBanner tone="info" title={`Discrepancy resolved: ${statusLabel(allocation.discrepancyResolution ?? "")}`}>
           {formatDate(allocation.discrepancyResolvedAt)} · {detail.discrepancyResolvedByName}
         </NoticeBanner>
       )}
 
-      <Panel className="space-y-4 p-6">
-        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">History</h2>
-        <AuditTrail
-          entries={detail.audit}
-          actorName={(userId) => userName(store.db, userId)}
-          limit={12}
-        />
-      </Panel>
+      {/* The allocation's own audit trail is a subset of this: one hop of a
+          longer journey reads better with the rest of the journey around it. */}
+      <ThreadTimelinePanel
+        role="admin"
+        anchor={{ table: "allocations", id: allocation._id }}
+        description="This hop in the context of the whole material journey."
+      />
     </div>
   );
 }

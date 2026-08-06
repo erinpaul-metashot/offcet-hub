@@ -5,7 +5,7 @@ import { ExitDemoButton } from "./exit-demo-button";
 
 /**
  * Wraps the production `AppLayout` with the demo persona and swaps the
- * sign-out control for a role switcher — no auth involved.
+ * sign-out control for a role switcher: no auth involved.
  */
 export function DemoAppLayout({
   user,

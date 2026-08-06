@@ -56,7 +56,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
       custodianOrgId: "",
       makerOrgId: "",
       categoryFitNote: candidate.categoryFit
-        ? `Exact category match — ${categoryLabel(batch.materialCategory)}.`
+        ? `Exact category match: ${categoryLabel(batch.materialCategory)}.`
         : `Different category: ${categoryLabel(batch.materialCategory)} against a ${categoryLabel(request.materialCategory)} request.`,
     });
     setAvailabilityFitNote(
@@ -130,13 +130,13 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                   hint={workspace.project.reference}
                 />
               )}
-              <DataRow label="Material" value={request.materialDescription ?? "—"} />
-              <DataRow label="Composition" value={request.compositionRequirements ?? "—"} />
-              <DataRow label="Quality" value={request.qualityRequirements ?? "—"} />
-              <DataRow label="Intended product" value={request.intendedProduct ?? "—"} />
+              <DataRow label="Material" value={request.materialDescription ?? "-"} />
+              <DataRow label="Composition" value={request.compositionRequirements ?? "-"} />
+              <DataRow label="Quality" value={request.qualityRequirements ?? "-"} />
+              <DataRow label="Intended product" value={request.intendedProduct ?? "-"} />
               <DataRow
                 label="Location preference"
-                value={request.productionLocationPreference ?? "—"}
+                value={request.productionLocationPreference ?? "-"}
                 hint={request.maxDistanceKm ? `Within ${request.maxDistanceKm} km` : undefined}
               />
               <DataRow label="Needed by" value={formatDate(request.neededBy)} />
@@ -149,10 +149,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                     {briefAction.error}
                   </NoticeBanner>
                 )}
-                <Field
-                  label="Nothing suitable available?"
-                  hint="Marking a request unfulfillable keeps it visible — new stock can bring it back."
-                >
+                <Field label="Nothing suitable available?">
                   <Input
                     value={unfulfillableNote}
                     onChange={(event) => setUnfulfillableNote(event.target.value)}
@@ -207,10 +204,9 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
 
       {activeTab === "shortlist" && (
         <Panel className="overflow-hidden animate-stagger-in">
-          <div className="border-b border-[var(--line)] px-6 py-5">
-            <p className="text-sm text-[var(--ink-muted)]">
-              Sorted by category fit, quantity fit and distance. A suggestion, not a decision.
-              Select a candidate to propose it.
+          <div className="border-b border-[var(--line)] px-6 py-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+              Ranked by category, quantity & distance
             </p>
           </div>
           <div className="divide-y divide-[var(--line)]">
@@ -280,7 +276,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
             })}
             {candidates.length === 0 && (
               <p className="px-6 py-8 text-sm text-[var(--ink-muted)]">
-                No released batch has uncommitted quantity right now.
+                No uncommitted quantity right now.
               </p>
             )}
           </div>
@@ -289,11 +285,6 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
 
       {activeTab === "decisions" && (
         <Panel className="overflow-hidden animate-stagger-in">
-          <div className="border-b border-[var(--line)] px-6 py-5">
-            <p className="text-sm text-[var(--ink-muted)]">
-              Every proposal, with its reason and its outcome. Nothing here is deleted.
-            </p>
-          </div>
 
           {decisionAction.error && (
             <div className="px-6 pt-5">
@@ -305,7 +296,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
 
           {matches.length === 0 ? (
             <p className="px-6 py-8 text-sm text-[var(--ink-muted)]">
-              No match has been proposed for this request yet.
+              No match proposed yet.
             </p>
           ) : (
             <div className="divide-y divide-[var(--line)]">
@@ -347,7 +338,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                         <Input
                           value={decisionNote}
                           onChange={(event) => setDecisionNote(event.target.value)}
-                          placeholder="Approved on the brand's behalf — standalone maker request."
+                          placeholder="Approved on the brand's behalf: standalone maker request."
                         />
                       </Field>
                       <div className="flex flex-wrap gap-3">

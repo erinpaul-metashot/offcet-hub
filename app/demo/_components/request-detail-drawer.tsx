@@ -128,7 +128,7 @@ export function RequestDetailDrawer({
             {activeMatches.length === 0 ? (
               <EmptyState
                 title="No matches proposed yet"
-                body="An admin proposes matches once a request enters review."
+                body="Proposed once the request enters review."
               />
             ) : (
               <div className="space-y-3">

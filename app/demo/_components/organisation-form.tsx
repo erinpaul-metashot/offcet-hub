@@ -69,7 +69,7 @@ function toNumber(value: string): number | undefined {
 }
 
 /**
- * Sends every key, including the empty ones — `updateOrganisation` reads key
+ * Sends every key, including the empty ones: `updateOrganisation` reads key
  * presence, so an emptied field clears the column rather than being ignored.
  */
 function toInput(form: OrganisationFormState): OrganisationInput {
@@ -214,7 +214,7 @@ export function OrganisationForm({
         </Field>
         <Field
           label="Type"
-          hint={isEdit ? "Fixed at registration — register a new organisation to change it." : undefined}
+          hint={isEdit ? "Fixed at registration: register a new organisation to change it." : undefined}
         >
           <Select
             value={form.type}
@@ -239,7 +239,7 @@ export function OrganisationForm({
 
       <FormSection
         title="Registration"
-        hint="Protected — visible only to CIRKA and the organisation itself."
+        hint="Protected"
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Company number">
@@ -300,7 +300,7 @@ export function OrganisationForm({
 
       <FormSection
         title="Coordinates"
-        hint="Optional. Used to rank custodians by distance when matching material."
+        hint="Optional · ranks distance in matching"
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Latitude">
@@ -338,7 +338,7 @@ export function OrganisationForm({
         </Field>
         <Field
           label="Capability tags"
-          hint="Enter or comma to add. Used to shortlist this organisation during matching."
+          hint="Enter or comma to add"
         >
           <TagInput tags={form.capabilityTags} onChange={(next) => update("capabilityTags", next)} />
         </Field>

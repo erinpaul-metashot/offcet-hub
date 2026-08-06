@@ -14,7 +14,7 @@ import { useAction } from "./use-action";
 
 /**
  * A site never changes hands, so the patch deliberately drops `orgId`. Every
- * other key is sent even when empty — `updateFacility` reads key presence, so
+ * other key is sent even when empty: `updateFacility` reads key presence, so
  * an emptied field clears its column instead of being ignored.
  */
 function toPatch(input: FacilityInput): FacilityPatch {
@@ -29,10 +29,11 @@ function toPatch(input: FacilityInput): FacilityPatch {
     longitude: input.longitude,
     contactName: input.contactName,
     contactEmail: input.contactEmail,
+    storageCapacityKg: input.storageCapacityKg,
   };
 }
 
-/** What is recorded against the site — the reason it may not be removable. */
+/** What is recorded against the site: the reason it may not be removable. */
 function Reference({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-baseline gap-1.5">
@@ -53,8 +54,8 @@ function addressOf(facility: Facility): string {
 /**
  * The organisation's sites, and everything an admin can do to them.
  *
- * A site that material has moved through cannot be removed at all — the batches
- * recorded against it must keep pointing at a real record — so the row shows
+ * A site that material has moved through cannot be removed at all: the batches
+ * recorded against it must keep pointing at a real record: so the row shows
  * the counts that block it and offers deactivation instead.
  */
 export function OrganisationFacilities({
@@ -65,7 +66,7 @@ export function OrganisationFacilities({
   facilities: OrganisationFacility[];
 }) {
   const store = useDemoStore();
-  /* Three surfaces, three errors — a refused row action must not appear in the form. */
+  /* Three surfaces, three errors: a refused row action must not appear in the form. */
   const rowAction = useAction();
   const form = useAction();
   const removal = useAction();
@@ -135,9 +136,8 @@ export function OrganisationFacilities({
       {facilities.length === 0 ? (
         <Panel className="p-8 text-center">
           <p className="text-sm font-semibold text-[var(--ink)]">No sites recorded</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-[var(--ink-muted)]">
-            Batches are recorded against the site they came from, so {organisation.name} needs at
-            least one before it can log material.
+          <p className="mt-1 text-sm text-[var(--ink-muted)]">
+            {organisation.name} needs one before it can log material.
           </p>
         </Panel>
       ) : (
@@ -190,9 +190,7 @@ export function OrganisationFacilities({
                         <Reference label="Batches" value={batchCount} />
                         <Reference label="Allocations" value={allocationCount} />
                         <Reference label="Production" value={productionCount} />
-                        <span className="text-xs text-[#8A3D11]">
-                          Point at this site, so it can only be deactivated.
-                        </span>
+                        <span className="text-xs text-[#8A3D11]">Deactivate only</span>
                       </div>
                     )}
                   </div>
@@ -231,7 +229,7 @@ export function OrganisationFacilities({
                       title={
                         canRemove
                           ? undefined
-                          : "Material has moved through this site — deactivate it instead."
+                          : "Material has moved through this site: deactivate it instead."
                       }
                       onClick={() => setRemoving(facility)}
                     >
@@ -249,11 +247,6 @@ export function OrganisationFacilities({
         <Modal
           eyebrow={editing.facility ? "Edit site" : "New site"}
           title={editing.facility?.name ?? `Add a site to ${organisation.name}`}
-          description={
-            editing.facility
-              ? undefined
-              : "Material is recorded against the site it came from, so the address needs to be the real one."
-          }
           onClose={closeForm}
         >
           <FacilityForm
@@ -277,13 +270,7 @@ export function OrganisationFacilities({
           pending={removal.pending}
           onCancel={closeRemoval}
           onConfirm={() => handleRemove(removing)}
-          body={
-            <>
-              Nothing has been recorded at this site, so it can go without leaving anything
-              pointing at a missing record. It stops appearing when {organisation.name} logs
-              material.
-            </>
-          }
+          body="Nothing has been recorded at this site, so it can go."
         />
       )}
     </section>

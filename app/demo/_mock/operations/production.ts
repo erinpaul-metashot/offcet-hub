@@ -34,6 +34,7 @@ import {
   requireRow,
   requireText,
 } from "./helpers";
+import { now as currentTime } from "../clock";
 
 export interface CreateProductionInput {
   allocationId: Id;
@@ -63,7 +64,7 @@ export function createProductionBatch(
   }
 
   const productionBatchId = makeId("production");
-  const now = Date.now();
+  const now = currentTime();
 
   const production: ProductionBatch = {
     _id: productionBatchId,
@@ -127,10 +128,10 @@ export function setProductionStatus(
     throw new OperationError("Use Complete production so the material balance is checked.");
   }
 
-  const patch: Partial<ProductionBatch> = { status: args.status, updatedAt: Date.now() };
+  const patch: Partial<ProductionBatch> = { status: args.status, updatedAt: currentTime() };
 
   if (args.status === "in_production" && !production.actualStartDate) {
-    patch.actualStartDate = Date.now();
+    patch.actualStartDate = currentTime();
   }
 
   const updated = patchRow(db, "productionBatches", args.productionBatchId, patch);
@@ -180,7 +181,7 @@ export function recordMaterialUse(
     qtyReturned: input.qtyReturned ?? production.qtyReturned,
     actualQuantity: input.actualQuantity ?? production.actualQuantity,
     makerNotes: input.makerNotes?.trim() || production.makerNotes,
-    updatedAt: Date.now(),
+    updatedAt: currentTime(),
   };
 
   patch.materialYield = materialYield({
@@ -293,13 +294,13 @@ export function completeProduction(
 
   const updated = patchRow(moved, "productionBatches", args.productionBatchId, {
     status: "completed",
-    actualCompletionDate: Date.now(),
+    actualCompletionDate: currentTime(),
     actualQuantity: completedUnits > 0 ? completedUnits : production.actualQuantity,
     totalLabourHours: hours > 0 ? round(hours) : production.totalLabourHours,
     hoursPerSaleableUnit:
       hours > 0 && completedUnits > 0 ? round(hours / completedUnits) : production.hoursPerSaleableUnit,
     materialYield: materialYield(production),
-    updatedAt: Date.now(),
+    updatedAt: currentTime(),
   });
 
   return appendAudit(updated, {
@@ -334,9 +335,9 @@ export function submitEvidence(
   const updated = patchRow(db, "productionBatches", args.productionBatchId, {
     status: "evidence_submitted",
     evidenceStatus: "evidence_submitted",
-    evidenceSubmittedAt: Date.now(),
+    evidenceSubmittedAt: currentTime(),
     makerNotes: args.makerNotes?.trim() || production.makerNotes,
-    updatedAt: Date.now(),
+    updatedAt: currentTime(),
   });
 
   return appendAudit(updated, {
@@ -371,9 +372,9 @@ export function reviewEvidence(
     status: next,
     evidenceStatus: args.approve ? "cirka_reviewed" : "maker_reported",
     reviewedByUserId: actor.userId,
-    reviewedAt: Date.now(),
+    reviewedAt: currentTime(),
     reviewNotes: args.reviewNotes?.trim() || undefined,
-    updatedAt: Date.now(),
+    updatedAt: currentTime(),
   });
 
   return appendAudit(updated, {
@@ -396,7 +397,7 @@ export function reviewEvidence(
 }
 
 /* ------------------------------------------------------------------ *
- * Repeatable rows — inputs, time, outputs
+ * Repeatable rows: inputs, time, outputs
  * ------------------------------------------------------------------ */
 
 export function addProductionInput(
@@ -427,7 +428,7 @@ export function addProductionInput(
     cost: args.cost,
     currency: args.cost !== undefined ? "SEK" : undefined,
     sourcingCategory: args.sourcingCategory,
-    createdAt: Date.now(),
+    createdAt: currentTime(),
   };
 
   return appendAudit(insertRow(db, "productionInputs", row), {
@@ -479,7 +480,7 @@ function recomputeTime(db: MockDatabase, productionBatchId: Id): MockDatabase {
     peopleInvolved: people > 0 ? people : production.peopleInvolved,
     timeIsEstimated: entries.some((entry) => entry.isEstimated),
     hoursPerSaleableUnit: units > 0 ? round(hours / units) : undefined,
-    updatedAt: Date.now(),
+    updatedAt: currentTime(),
   });
 }
 
@@ -504,9 +505,9 @@ export function addTimeEntry(
     hours,
     peopleInvolved: args.peopleInvolved,
     isEstimated: args.isEstimated,
-    entryDate: Date.now(),
+    entryDate: currentTime(),
     notes: args.notes?.trim() || undefined,
-    createdAt: Date.now(),
+    createdAt: currentTime(),
   };
 
   const withRow = recomputeTime(insertRow(db, "productionTimeEntries", row), args.productionBatchId);
@@ -578,7 +579,7 @@ export function addProductionOutput(
     weightUnit: args.unitWeight !== undefined ? "kg" : undefined,
     finishedImageUrls: [],
     notes: args.notes?.trim() || undefined,
-    createdAt: Date.now(),
+    createdAt: currentTime(),
   };
 
   return appendAudit(insertRow(db, "productionOutputs", row), {
@@ -594,7 +595,7 @@ export function addProductionOutput(
 }
 
 /* ------------------------------------------------------------------ *
- * Costs — restricted to the maker and CIRKA
+ * Costs: restricted to the maker and CIRKA
  * ------------------------------------------------------------------ */
 
 export type CostInput = Partial<
@@ -652,7 +653,7 @@ export function upsertProductionCosts(
     saleableUnits,
     baseCostPerUnit,
     revenueGenerated,
-    updatedAt: Date.now(),
+    updatedAt: currentTime(),
   };
 
   const next = existing
@@ -663,7 +664,7 @@ export function upsertProductionCosts(
         makerOrgId: actor.orgId,
         currency: "SEK",
         shareCostPerUnitWithBrand: false,
-        createdAt: Date.now(),
+        createdAt: currentTime(),
         ...patch,
       } as ProductionCost);
 
@@ -695,7 +696,7 @@ export function setCostSharing(
 
   const updated = patchRow(db, "productionCosts", cost._id, {
     shareCostPerUnitWithBrand: args.share,
-    updatedAt: Date.now(),
+    updatedAt: currentTime(),
   });
 
   return appendAudit(updated, {
@@ -759,7 +760,7 @@ export function submitSuitabilityFeedback(
     limitations: args.limitations?.trim() || undefined,
     notes: args.notes?.trim() || undefined,
     imageUrls: [],
-    createdAt: Date.now(),
+    createdAt: currentTime(),
   };
 
   return appendAudit(insertRow(db, "suitabilityFeedback", row), {
@@ -802,7 +803,7 @@ export function addEvidenceItem(
     visibility: args.visibility ?? "project_participants",
     caption: args.caption?.trim() || undefined,
     containsPeople: args.containsPeople,
-    createdAt: Date.now(),
+    createdAt: currentTime(),
   };
 
   return appendAudit(insertRow(db, "evidenceItems", row), {

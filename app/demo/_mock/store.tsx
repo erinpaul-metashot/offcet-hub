@@ -19,6 +19,8 @@ import * as productionOps from "./operations/production";
 import * as adminOps from "./operations/admin";
 import * as importOps from "./operations/imports";
 import * as arrivalOps from "./operations/arrivals";
+import * as integrationOps from "./operations/integrations";
+import * as retexcirOps from "./operations/retexcir";
 import * as facilityOps from "./operations/facilities";
 
 /** The persona each section of the demo signs you in as. */
@@ -38,6 +40,8 @@ export const PERSONA_IDS: Record<CirkaRole, Id> = {
 interface DemoStoreValue {
   db: MockDatabase;
   resetDemo: () => void;
+  /** Replaces the whole database. Story mode pushes each replayed beat in here. */
+  loadDatabase: (next: MockDatabase) => void;
   personaFor: (role: CirkaRole) => User;
   scopeFor: (role: CirkaRole) => ViewerScope;
 
@@ -93,6 +97,10 @@ interface DemoStoreValue {
   confirmReceipt: (
     role: CirkaRole,
     args: { allocationId: Id; quantityReceived: number; note?: string },
+  ) => Promise<void>;
+  reportArrivalIssue: (
+    role: CirkaRole,
+    args: Parameters<typeof allocationOps.reportArrivalIssue>[2],
   ) => Promise<void>;
   resolveDiscrepancy: (
     role: CirkaRole,
@@ -213,7 +221,12 @@ interface DemoStoreValue {
     args: Parameters<typeof importOps.queueOutboundTransfer>[2],
   ) => Promise<void>;
 
-  // Intake — connected-system arrivals
+  // Intake: connected-system arrivals
+  connectRetexcirAccount: (role: CirkaRole, args: integrationOps.ConnectRetexcirInput) => Promise<void>;
+  disconnectRetexcirAccount: (role: CirkaRole) => Promise<void>;
+  pullRetexcirRecords: (
+    role: CirkaRole,
+  ) => Promise<Omit<retexcirOps.PullRetexcirResult, "db">>;
   receiveArrival: (role: CirkaRole, args: arrivalOps.ReceiveArrivalInput) => Promise<void>;
   confirmArrival: (
     role: CirkaRole,
@@ -256,11 +269,14 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     [db],
   );
 
-  const resetDemo = useCallback(() => {
-    const fresh = createMockDatabase();
-    dbRef.current = fresh;
-    setDb(fresh);
+  const loadDatabase = useCallback((next: MockDatabase) => {
+    dbRef.current = next;
+    setDb(next);
   }, []);
+
+  const resetDemo = useCallback(() => {
+    loadDatabase(createMockDatabase());
+  }, [loadDatabase]);
 
   /** Runs an operation that also returns a value alongside the new database. */
   const commitWith = useCallback(
@@ -291,6 +307,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     return {
       db,
       resetDemo,
+      loadDatabase,
       personaFor,
       scopeFor,
 
@@ -321,6 +338,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       confirmDispatchReadiness: simple(allocationOps.confirmDispatchReadiness),
       recordDispatch: simple(allocationOps.recordDispatch),
       confirmReceipt: simple(allocationOps.confirmReceipt),
+      reportArrivalIssue: simple(allocationOps.reportArrivalIssue),
       resolveDiscrepancy: simple(allocationOps.resolveDiscrepancy),
       proposeAllocationToMaker: simple(allocationOps.proposeAllocationToMaker),
       returnMaterial: simple(allocationOps.returnMaterial),
@@ -371,6 +389,12 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
         commitWith(role, (current, actor) => importOps.commitImport(current, actor, args)),
       queueOutboundTransfer: simple(importOps.queueOutboundTransfer),
 
+      connectRetexcirAccount: simple(integrationOps.connectRetexcirAccount),
+      disconnectRetexcirAccount: async (role) => {
+        commit((current) => integrationOps.disconnectRetexcirAccount(current, scopeFor(role)));
+      },
+      pullRetexcirRecords: async (role) =>
+        commitWith(role, (current, actor) => retexcirOps.pullRetexcirRecords(current, actor)),
       receiveArrival: simple(arrivalOps.receiveArrival),
       confirmArrival: async (role, args) =>
         commitWith(role, (current, actor) =>
@@ -380,7 +404,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
         commit((current) => arrivalOps.skipArrival(current, scopeFor(role), args.arrivalId));
       },
     };
-  }, [commit, commitWith, db, personaFor, resetDemo, scopeFor]);
+  }, [commit, commitWith, db, loadDatabase, personaFor, resetDemo, scopeFor]);
 
   return <DemoStoreContext.Provider value={value}>{children}</DemoStoreContext.Provider>;
 }

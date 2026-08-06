@@ -1,4 +1,4 @@
-/** Group C — projects, demand requests, recorded matching decisions, milestones. */
+/** Group C: projects, demand requests, recorded matching decisions, milestones. */
 
 import type { Match, Project, ProjectMilestone, ResourceRequest } from "../types";
 import {
@@ -89,7 +89,7 @@ export const projects: Project[] = [
     brandOrgId: ORG_BYTHORN,
     ownerUserId: DEMO_BRAND_ID,
     title: "Spring Linen Study",
-    objective: "Early brief — exploring whether linen seconds can carry a shirting programme.",
+    objective: "Early brief: exploring whether linen seconds can carry a shirting programme.",
     status: "draft",
     visibility: "private",
     createdAt: daysAgo(2),
@@ -261,7 +261,7 @@ export const resourceRequests: ResourceRequest[] = [
     quantityNeeded: 300,
     unit: "kg",
     quantityMatched: 300,
-    intendedProduct: "Capsule extension — pouches",
+    intendedProduct: "Capsule extension: pouches",
     neededBy: daysAhead(8),
     maxDistanceKm: 300,
     status: "in_delivery",
@@ -289,7 +289,7 @@ export const matches: Match[] = [
       "Nordväst's jersey offcuts are the closest composition match in the system and the only A-grade cotton batch above 300 kg. Malmö Resource Node is 190 km from the source and 4 km from Atelier Rask, who have run this construction before. Proposing 300 kg of the 500 kg batch so the remainder stays available for the capsule extension.",
     suggestedCustodianOrgId: ORG_MALMO_NODE,
     suggestedMakerOrgId: ORG_RASK,
-    categoryFitNote: "Exact category match — cotton offcuts, 100% organic cotton, tested.",
+    categoryFitNote: "Exact category match: cotton offcuts, 100% organic cotton, tested.",
     distanceKm: 190,
     availabilityFitNote: "Available immediately, 500 kg uncommitted at the time of proposal.",
     proposedByUserId: DEMO_ADMIN_ID,
@@ -306,10 +306,10 @@ export const matches: Match[] = [
     quantityProposed: 300,
     unit: "kg",
     rationale:
-      "Merino knit panels from a cancelled winter order — wool-dominant, A-grade, stored mothproof since production. 300 kg of the 940 kg batch covers the full brief with headroom for a second colourway. Same manufacturer and custodian pairing that worked for the jersey capsule.",
+      "Merino knit panels from a cancelled winter order: wool-dominant, A-grade, stored mothproof since production. 300 kg of the 940 kg batch covers the full brief with headroom for a second colourway. Same manufacturer and custodian pairing that worked for the jersey capsule.",
     suggestedCustodianOrgId: ORG_MALMO_NODE,
     suggestedMakerOrgId: ORG_RASK,
-    categoryFitNote: "Knitwear, 80% merino — meets the wool-dominant requirement.",
+    categoryFitNote: "Knitwear, 80% merino: meets the wool-dominant requirement.",
     distanceKm: 190,
     availabilityFitNote: "940 kg available, no competing reservations.",
     proposedByUserId: DEMO_ADMIN_ID,
@@ -326,14 +326,14 @@ export const matches: Match[] = [
       "B-grade selvedge denim rejected only on shade tolerance, which the apron design absorbs. Göteborg Circular Hub can hold the pallets and is on Remade's existing collection route.",
     suggestedCustodianOrgId: ORG_GOTEBORG_HUB,
     suggestedMakerOrgId: ORG_REMADE,
-    categoryFitNote: "Denim, heavy weight — matches the requested construction.",
+    categoryFitNote: "Denim, heavy weight: matches the requested construction.",
     distanceKm: 240,
     proposedByUserId: DEMO_ADMIN_ID,
     proposedAt: daysAgo(13),
     status: "approved",
     decidedByUserId: DEMO_ADMIN_ID,
     decidedAt: daysAgo(12),
-    decisionNote: "Approved on the maker's behalf — standalone request, no brand project.",
+    decisionNote: "Approved on the maker's behalf: standalone request, no brand project.",
   },
   {
     _id: MATCH_WOOL,
@@ -345,7 +345,7 @@ export const matches: Match[] = [
       "480 gsm carded wool blend in four natural shades, tested composition. Västkust is 6 km from the Göteborg hub, which keeps the pilot inside the brand's 200 km preference.",
     suggestedCustodianOrgId: ORG_GOTEBORG_HUB,
     suggestedMakerOrgId: ORG_REMADE,
-    categoryFitNote: "Wool, coating weight — above the 440 gsm minimum.",
+    categoryFitNote: "Wool, coating weight: above the 440 gsm minimum.",
     distanceKm: 6,
     proposedByUserId: DEMO_ADMIN_ID,
     proposedAt: daysAgo(15),
@@ -360,10 +360,10 @@ export const matches: Match[] = [
     quantityProposed: 750,
     unit: "kg",
     rationale:
-      "Whole batch proposed — recycled polyester fleece with a tested recycled-content declaration, which the workwear buyer requires. Malmö node holds it and splits between makers as the runs are scheduled.",
+      "Whole batch proposed: recycled polyester fleece with a tested recycled-content declaration, which the workwear buyer requires. Malmö node holds it and splits between makers as the runs are scheduled.",
     suggestedCustodianOrgId: ORG_MALMO_NODE,
     suggestedMakerOrgId: ORG_REMADE,
-    categoryFitNote: "Polyester blend, 100% recycled — meets the insulation spec.",
+    categoryFitNote: "Polyester blend, 100% recycled: meets the insulation spec.",
     distanceKm: 190,
     proposedByUserId: DEMO_ADMIN_ID,
     proposedAt: daysAgo(46),
@@ -396,14 +396,14 @@ export const matches: Match[] = [
     quantityProposed: 300,
     unit: "kg",
     rationale:
-      "Cotton twill roll ends considered as an alternative to denim. Withdrawn — the twill is too light for the apron construction.",
+      "Cotton twill roll ends considered as an alternative to denim. Withdrawn: the twill is too light for the apron construction.",
     categoryFitNote: "Category mismatch: cotton offcuts against a denim request.",
     proposedByUserId: DEMO_ADMIN_ID,
     proposedAt: daysAgo(15),
     status: "withdrawn",
     decidedByUserId: DEMO_ADMIN_ID,
     decidedAt: daysAgo(14),
-    decisionNote: "Withdrawn before the maker saw it — weight is wrong for the product.",
+    decisionNote: "Withdrawn before the maker saw it: weight is wrong for the product.",
   },
 ];
 
@@ -487,7 +487,7 @@ export const projectMilestones: ProjectMilestone[] = [
     actualDate: daysAgo(12),
     status: "completed",
     responsibleOrgId: ORG_RASK,
-    notes: "Four days late — a rework cycle on the strap seam.",
+    notes: "Four days late: a rework cycle on the strap seam.",
   },
   {
     _id: "milestone_9",

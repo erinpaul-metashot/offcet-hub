@@ -18,6 +18,7 @@ import {
   actionItems,
   evidenceItems,
   importJobs,
+  integrationConnections,
   integrationTransfers,
   pendingArrivals,
   seedAuditEntries,
@@ -51,7 +52,7 @@ function clone<T>(rows: T[]): T[] {
   return rows.map((row) => ({ ...row }));
 }
 
-/** A fresh copy of the seed database — never hand out the module-level arrays. */
+/** A fresh copy of the seed database: never hand out the module-level arrays. */
 export function createMockDatabase(): MockDatabase {
   resetIdCounter();
 
@@ -74,6 +75,7 @@ export function createMockDatabase(): MockDatabase {
     auditLog: clone(seedAuditEntries),
     evidenceItems: clone(evidenceItems),
     importJobs: clone(importJobs),
+    integrationConnections: clone(integrationConnections),
     integrationTransfers: clone(integrationTransfers),
     projectMilestones: clone(projectMilestones),
     actionItems: clone(actionItems),

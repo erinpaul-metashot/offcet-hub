@@ -199,14 +199,12 @@ export function CustodianDispatchDrawer({
           )}
 
           {isProposed && (
-            <NoticeBanner tone="info" title={`Waiting on ${makerName}`}>
-              The allocation has been proposed. Nothing for you to do until the maker accepts or declines.
-            </NoticeBanner>
+            <NoticeBanner tone="info" title={`Waiting on ${makerName}`} />
           )}
 
           {isInTransit && (
             <NoticeBanner tone="info" title="Hand-over recorded">
-              You recorded the physical dispatch. The material is currently in transit to {makerName}.
+              In transit to {makerName}.
             </NoticeBanner>
           )}
 

@@ -9,6 +9,7 @@
 import { ACTION_KIND_LABELS, type ActionKind, type ActionSeverity } from "./domain";
 import type { Id, MockDatabase } from "./types";
 import { formatQuantity, isOverdue, orgName } from "./selectors-shared";
+import { now as currentTime } from "./clock";
 
 export interface QueueRow {
   id: string;
@@ -27,7 +28,7 @@ const STALE_PRODUCTION_DAYS = 7;
 
 export function buildActionQueue(db: MockDatabase): QueueRow[] {
   const rows: QueueRow[] = [];
-  const now = Date.now();
+  const now = currentTime();
 
   /* Requests awaiting matching. */
   for (const request of db.resourceRequests) {
@@ -229,7 +230,7 @@ export function groupQueueBySeverity(rows: QueueRow[]) {
   })).filter((group) => group.items.length > 0);
 }
 
-/** The same idea, scoped to one organisation — used on the role dashboards. */
+/** The same idea, scoped to one organisation: used on the role dashboards. */
 export function queueForOrg(db: MockDatabase, orgId: Id): QueueRow[] {
   const rows: QueueRow[] = [];
 

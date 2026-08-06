@@ -99,9 +99,8 @@ export function ProposeDrawer({
             </NoticeBanner>
           )}
 
-          <p className="text-sm leading-relaxed text-[var(--ink-muted)]">
-            Proposing moves the quantity from Available into Reserved, so it cannot be promised
-            twice while the brand decides.
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+            Available → Reserved
           </p>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -150,7 +149,7 @@ export function ProposeDrawer({
 
           <Field
             label="Rationale"
-            hint="Required. The brand reads this — say why this batch, this custodian and this maker."
+            hint="Required · the brand reads this"
           >
             <Textarea
               value={values.rationale}

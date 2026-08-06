@@ -12,6 +12,7 @@ import { getMakerDashboard } from "../../_mock/selectors-maker";
 import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { CirkaBadge, LinkRow, NoticeBanner, formatDate } from "../../_components/cirka-ui";
+import { RoleActivityFeed } from "../../_components/trace-timeline";
 
 export default function MakerDashboardPage() {
   const { db } = useDemoStore();
@@ -22,8 +23,7 @@ export default function MakerDashboardPage() {
     <div className="space-y-8">
       <DashboardHero
         eyebrow="Maker"
-        title={`${organisation?.name ?? "Your workshop"} — material in, products out`}
-        description="Accept what you can use, say what the material was actually like, and record what you made with it. Your costs and prices stay private to you and CIRKA."
+        title={`${organisation?.name ?? "Your workshop"}: material in, products out`}
       >
         <SummaryPill label="Held by you" value={formatQuantity(view.metrics.held, "kg")} />
         <SummaryPill label="Into products" value={formatQuantity(view.metrics.transformed, "kg")} />
@@ -32,15 +32,14 @@ export default function MakerDashboardPage() {
 
       {view.metrics.awaitingResponse > 0 && (
         <NoticeBanner tone="info" title="An allocation is waiting on your decision">
-          A custodian has offered you material. Accepting does not move anything yet — the quantity
-          only reaches you when you confirm receipt.
+          Quantity only reaches you when you confirm receipt.
         </NoticeBanner>
       )}
 
       {view.feedbackDue.length > 0 && (
         <NoticeBanner tone="warning" title="Suitability feedback outstanding">
-          You have received material without recording what it was like. This is what makes future
-          matching better, and the brand sees a summary of it.
+          {view.feedbackDue.length} received allocation
+          {view.feedbackDue.length === 1 ? "" : "s"} with no suitability recorded.
         </NoticeBanner>
       )}
 
@@ -48,30 +47,20 @@ export default function MakerDashboardPage() {
         <DashboardMetricCard
           label="Awaiting your response"
           value={view.metrics.awaitingResponse}
-          hint="Allocations proposed to you"
           accent={view.metrics.awaitingResponse > 0}
         />
         <DashboardMetricCard
           label="Active production"
           value={view.metrics.activeProduction}
-          hint={`${view.metrics.overdue} past the planned completion date`}
+          hint={`${view.metrics.overdue} overdue`}
         />
-        <DashboardMetricCard
-          label="Awaiting CIRKA review"
-          value={view.metrics.awaitingReview}
-          hint="Evidence submitted, not yet signed off"
-        />
-        <DashboardMetricCard
-          label="Labour hours recorded"
-          value={view.metrics.hours}
-          hint="Across all your production batches"
-        />
+        <DashboardMetricCard label="Awaiting CIRKA review" value={view.metrics.awaitingReview} />
+        <DashboardMetricCard label="Labour hours recorded" value={view.metrics.hours} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <DashboardSection
           title="Allocations"
-          description="Material offered, on its way, or already with you."
           action={
             <Button as={Link} href="/demo/maker/allocations" variant="secondary" size="sm">
               Open allocations
@@ -100,7 +89,6 @@ export default function MakerDashboardPage() {
 
         <DashboardSection
           title="Production"
-          description="What you are making, and where each batch has reached."
           action={
             <Button as={Link} href="/demo/maker/production" variant="secondary" size="sm">
               Open production
@@ -129,6 +117,8 @@ export default function MakerDashboardPage() {
           </div>
         </DashboardSection>
       </div>
+
+      <RoleActivityFeed role="maker" />
     </div>
   );
 }

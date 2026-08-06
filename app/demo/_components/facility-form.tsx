@@ -23,6 +23,7 @@ interface FacilityFormState {
   longitude: string;
   contactName: string;
   contactEmail: string;
+  storageCapacityKg: string;
 }
 
 function fromFacility(facility: Facility): FacilityFormState {
@@ -37,6 +38,8 @@ function fromFacility(facility: Facility): FacilityFormState {
     longitude: facility.longitude !== undefined ? String(facility.longitude) : "",
     contactName: facility.contactName ?? "",
     contactEmail: facility.contactEmail ?? "",
+    storageCapacityKg:
+      facility.storageCapacityKg !== undefined ? String(facility.storageCapacityKg) : "",
   };
 }
 
@@ -53,7 +56,7 @@ export function FacilityForm({
   onSubmit,
   onCancel,
 }: {
-  /** Whose site this is. Fixed — this form is scoped to one organisation. */
+  /** Whose site this is. Fixed: this form is scoped to one organisation. */
   orgId: Id;
   /** Absent when adding a new site. */
   facility?: Facility;
@@ -77,6 +80,7 @@ export function FacilityForm({
           longitude: "",
           contactName: "",
           contactEmail: "",
+          storageCapacityKg: "",
         },
   );
 
@@ -88,13 +92,16 @@ export function FacilityForm({
   const emailLooksWrong =
     form.contactEmail.trim() !== "" &&
     !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.contactEmail.trim());
+  const capacityLooksWrong =
+    form.storageCapacityKg.trim() !== "" && (toNumber(form.storageCapacityKg) ?? 0) <= 0;
 
   const canSubmit =
     form.name.trim() !== "" &&
     form.addressLine.trim() !== "" &&
     form.country.trim() !== "" &&
     !countryLooksWrong &&
-    !emailLooksWrong;
+    !emailLooksWrong &&
+    !capacityLooksWrong;
 
   /* Every key is sent, so an emptied optional field clears its column. */
   const toInput = (): FacilityInput => ({
@@ -109,6 +116,7 @@ export function FacilityForm({
     longitude: toNumber(form.longitude),
     contactName: form.contactName,
     contactEmail: form.contactEmail,
+    storageCapacityKg: toNumber(form.storageCapacityKg),
   });
 
   return (
@@ -134,10 +142,7 @@ export function FacilityForm({
             autoFocus
           />
         </Field>
-        <Field
-          label="Type"
-          hint="What happens here — where material comes from, is kept, or is worked on."
-        >
+        <Field label="Type">
           <Select
             value={form.type}
             onChange={(event) => update("type", event.target.value as FacilityType)}
@@ -190,10 +195,23 @@ export function FacilityForm({
         </div>
       </FormSection>
 
-      <FormSection
-        title="Coordinates"
-        hint="Optional. Used to rank this site by distance when matching material."
-      >
+      <FormSection title="Capacity" hint="Blank if no declared limit">
+        <Field
+          label="Storage capacity (kg)"
+          error={capacityLooksWrong ? "Capacity must be greater than zero." : undefined}
+        >
+          <Input
+            type="number"
+            min="0"
+            step="1"
+            value={form.storageCapacityKg}
+            onChange={(event) => update("storageCapacityKg", event.target.value)}
+            placeholder="50000"
+          />
+        </Field>
+      </FormSection>
+
+      <FormSection title="Coordinates" hint="Optional · ranks distance in matching">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Latitude">
             <Input
@@ -220,10 +238,7 @@ export function FacilityForm({
         </div>
       </FormSection>
 
-      <FormSection
-        title="Site contact"
-        hint="Protected — never shown to brands. Who to reach at this site about a collection."
-      >
+      <FormSection title="Site contact" hint="Protected">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Contact name">
             <Input

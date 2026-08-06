@@ -170,7 +170,6 @@ export default function ImportMappingWizardPage() {
       <SectionHeading
         eyebrow="Intake · CSV mapping"
         title="Bring in a spreadsheet"
-        description="Paste a sheet, tell CIRKA which column is which, then confirm before anything is created."
         action={
           <Button as={Link} href="/demo/manufacturer/batches/import" variant="secondary" size="sm">
             <ArrowLeft size={15} />
@@ -183,21 +182,14 @@ export default function ImportMappingWizardPage() {
 
       {stage === 1 && (
         <Panel className="space-y-5 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-[var(--ink-muted)]">
-              Paste rows copied from a spreadsheet, or load a sample export whose columns don&apos;t
-              already match CIRKA&apos;s field names.
-            </p>
+          <div className="flex flex-wrap items-center justify-end gap-3">
             <Button variant="secondary" size="sm" onClick={loadSample}>
               <UploadCloud size={15} />
               Use the Nordväst ERP export
             </Button>
           </div>
 
-          <Field
-            label="External system"
-            hint="Only needed if this sheet came from a connected system — used to detect updates to batches CIRKA already has."
-          >
+          <Field label="External system" hint="Optional · detects updates">
             <Input
               value={externalSystemName}
               onChange={(event) => setExternalSystemName(event.target.value)}
@@ -296,7 +288,7 @@ function StageMap({
       <div className="space-y-5">
         <EmptyState
           title="Nothing to map"
-          body="That paste didn't produce any columns. Go back and check the header row is included."
+          body="No columns found. Check the header row is included."
         />
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft size={15} />
@@ -312,8 +304,7 @@ function StageMap({
     <Panel className="space-y-5 p-6">
       <p className="text-sm text-[var(--ink-muted)]">
         {sheet.headers.length} column{sheet.headers.length === 1 ? "" : "s"} found across{" "}
-        {sheet.rows.length} row{sheet.rows.length === 1 ? "" : "s"}. Map each one to a CIRKA field —
-        unmapped columns are ignored.
+        {sheet.rows.length} row{sheet.rows.length === 1 ? "" : "s"}. Map each one to a CIRKA field:         unmapped columns are ignored.
       </p>
 
       <div className="divide-y divide-[var(--line)]">
@@ -326,7 +317,7 @@ function StageMap({
               <p className="truncate text-sm font-medium text-[var(--ink)]">{header}</p>
               {previewRow && (
                 <p className="truncate text-xs text-[var(--ink-muted)]">
-                  e.g. {previewRow[header] || "—"}
+                  e.g. {previewRow[header] || "-"}
                 </p>
               )}
             </div>

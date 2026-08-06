@@ -29,6 +29,7 @@ import {
   formatDate,
 } from "./cirka-ui";
 import { AuditTrail, EvidenceGrid, MovementTable } from "./records";
+import { ThreadTimelinePanel } from "./trace-timeline";
 import { useAction } from "./use-action";
 
 type BatchTab = "overview" | "activity" | "admin";
@@ -125,9 +126,11 @@ export function BatchDetailView({
       )}
 
       {!batch.releasedAt && (
-        <NoticeBanner tone="info" title="Not yet released for matching">
-          This batch is private to {detail.ownerName}. CIRKA cannot propose it against demand until it is released.
-        </NoticeBanner>
+        <NoticeBanner tone="info" title={`Not yet released · private to ${detail.ownerName}`} />
+      )}
+
+      {batch.releasedAt && !batch.reviewedAt && (
+        <NoticeBanner tone="info" title="Awaiting CIRKA review" />
       )}
 
       {/* Tab Bar Navigation */}
@@ -213,18 +216,18 @@ export function BatchDetailView({
               <dl>
                 <DataRow label="Category" value={categoryLabel(batch.materialCategory)} />
                 <DataRow label="Composition" value={batch.composition ?? "Not recorded"} hint={batch.compositionConfidence ? `${batch.compositionConfidence} composition` : undefined} />
-                <DataRow label="Format" value={batch.format ? FORMAT_LABELS[batch.format] : "—"} />
+                <DataRow label="Format" value={batch.format ? FORMAT_LABELS[batch.format] : "-"} />
                 <DataRow
                   label="Quality"
-                  value={batch.qualityClass ? QUALITY_CLASS_LABELS[batch.qualityClass] : "—"}
+                  value={batch.qualityClass ? QUALITY_CLASS_LABELS[batch.qualityClass] : "-"}
                 />
-                <DataRow label="Colour" value={batch.colour ?? "—"} />
+                <DataRow label="Colour" value={batch.colour ?? "-"} />
                 <DataRow label="Unit" value={batch.unit} />
                 {batch.estimatedValue !== undefined && (
                   <DataRow
                     label="Estimated value"
                     value={formatCurrency(batch.estimatedValue, batch.currency)}
-                    hint="Protected — never shown to brands"
+                    hint="Protected"
                   />
                 )}
               </dl>
@@ -237,7 +240,7 @@ export function BatchDetailView({
               <dl>
                 <DataRow label="Owner" value={detail.ownerName} />
                 <DataRow label="Source facility" value={detail.facility?.name ?? "Not recorded"} />
-                <DataRow label="Location" value={batch.locationText ?? "—"} />
+                <DataRow label="Location" value={batch.locationText ?? "-"} />
                 <DataRow
                   label="Provenance"
                   value={
@@ -293,15 +296,19 @@ export function BatchDetailView({
       {/* TAB 2: ACTIVITY & LEDGER */}
       {activeTab === "activity" && (
         <div className="space-y-6 animate-stagger-in">
+          {/* The whole story first, the underlying records below it. */}
+          <ThreadTimelinePanel
+            role={role}
+            anchor={{ table: "resourceBatches", id: batch._id }}
+            description="Every recorded step, from the day this material was logged."
+          />
+
           {detail.matches.length > 0 && (
             <Panel className="overflow-hidden">
               <div className="border-b border-[var(--line)] px-6 py-4">
                 <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
                   Matching decisions
                 </h2>
-                <p className="text-xs text-[var(--ink-muted)]">
-                  Recorded decisions with written rationale.
-                </p>
               </div>
               <div className="divide-y divide-[var(--line)]">
                 {detail.matches.map(({ match, request }) => (
@@ -432,9 +439,6 @@ export function BatchDetailView({
                 <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
                   CIRKA review & assurance
                 </h2>
-                <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
-                  CIRKA never presents imported data as verified unless review is logged here.
-                </p>
                 <Field label="Assurance level">
                   <Select
                     value={review.assuranceLevel}
@@ -483,9 +487,6 @@ export function BatchDetailView({
               <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
                 Write off available material
               </h2>
-              <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
-                Damage or correction. Quantity leaves Available pot and is recorded permanently — never silently deleted.
-              </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={`Quantity (${batch.unit})`}>
                   <Input
@@ -527,7 +528,7 @@ export function BatchDetailView({
               </Button>
 
               <div className="space-y-4 border-t border-[var(--line)] pt-4">
-                <Field label="Exception status" hint="Raises batch on action queue.">
+                <Field label="Exception status">
                   <Select
                     value={exception.status}
                     onChange={(event) =>

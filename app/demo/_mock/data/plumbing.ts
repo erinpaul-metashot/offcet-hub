@@ -1,13 +1,15 @@
-/** Group F — evidence, imports, integration transfers, stored action items, seed audit. */
+/** Group F: evidence, imports, integration transfers, stored action items, seed audit. */
 
 import type {
   ActionItem,
   AuditEntry,
   EvidenceItem,
   ImportJob,
+  IntegrationConnection,
   IntegrationTransfer,
   PendingArrival,
 } from "../types";
+import { RETEXCIR } from "../domain";
 import { BATCH_JERSEY, BATCH_LINEN_CURTAIN, BATCH_LINING, BATCH_WEBBING } from "./batches";
 import { ALLOC_JERSEY2_TO_NODE, ALLOC_JERSEY_TO_NODE, ALLOC_WOOL_TO_HUB } from "./allocations";
 import { PROD_FLEECE_LINER, PROD_JERSEY_TOTE } from "./production";
@@ -55,7 +57,7 @@ export const evidenceItems: EvidenceItem[] = [
     uploadedByUserId: DEMO_CUSTODIAN_ID,
     uploadedByOrgId: ORG_MALMO_NODE,
     visibility: "project_participants",
-    caption: "Weighed on the pallet scale — 295 kg against a 300 kg dispatch note.",
+    caption: "Weighed on the pallet scale: 295 kg against a 300 kg dispatch note.",
     containsPeople: false,
     createdAt: daysAgo(36),
   },
@@ -143,7 +145,7 @@ export const importJobs: ImportJob[] = [
       {
         rowNumber: 7,
         field: "quantity",
-        message: "Quantity must be a positive number — found \"approx 40\".",
+        message: "Quantity must be a positive number: found \"approx 40\".",
       },
     ],
     createdAt: daysAgo(6),
@@ -194,9 +196,9 @@ export const integrationTransfers: IntegrationTransfer[] = [
     entityTable: "resourceBatches",
     entityId: BATCH_LINEN_CURTAIN,
     direction: "inbound",
-    externalSystemName: "Fibre sorting line",
-    externalRecordId: "SORT-2026-114-778",
-    externalRecordUrl: "https://sorting.example/records/SORT-2026-114-778",
+    externalSystemName: RETEXCIR.systemName,
+    externalRecordId: "RET-2026-114-778",
+    externalRecordUrl: RETEXCIR.recordUrl("RET-2026-114-778"),
     status: "success",
     attemptCount: 1,
     lastAttemptAt: daysAgo(2),
@@ -276,7 +278,7 @@ export const actionItems: ActionItem[] = [
     status: "open",
     dueDate: daysAgo(1),
     openedAt: daysAgo(5),
-    title: "5 kg short on CIRKA-ALC-2026-0074 — awaiting manufacturer response",
+    title: "5 kg short on CIRKA-ALC-2026-0074: awaiting manufacturer response",
   },
   {
     _id: "action_2",
@@ -451,6 +453,22 @@ export const seedAuditEntries: AuditEntry[] = [
   },
 ];
 
+/**
+ * Accounts orgs have linked to an external system. Nordväst has not connected
+ * Retexcir yet: connecting it is the manufacturer's intake demo.
+ */
+export const integrationConnections: IntegrationConnection[] = [
+  {
+    _id: "connection_seed_1",
+    orgId: ORG_VASTKUST,
+    channel: "sorting_system",
+    externalSystemName: RETEXCIR.systemName,
+    accountRef: "RETEXCIR-FAC-07",
+    connectedAt: monthsAgo(3),
+    lastSyncedAt: daysAgo(1),
+  },
+];
+
 /** Records connected systems have pushed at CIRKA, waiting to be confirmed or skipped. */
 export const pendingArrivals: PendingArrival[] = [
   {
@@ -489,8 +507,9 @@ export const pendingArrivals: PendingArrival[] = [
     _id: "arrival_3",
     ownerOrgId: ORG_VASTKUST,
     channel: "sorting_system",
-    externalSystemName: "Fibre sorting line",
-    externalRecordId: "SORT-2026-118-402",
+    externalSystemName: RETEXCIR.systemName,
+    externalRecordId: "RET-2026-118-402",
+    externalRecordUrl: RETEXCIR.recordUrl("RET-2026-118-402"),
     name: "Sorted linen offcuts",
     materialCategory: "linen",
     locationText: "Hamnvägen 3, Norrköping",
@@ -501,8 +520,9 @@ export const pendingArrivals: PendingArrival[] = [
     _id: "arrival_4",
     ownerOrgId: ORG_VASTKUST,
     channel: "sorting_system",
-    externalSystemName: "Fibre sorting line",
-    externalRecordId: "SORT-2026-119-115",
+    externalSystemName: RETEXCIR.systemName,
+    externalRecordId: "RET-2026-119-115",
+    externalRecordUrl: RETEXCIR.recordUrl("RET-2026-119-115"),
     name: "Sorted wool remnants",
     description: "Off-spec wool remnants flagged by the optical sorter.",
     materialCategory: "wool",

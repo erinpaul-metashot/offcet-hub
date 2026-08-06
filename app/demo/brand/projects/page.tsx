@@ -75,7 +75,6 @@ export default function BrandProjectsPage() {
       <SectionHeading
         eyebrow="Projects"
         title="Your programmes of work"
-        description="A project ties a brief to the resources, allocations, production and evidence behind it — the spine of the proof view."
         action={
           <Button as={Link} href="/demo/brand/projects/new" size="sm">
             New brief
@@ -110,9 +109,6 @@ export default function BrandProjectsPage() {
           <p className="mt-2 text-2xl font-bold tracking-[-0.04em] text-[var(--brand-secondary)]">
             {overallYield !== undefined ? formatPercent(overallYield) : "N/A"}
           </p>
-          <p className="mt-1 text-[11px] font-semibold text-[var(--ink-muted)]">
-            Incorporated into finished products
-          </p>
         </Panel>
 
         <Panel className="p-5">
@@ -125,9 +121,6 @@ export default function BrandProjectsPage() {
           <p className="mt-2 text-2xl font-bold tracking-[-0.04em] text-[var(--ink)]">
             {totalMakers} {totalMakers === 1 ? "maker" : "makers"}
           </p>
-          <p className="mt-1 text-[11px] font-semibold text-[var(--ink-muted)]">
-            Active in verified facilities
-          </p>
         </Panel>
 
         <Panel className="p-5">
@@ -139,9 +132,6 @@ export default function BrandProjectsPage() {
           </div>
           <p className="mt-2 text-2xl font-bold tracking-[-0.04em] text-[var(--ink)]">
             {totalUnits.toLocaleString()} units
-          </p>
-          <p className="mt-1 text-[11px] font-semibold text-[var(--ink-muted)]">
-            With digital product passports
           </p>
         </Panel>
       </div>
@@ -180,7 +170,7 @@ export default function BrandProjectsPage() {
       {filteredProjects.length === 0 ? (
         <EmptyState
           title="No projects match your filter"
-          body="Try clearing your search or status filter to see all brand projects."
+          body="Clear the search or status filter."
         />
       ) : (
         <div className="space-y-6">

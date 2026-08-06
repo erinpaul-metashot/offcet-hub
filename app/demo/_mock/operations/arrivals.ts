@@ -1,9 +1,12 @@
 /**
- * Confirmation queue for records a connected system (ERP, sorting tech)
- * pushes at CIRKA (05_SYSTEM_DESIGN §7.4). Confirming an arrival hands its
- * fields to `createResourceBatch` — the same write path the manual form and
- * the CSV importer use — so validation, dedupe on the external key, and
- * provenance stamping all stay in one place.
+ * Confirmation queue for records a connected system pushes at CIRKA
+ * (05_SYSTEM_DESIGN §7.4). Confirming an arrival hands its fields to
+ * `createResourceBatch`: the same write path the manual form and the CSV
+ * importer use: so validation, dedupe on the external key, and provenance
+ * stamping all stay in one place.
+ *
+ * `receiveArrival` covers the ERP channel. Retexcir has its own payload
+ * contract and lives in `operations/retexcir.ts`, but lands in this same queue.
  */
 
 import { appendAudit } from "../audit";
@@ -13,6 +16,7 @@ import type { Id, MockDatabase, PendingArrival } from "../types";
 import type { ViewerScope } from "../visibility";
 import { createResourceBatch, type CreateBatchInput } from "./batches";
 import { insertRow, OperationError, patchRow, requireRow } from "./helpers";
+import { now as currentTime } from "../clock";
 
 interface ArrivalTemplate {
   recordSuffix: string;
@@ -26,7 +30,7 @@ interface ArrivalTemplate {
   format?: MaterialFormat;
 }
 
-const ARRIVAL_TEMPLATES: Record<"erp_import" | "sorting_system", ArrivalTemplate[]> = {
+const ARRIVAL_TEMPLATES: Record<"erp_import", ArrivalTemplate[]> = {
   erp_import: [
     {
       recordSuffix: "0412",
@@ -48,30 +52,14 @@ const ARRIVAL_TEMPLATES: Record<"erp_import" | "sorting_system", ArrivalTemplate
       locationText: "Industrigatan 14, Norrköping",
     },
   ],
-  sorting_system: [
-    {
-      recordSuffix: "203",
-      name: "Sorted cotton fines",
-      materialCategory: "cotton_offcuts",
-      locationText: "Hamnvägen 3, Norrköping",
-    },
-    {
-      recordSuffix: "204",
-      name: "Sorted wool blend",
-      description: "Blend flagged by the optical sorter for a manual composition check.",
-      materialCategory: "wool",
-      quantity: 54,
-      unit: "kg",
-    },
-  ],
 };
 
 export interface ReceiveArrivalInput {
-  channel: "erp_import" | "sorting_system";
+  channel: "erp_import";
   externalSystemName: string;
 }
 
-/** Stands in for a connected system pushing its next record at CIRKA. */
+/** Stands in for a connected ERP pushing its next record at CIRKA. */
 export function receiveArrival(
   db: MockDatabase,
   actor: ViewerScope,
@@ -83,15 +71,14 @@ export function receiveArrival(
 
   const templates = ARRIVAL_TEMPLATES[input.channel];
   const template = templates[receivedForChannel % templates.length];
-  const prefix = input.channel === "erp_import" ? "ERP" : "SORT";
-  const now = Date.now();
+  const now = currentTime();
 
   const arrival: PendingArrival = {
     _id: makeId("arrival"),
     ownerOrgId: actor.orgId,
     channel: input.channel,
     externalSystemName: input.externalSystemName,
-    externalRecordId: `${prefix}-${now}-${template.recordSuffix}`,
+    externalRecordId: `ERP-${now}-${template.recordSuffix}`,
     name: template.name,
     description: template.description,
     materialCategory: template.materialCategory,
@@ -152,13 +139,14 @@ export function confirmArrival(
     dataSource: arrival.channel,
     externalSystemName: arrival.externalSystemName,
     externalRecordId: arrival.externalRecordId,
+    externalRecordUrl: arrival.externalRecordUrl,
     ownerOrgId: arrival.ownerOrgId,
   });
 
   const patched = patchRow(result.db, "pendingArrivals", arrivalId, {
     status: "confirmed",
     resolvedBatchId: result.batchId,
-    resolvedAt: Date.now(),
+    resolvedAt: currentTime(),
   });
 
   return {
@@ -185,7 +173,7 @@ export function skipArrival(db: MockDatabase, actor: ViewerScope, arrivalId: Id)
 
   const patched = patchRow(db, "pendingArrivals", arrivalId, {
     status: "skipped",
-    resolvedAt: Date.now(),
+    resolvedAt: currentTime(),
   });
 
   return appendAudit(patched, {
@@ -195,6 +183,6 @@ export function skipArrival(db: MockDatabase, actor: ViewerScope, arrivalId: Id)
     actorUserId: actor.userId,
     actorOrgId: actor.orgId,
     fieldChanges: [{ field: "status", previousValue: "pending", newValue: "skipped" }],
-    notes: "Skipped — not recorded as a resource batch.",
+    notes: "Skipped: not recorded as a resource batch.",
   });
 }

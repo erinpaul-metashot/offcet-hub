@@ -1,5 +1,5 @@
 /**
- * Facilities — the physical sites an organisation operates.
+ * Facilities: the physical sites an organisation operates.
  *
  * A source facility is tracked separately from the organisation (§5), so a
  * batch can say which plant it actually came from. Site contact details are
@@ -16,16 +16,18 @@ import {
   insertRow,
   optionalCoordinate,
   optionalEmail,
+  optionalPositive,
   optionalText,
   patchRow,
   requireCountryCode,
   requireRow,
   requireText,
 } from "./helpers";
+import { now as currentTime } from "../clock";
 
 /**
  * Every writable column of the `facilities` table (06_DATA_MODEL §facilities).
- * `isActive` is absent — it only ever moves through `setFacilityActive`.
+ * `isActive` is absent: it only ever moves through `setFacilityActive`.
  */
 export interface FacilityInput {
   name: string;
@@ -36,10 +38,12 @@ export interface FacilityInput {
   country: string;
   latitude?: number;
   longitude?: number;
-  /** Protected field — never shown to brands (§6). */
+  /** Protected field: never shown to brands (§6). */
   contactName?: string;
   /** Protected field. */
   contactEmail?: string;
+  /** Total storage volume this site can hold, in kg. Omitted = no declared limit. */
+  storageCapacityKg?: number;
   /**
    * Whose site this is. Omitted, it is the actor's own organisation; only a
    * CIRKA admin may name a different one, managing that org on its behalf.
@@ -112,8 +116,12 @@ export function createFacility(
     ...facilityLocation(input),
     contactName: optionalText(input.contactName),
     contactEmail: optionalEmail(input.contactEmail),
+    storageCapacityKg: optionalPositive(
+      input.storageCapacityKg,
+      "Storage capacity must be a positive number of kg.",
+    ),
     isActive: true,
-    createdAt: Date.now(),
+    createdAt: currentTime(),
   };
 
   return {
@@ -132,7 +140,7 @@ export function createFacility(
 export type FacilityPatch = Partial<Omit<FacilityInput, "orgId">>;
 
 /**
- * Key-presence patch — a key sent as `undefined` clears the column, an absent
+ * Key-presence patch: a key sent as `undefined` clears the column, an absent
  * key leaves it alone. A site cannot change hands: the batches recorded at it
  * would silently move organisation with it.
  */
@@ -199,6 +207,13 @@ export function updateFacility(
     patch.contactEmail = optionalEmail(input.contactEmail);
   }
 
+  if ("storageCapacityKg" in input) {
+    patch.storageCapacityKg = optionalPositive(
+      input.storageCapacityKg,
+      "Storage capacity must be a positive number of kg.",
+    );
+  }
+
   const updated = patchRow(db, "facilities", args.facilityId, patch);
 
   return appendAudit(updated, {
@@ -215,7 +230,7 @@ export function updateFacility(
 }
 
 /**
- * Sites are deactivated rather than deleted — batches recorded against them
+ * Sites are deactivated rather than deleted: batches recorded against them
  * keep pointing at a real record.
  */
 export function setFacilityActive(
@@ -282,7 +297,7 @@ export function countFacilityReferences(db: MockDatabase, facilityId: Id) {
 /**
  * Soft delete (§7.2), and only for a site nothing was ever recorded at. Once
  * material has moved through it the record has to survive, so the refusal
- * points at `setFacilityActive` instead — that is what "closed" means here.
+ * points at `setFacilityActive` instead: that is what "closed" means here.
  */
 export function removeFacility(
   db: MockDatabase,
@@ -315,7 +330,7 @@ export function removeFacility(
 
   const updated = patchRow(db, "facilities", args.facilityId, {
     isActive: false,
-    deletedAt: Date.now(),
+    deletedAt: currentTime(),
   });
 
   return appendAudit(updated, {

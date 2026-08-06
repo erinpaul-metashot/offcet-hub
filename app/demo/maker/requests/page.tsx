@@ -89,7 +89,6 @@ export default function MakerRequestsPage() {
       <SectionHeading
         eyebrow="Demand"
         title="Material you have asked for"
-        description="Makers can submit demand directly. CIRKA shortlists candidates and records the match with a written reason, exactly as it does for a brand brief."
         action={
           <Button size="sm" onClick={() => setComposeOpen(true)}>
             New request
@@ -127,7 +126,7 @@ export default function MakerRequestsPage() {
         ) : (
           <EmptyState
             title="No requests match this filter"
-            body="Clear the search or status filter to see every request."
+            body="Clear the search or status filter."
           />
         )
       ) : (

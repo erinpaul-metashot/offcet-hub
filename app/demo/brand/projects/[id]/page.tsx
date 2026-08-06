@@ -1,9 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Button, EmptyState, Panel } from "@/components/ui";
-import { ASSURANCE_LABELS, DATA_SOURCE_LABELS } from "../../../_mock/domain";
+import { Plus } from "lucide-react";
+import { Button, EmptyState, Field, Input, Panel, Select, Textarea } from "@/components/ui";
+import {
+  ASSURANCE_LABELS,
+  DATA_SOURCE_LABELS,
+  MATERIAL_CATEGORIES,
+  UNITS,
+  UNIT_LABELS,
+  type MaterialCategory,
+  type Unit,
+} from "../../../_mock/domain";
 import { getProjectProofView } from "../../../_mock/selectors-brand";
 import { potSlices } from "../../../_mock/selectors-batches";
 import {
@@ -12,6 +22,7 @@ import {
   formatPercent,
   formatQuantity,
 } from "../../../_mock/selectors-shared";
+import type { Id } from "../../../_mock/types";
 import { useDemoPersona, useDemoStore } from "../../../_mock/store";
 import {
   CirkaBadge,
@@ -23,18 +34,166 @@ import {
   formatDate,
 } from "../../../_components/cirka-ui";
 import { EvidenceGrid } from "../../../_components/records";
+import { ThreadTimelinePanel } from "../../../_components/trace-timeline";
 import { downloadCsv, downloadJson } from "../../../_mock/exports";
 import { useAction } from "../../../_components/use-action";
+
+function toTimestamp(value: string): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Date.parse(`${value}T12:00:00Z`);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+const EMPTY_DEMAND = {
+  title: "",
+  materialCategory: "cotton_offcuts" as MaterialCategory,
+  materialDescription: "",
+  quantityNeeded: "",
+  unit: "kg" as Unit,
+  neededBy: "",
+};
+
+/** A project can carry more than one open demand: this adds another without leaving the proof view. */
+function AddDemandForm({ projectId, projectTitle }: { projectId: Id; projectTitle: string }) {
+  const store = useDemoStore();
+  const { run, error, pending } = useAction();
+  const [open, setOpen] = useState(false);
+  const [demand, setDemand] = useState(EMPTY_DEMAND);
+
+  if (!open) {
+    return (
+      <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+        <Plus className="h-4 w-4" /> Add another demand
+      </Button>
+    );
+  }
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    await run(async () => {
+      await store.createResourceRequest("brand", {
+        projectId,
+        title: demand.title || `${projectTitle}: material request`,
+        materialCategory: demand.materialCategory,
+        materialDescription: demand.materialDescription || undefined,
+        quantityNeeded: Number(demand.quantityNeeded),
+        unit: demand.unit,
+        neededBy: toTimestamp(demand.neededBy),
+        submitImmediately: true,
+      });
+
+      setDemand(EMPTY_DEMAND);
+      setOpen(false);
+    });
+  };
+
+  return (
+    <form
+      onSubmit={submit}
+      className="space-y-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5"
+    >
+      {error && (
+        <NoticeBanner tone="blocking" title="The demand was not created">
+          {error}
+        </NoticeBanner>
+      )}
+
+      <Field label="Request title">
+        <Input
+          value={demand.title}
+          onChange={(event) => setDemand((current) => ({ ...current, title: event.target.value }))}
+          placeholder="Cotton jersey offcuts for the capsule tote"
+        />
+      </Field>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field label="Material category">
+          <Select
+            value={demand.materialCategory}
+            onChange={(event) =>
+              setDemand((current) => ({
+                ...current,
+                materialCategory: event.target.value as MaterialCategory,
+              }))
+            }
+          >
+            {MATERIAL_CATEGORIES.map((value) => (
+              <option key={value} value={value}>
+                {categoryLabel(value)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Quantity needed" required>
+          <Input
+            required
+            type="number"
+            min="0"
+            step="0.001"
+            value={demand.quantityNeeded}
+            onChange={(event) =>
+              setDemand((current) => ({ ...current, quantityNeeded: event.target.value }))
+            }
+            placeholder="300"
+          />
+        </Field>
+        <Field label="Unit">
+          <Select
+            value={demand.unit}
+            onChange={(event) =>
+              setDemand((current) => ({ ...current, unit: event.target.value as Unit }))
+            }
+          >
+            {UNITS.map((value) => (
+              <option key={value} value={value}>
+                {UNIT_LABELS[value]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+
+      <Field label="Needed by">
+        <Input
+          type="date"
+          value={demand.neededBy}
+          onChange={(event) => setDemand((current) => ({ ...current, neededBy: event.target.value }))}
+        />
+      </Field>
+
+      <Field label="Material requirements">
+        <Textarea
+          value={demand.materialDescription}
+          onChange={(event) =>
+            setDemand((current) => ({ ...current, materialDescription: event.target.value }))
+          }
+          placeholder="Light to mid-weight jersey, undyed or pale, minimum piece size 30 x 30 cm."
+        />
+      </Field>
+
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+        <Button type="submit" size="sm" disabled={pending}>
+          {pending ? "Adding…" : "Add demand"}
+        </Button>
+      </div>
+    </form>
+  );
+}
 
 function StoryStep({
   index,
   title,
-  lead,
   children,
 }: {
   index: number;
   title: string;
-  lead: string;
   children: React.ReactNode;
 }) {
   return (
@@ -43,10 +202,7 @@ function StoryStep({
         <span className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)] text-sm font-bold text-white">
           {index}
         </span>
-        <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)]">{title}</h2>
-          <p className="max-w-3xl text-sm leading-relaxed text-[var(--ink-muted)]">{lead}</p>
-        </div>
+        <h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)]">{title}</h2>
       </div>
       <div className="sm:pl-13">{children}</div>
     </section>
@@ -144,23 +300,21 @@ export default function BrandProofViewPage() {
       <SectionHeading
         eyebrow={`${project.reference} · ${proof.brandName}`}
         title={project.title}
-        description="One page, top to bottom: what you asked for, what was found, how CIRKA activated it, what happened, what was made, what it produced, and what supports the claim."
         action={<CirkaBadge status={project.status} />}
       />
 
-      {/* 1 — The brief */}
+      {/* 1: The brief */}
       <StoryStep
         index={1}
         title="The brief"
-        lead="What you set out to do, in your own words."
       >
         <Panel className="p-6">
           <dl>
             <DataRow label="Objective" value={project.objective} />
-            <DataRow label="Intended product" value={project.intendedProduct ?? "—"} />
-            <DataRow label="Design intent" value={project.designIntent ?? "—"} />
-            <DataRow label="Commercial objectives" value={project.commercialObjectives ?? "—"} />
-            <DataRow label="Impact objectives" value={project.impactObjectives ?? "—"} />
+            <DataRow label="Intended product" value={project.intendedProduct ?? "-"} />
+            <DataRow label="Design intent" value={project.designIntent ?? "-"} />
+            <DataRow label="Commercial objectives" value={project.commercialObjectives ?? "-"} />
+            <DataRow label="Impact objectives" value={project.impactObjectives ?? "-"} />
             <DataRow
               label="Timeline"
               value={`${formatDate(project.startDate)} → ${formatDate(project.targetCompletionDate)}`}
@@ -184,14 +338,17 @@ export default function BrandProofViewPage() {
               ))}
             </div>
           )}
+
+          <div className="mt-5 border-t border-[var(--line)] pt-5">
+            <AddDemandForm projectId={project._id} projectTitle={project.title} />
+          </div>
         </Panel>
       </StoryStep>
 
-      {/* 2 — The resource */}
+      {/* 2: The resource */}
       <StoryStep
         index={2}
         title="The resource"
-        lead="What material was found, where it came from, and how we know."
       >
         <div className="space-y-4">
           {proof.batches.map((batch) => (
@@ -219,9 +376,9 @@ export default function BrandProofViewPage() {
               />
 
               <dl className="grid gap-x-8 sm:grid-cols-2">
-                <DataRow label="Source location" value={batch.locationText ?? "—"} />
+                <DataRow label="Source location" value={batch.locationText ?? "-"} />
                 <DataRow label="Available from" value={formatDate(batch.availableFrom)} />
-                <DataRow label="Quality" value={batch.qualityClass?.replace(/_/g, " ") ?? "—"} />
+                <DataRow label="Quality" value={batch.qualityClass?.replace(/_/g, " ") ?? "-"} />
                 <DataRow
                   label="Data source"
                   value={DATA_SOURCE_LABELS[batch.dataSource]}
@@ -233,17 +390,16 @@ export default function BrandProofViewPage() {
           {proof.batches.length === 0 && (
             <EmptyState
               title="No resource matched yet"
-              body="Once CIRKA proposes a batch and you approve it, the material appears here."
+              body="Approved matches appear here."
             />
           )}
         </div>
       </StoryStep>
 
-      {/* 3 — CIRKA activation */}
+      {/* 3: CIRKA activation */}
       <StoryStep
         index={3}
         title="CIRKA activation"
-        lead="Why this resource, which custodian, which maker — and how much was reserved."
       >
         <div className="space-y-4">
           {proof.matches.map(({ match, batch }) => (
@@ -300,11 +456,10 @@ export default function BrandProofViewPage() {
         </div>
       </StoryStep>
 
-      {/* 4 — The journey */}
+      {/* 4: The journey */}
       <StoryStep
         index={4}
         title="The journey"
-        lead="Planned against actual, with the exceptions shown rather than hidden. A report that is always green is a report nobody believes."
       >
         <Panel className="overflow-x-auto">
           <table className="w-full min-w-[44rem] border-collapse text-sm">
@@ -363,11 +518,10 @@ export default function BrandProofViewPage() {
         )}
       </StoryStep>
 
-      {/* 5 — The outputs */}
+      {/* 5: The outputs */}
       <StoryStep
         index={5}
         title="The outputs"
-        lead="What was made, how much material went into it, and what is left. Material yield, not a broad diversion claim."
       >
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -399,10 +553,9 @@ export default function BrandProofViewPage() {
             <p className="mt-1 text-4xl font-semibold tracking-[-0.05em] text-[var(--brand-primary)]">
               {formatPercent(material.yield)}
             </p>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--ink-muted)]">
-              {formatQuantity(material.incorporated, material.unit)} incorporated into finished
-              outputs ÷ {formatQuantity(material.used, material.unit)} used. Every figure here traces
-              back to a movement row with a person and a timestamp against it.
+            <p className="mt-2 text-sm tabular-nums text-[var(--ink-muted)]">
+              {formatQuantity(material.incorporated, material.unit)} ÷{" "}
+              {formatQuantity(material.used, material.unit)} used
             </p>
           </Panel>
 
@@ -438,10 +591,10 @@ export default function BrandProofViewPage() {
                         </td>
                         <td className="py-3 pr-4 text-right tabular-nums">{output.numberPlanned}</td>
                         <td className="py-3 pr-4 text-right tabular-nums">
-                          {output.numberCompleted ?? "—"}
+                          {output.numberCompleted ?? "-"}
                         </td>
                         <td className="py-3 text-right tabular-nums">
-                          {output.numberRejected ?? "—"}
+                          {output.numberRejected ?? "-"}
                         </td>
                       </tr>
                     ))}
@@ -453,11 +606,10 @@ export default function BrandProofViewPage() {
         </div>
       </StoryStep>
 
-      {/* 6 — The results */}
+      {/* 6: The results */}
       <StoryStep
         index={6}
         title="The results"
-        lead="Operational, environmental, social and commercial value — showing only what an agreed method supports."
       >
         <div className="grid gap-6 lg:grid-cols-2">
           <Panel className="p-6">
@@ -470,7 +622,7 @@ export default function BrandProofViewPage() {
                 value={
                   operational.demandToMatchDays !== undefined
                     ? `${operational.demandToMatchDays} days`
-                    : "—"
+                    : "-"
                 }
               />
               <DataRow
@@ -478,7 +630,7 @@ export default function BrandProofViewPage() {
                 value={
                   operational.allocationToProductionDays !== undefined
                     ? `${operational.allocationToProductionDays} days`
-                    : "—"
+                    : "-"
                 }
               />
               <DataRow
@@ -521,10 +673,8 @@ export default function BrandProofViewPage() {
               />
               <DataRow label="Material yield" value={formatPercent(material.yield)} />
             </dl>
-            <p className="mt-4 rounded-2xl bg-[var(--surface)] p-4 text-xs leading-relaxed text-[var(--ink-muted)]">
-              Carbon and water figures are deliberately absent. CIRKA will not present them until a
-              methodology and source factors have been agreed and documented — and when they arrive,
-              the method will be named on screen.
+            <p className="mt-4 border-t border-[var(--line)] pt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+              Carbon &amp; water withheld — no agreed methodology
             </p>
           </Panel>
 
@@ -550,7 +700,7 @@ export default function BrandProofViewPage() {
             <dl>
               <DataRow
                 label="Production time per unit"
-                value={commercial.hoursPerUnit !== undefined ? `${commercial.hoursPerUnit} h` : "—"}
+                value={commercial.hoursPerUnit !== undefined ? `${commercial.hoursPerUnit} h` : "-"}
               />
               <DataRow label="Material yield" value={formatPercent(material.yield)} />
               <DataRow
@@ -568,8 +718,8 @@ export default function BrandProofViewPage() {
                   >
                     <div>
                       <p className="text-sm font-medium text-[var(--ink)]">{row.makerName}</p>
-                      <p className="text-xs text-[var(--ink-muted)]">
-                        Cost per unit, shared voluntarily by the maker
+                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+                        Shared voluntarily
                       </p>
                     </div>
                     <p className="text-lg font-semibold text-[var(--ink)]">
@@ -579,20 +729,18 @@ export default function BrandProofViewPage() {
                 ))}
               </div>
             ) : (
-              <p className="mt-4 rounded-2xl bg-[var(--surface)] p-4 text-xs leading-relaxed text-[var(--ink-muted)]">
-                No maker on this project has opted in to sharing cost per unit. Cost breakdowns,
-                labour rates, supplier prices and margins are never part of this view.
+              <p className="mt-4 border-t border-[var(--line)] pt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+                No maker has opted in
               </p>
             )}
           </Panel>
         </div>
       </StoryStep>
 
-      {/* 7 — Evidence and reporting */}
+      {/* 7: Evidence and reporting */}
       <StoryStep
         index={7}
         title="Evidence and reporting"
-        lead="What supports the claims, what CIRKA has checked, and what you can take away."
       >
         <div className="space-y-5">
           <Panel className="p-6">
@@ -624,20 +772,24 @@ export default function BrandProofViewPage() {
           <EvidenceGrid items={proof.evidence} />
 
           <Panel className="flex flex-wrap items-center justify-between gap-4 p-6">
-            <div>
-              <h3 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                Take the data with you
-              </h3>
-              <p className="max-w-2xl text-sm text-[var(--ink-muted)]">
-                Every export carries the same provenance columns — data source, assurance level, who
-                recorded it, when, and when it was last reviewed. No lock-in, no permission needed.
-              </p>
-            </div>
+            <h3 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
+              Take the data with you
+            </h3>
             <Button as={Link} href={`/demo/brand/projects/${project._id}/report`} size="sm">
               Open the printable report
             </Button>
           </Panel>
         </div>
+      </StoryStep>
+
+      {/* 8: The record itself */}
+      <StoryStep index={8} title="The full record">
+        <ThreadTimelinePanel
+          role="brand"
+          anchor={{ table: "projects", id: project._id }}
+          title="Everything that happened"
+          description="Every step the six sections above summarise, in the order it was recorded."
+        />
       </StoryStep>
     </div>
   );

@@ -21,10 +21,7 @@ export function MovementTable({
 }) {
   if (movements.length === 0) {
     return (
-      <EmptyState
-        title="No movements yet"
-        body="Every pour between pots is written down here, with the person and the time."
-      />
+      <EmptyState title="No movements yet" />
     );
   }
 
@@ -49,8 +46,8 @@ export function MovementTable({
               <td className="py-3 pr-4">
                 <p className="font-medium text-[var(--ink)]">{movementLabel(movement)}</p>
                 <p className="text-xs text-[var(--ink-muted)]">
-                  {(movement.fromBucket ?? "—").replace(/_/g, " ")} →{" "}
-                  {(movement.toBucket ?? "—").replace(/_/g, " ")}
+                  {(movement.fromBucket ?? "-").replace(/_/g, " ")} →{" "}
+                  {(movement.toBucket ?? "-").replace(/_/g, " ")}
                 </p>
                 {movement.notes && (
                   <p className="mt-1 text-xs italic text-[var(--ink-muted)]">{movement.notes}</p>
@@ -83,7 +80,7 @@ export function AuditTrail({
   const rows = limit ? entries.slice(0, limit) : entries;
 
   if (rows.length === 0) {
-    return <EmptyState title="No history yet" body="Changes to this record will appear here." />;
+    return <EmptyState title="No history yet" />;
   }
 
   return (
@@ -101,7 +98,7 @@ export function AuditTrail({
                 {entry.fieldChanges
                   .map(
                     (change) =>
-                      `${change.field}: ${change.previousValue ?? "—"} → ${change.newValue ?? "—"}`,
+                      `${change.field}: ${change.previousValue ?? "-"} → ${change.newValue ?? "-"}`,
                   )
                   .join(" · ")}
               </p>
@@ -121,10 +118,7 @@ export function AuditTrail({
 export function EvidenceGrid({ items }: { items: EvidenceItem[] }) {
   if (items.length === 0) {
     return (
-      <EmptyState
-        title="No evidence uploaded"
-        body="Photos and documents attached to this record will show here."
-      />
+      <EmptyState title="No evidence uploaded" />
     );
   }
 

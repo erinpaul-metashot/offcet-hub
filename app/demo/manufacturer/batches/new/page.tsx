@@ -107,11 +107,7 @@ export default function RecordBatchPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="Manual entry"
-        title="Record a resource batch"
-        description="This form is one of four front doors — the CSV importer, an ERP push and a sorting system all write through the same internal function and differ only in the source stamped on the record."
-      />
+      <SectionHeading eyebrow="Manual entry" title="Record a resource batch" />
 
       {error && <NoticeBanner tone="blocking" title="The batch was not saved">{error}</NoticeBanner>}
 
@@ -130,7 +126,7 @@ export default function RecordBatchPage() {
                 placeholder="Organic cotton jersey offcuts"
               />
             </Field>
-            <Field label="Material category" hint="A controlled list keeps matching reliable.">
+            <Field label="Material category">
               <Select
                 value={form.materialCategory}
                 onChange={(event) =>
@@ -156,7 +152,7 @@ export default function RecordBatchPage() {
           </Field>
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Composition" hint="Leave blank if not known.">
+            <Field label="Composition">
               <Input
                 value={form.composition}
                 onChange={(event) => update("composition", event.target.value)}
@@ -217,7 +213,7 @@ export default function RecordBatchPage() {
             Quantity, location and availability
           </h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Quantity" hint="Opens the ledger — this becomes the Available pot.">
+            <Field label="Quantity">
               <Input
                 required
                 type="number"
@@ -288,10 +284,7 @@ export default function RecordBatchPage() {
             </Field>
           </div>
 
-          <Field
-            label="Estimated value (SEK)"
-            hint="Protected — this is never shown to brands or funders."
-          >
+          <Field label="Estimated value (SEK)" hint="Never shown to brands">
             <Input
               type="number"
               min="0"
@@ -303,11 +296,11 @@ export default function RecordBatchPage() {
         </Panel>
 
         <Panel className="space-y-5 p-6">
-          <div className="space-y-1">
+          <div className="flex items-baseline justify-between gap-3">
             <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Images</h2>
-            <p className="text-sm text-[var(--ink-muted)]">
-              Pick the reference photos that match this batch. Uploads are simulated in the demo.
-            </p>
+            <span className="text-[11px] font-bold uppercase tracking-[0.16em] tabular-nums text-[var(--ink-muted)]">
+              {images.length} selected
+            </span>
           </div>
           <div className="grid gap-4 sm:grid-cols-4">
             {PHOTO_CHOICES.map((photo) => {
@@ -347,13 +340,7 @@ export default function RecordBatchPage() {
               onChange={(event) => update("releaseImmediately", event.target.checked)}
               className="mt-1"
             />
-            <span>
-              Release for matching straight away
-              <span className="block text-xs text-[var(--ink-muted)]">
-                Leave this off to keep the batch private until the details are complete. Releasing
-                commits nothing — it only makes the available quantity visible to CIRKA.
-              </span>
-            </span>
+            <span>Release for matching straight away</span>
           </label>
           <Button type="submit" disabled={pending}>
             {pending ? "Recording…" : "Record batch"}

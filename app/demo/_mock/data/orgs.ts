@@ -8,7 +8,7 @@ export const DEMO_CUSTODIAN_ID = "user_custodian";
 export const DEMO_MAKER_ID = "user_maker";
 export const DEMO_BRAND_ID = "user_brand";
 
-/* Organisations — the unit of ownership and access. */
+/* Organisations: the unit of ownership and access. */
 export const ORG_CIRKA = "org_cirka";
 export const ORG_NORDVAST = "org_nordvast";
 export const ORG_VASTKUST = "org_vastkust";
@@ -379,11 +379,11 @@ export const users: User[] = [
     createdAt: monthsAgo(2),
     reviewedAt: daysAgo(24),
     reviewedBy: DEMO_ADMIN_ID,
-    reviewNotes: "Left the organisation. Account disabled — production records retained.",
+    reviewNotes: "Left the organisation. Account disabled: production records retained.",
   }),
 ];
 
-/* Facilities — a source site, a storage site and a production site are different things. */
+/* Facilities: a source site, a storage site and a production site are different things. */
 export const FAC_NORDVAST_SOURCE = "fac_nordvast_source";
 export const FAC_NORDVAST_STORE = "fac_nordvast_store";
 export const FAC_VASTKUST_SOURCE = "fac_vastkust_source";

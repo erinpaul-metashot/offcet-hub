@@ -12,7 +12,7 @@ import { CirkaBadge, ConfirmDialog, Modal, NoticeBanner, formatDate } from "./ci
 import { PersonForm } from "./person-form";
 import { useAction } from "./use-action";
 
-/** A short, non-status fact about the person — kept visually below the badge. */
+/** A short, non-status fact about the person: kept visually below the badge. */
 function Chip({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-[var(--line-strong)] bg-[var(--surface)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
@@ -37,7 +37,7 @@ export function OrganisationPeople({
   people: OrganisationPerson[];
 }) {
   const store = useDemoStore();
-  /* Three surfaces, three errors — a refused row action must not appear in the form. */
+  /* Three surfaces, three errors: a refused row action must not appear in the form. */
   const rowAction = useAction();
   const form = useAction();
   const removal = useAction();
@@ -262,12 +262,7 @@ export function OrganisationPeople({
           onConfirm={() => handleRemove(removing)}
           body={
             <>
-              Their account closes and they stop appearing anywhere in {organisation.name}.
-              Everything they recorded — batches, allocations, audit entries — stays exactly as it
-              is and stays attributed to them.
-              <span className="mt-3 block">
-                If they are only away for a while, disable the account instead.
-              </span>
+              Their account closes. Everything they recorded stays attributed to them.
             </>
           }
         />

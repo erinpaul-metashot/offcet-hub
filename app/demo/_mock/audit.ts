@@ -7,6 +7,7 @@
 import type { ActorType, AuditAction } from "./domain";
 import { makeId } from "./ids";
 import type { AuditEntry, FieldChange, Id, MockDatabase, Timestamp } from "./types";
+import { now as currentTime } from "./clock";
 
 export interface AuditInput {
   entityTable: string;
@@ -34,7 +35,7 @@ export function appendAudit(db: MockDatabase, input: AuditInput): MockDatabase {
     actorUserId: input.actorUserId,
     actorOrgId: input.actorOrgId,
     actorType: input.actorType ?? "user",
-    occurredAt: input.occurredAt ?? Date.now(),
+    occurredAt: input.occurredAt ?? currentTime(),
     notes: input.notes,
   };
 

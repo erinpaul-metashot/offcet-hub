@@ -1,4 +1,4 @@
-/** Group E — production batches and everything that hangs off them. */
+/** Group E: production batches and everything that hangs off them. */
 
 import type {
   ProductionBatch,
@@ -30,7 +30,7 @@ export const PROD_FLEECE_LINER = "production_fleece_liner";
 export const PROD_FLEECE_POUCH = "production_fleece_pouch";
 
 export const productionBatches: ProductionBatch[] = [
-  /* The golden thread — complete, evidence reviewed, numbers balanced. */
+  /* The golden thread: complete, evidence reviewed, numbers balanced. */
   {
     _id: PROD_JERSEY_TOTE,
     reference: "CIRKA-PB-2026-0091",
@@ -76,7 +76,7 @@ export const productionBatches: ProductionBatch[] = [
     createdAt: daysAgo(32),
     updatedAt: daysAgo(8),
   },
-  /* Fleece liners — evidence submitted, waiting for CIRKA to review. */
+  /* Fleece liners: evidence submitted, waiting for CIRKA to review. */
   {
     _id: PROD_FLEECE_LINER,
     reference: "CIRKA-PB-2026-0104",
@@ -116,7 +116,7 @@ export const productionBatches: ProductionBatch[] = [
     createdAt: daysAgo(20),
     updatedAt: daysAgo(2),
   },
-  /* Lined pouches — in production and now past the planned completion date. */
+  /* Lined pouches: in production and now past the planned completion date. */
   {
     _id: PROD_FLEECE_POUCH,
     reference: "CIRKA-PB-2026-0112",
@@ -398,7 +398,7 @@ export const productionOutputs: ProductionOutput[] = [
   },
 ];
 
-/** Restricted to the maker and CIRKA — brand-scoped selectors never read this. */
+/** Restricted to the maker and CIRKA: brand-scoped selectors never read this. */
 export const productionCosts: ProductionCost[] = [
   {
     _id: "cost_1",

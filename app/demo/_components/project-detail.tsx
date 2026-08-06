@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Panel } from "@/components/ui";
+import type { CirkaRole } from "../_mock/domain";
 import type { ProjectProofView } from "../_mock/selectors-brand";
 import { formatCurrency, formatPercent, formatQuantity } from "../_mock/selectors-shared";
 import { CirkaBadge, DataRow, NoticeBanner, SectionHeading, formatDate } from "./cirka-ui";
 import { ProjectJourneyStepper } from "./project-journey-stepper";
+import { ThreadTimelinePanel } from "./trace-timeline";
 
 function MaterialTile({ label, value }: { label: string; value: string }) {
   return (
@@ -22,9 +24,11 @@ function MaterialTile({ label, value }: { label: string; value: string }) {
 export function ProjectDetailView({
   proof,
   backHref,
+  role = "admin",
 }: {
   proof: ProjectProofView;
   backHref: string;
+  role?: CirkaRole;
 }) {
   const overdue = proof.journey.find((row) => row.status === "overdue");
   const { project, material } = proof;
@@ -70,9 +74,7 @@ export function ProjectDetailView({
       <section className="space-y-4">
         <SectionHeading eyebrow="Journey" title="Where this project stands" />
         {proof.journey.length === 0 ? (
-          <NoticeBanner tone="info" title="The journey hasn't started">
-            No milestones are recorded yet — this project is still a draft.
-          </NoticeBanner>
+          <NoticeBanner tone="info" title="The journey hasn't started" />
         ) : (
           <Panel className="p-6">
             <ProjectJourneyStepper journey={proof.journey} />
@@ -95,7 +97,7 @@ export function ProjectDetailView({
           <dl>
             <DataRow
               label="Yield"
-              value={material.yield !== undefined ? formatPercent(material.yield) : "—"}
+              value={material.yield !== undefined ? formatPercent(material.yield) : "-"}
               hint="Incorporated as a share of material used"
             />
             <DataRow
@@ -160,6 +162,13 @@ export function ProjectDetailView({
           </Panel>
         </section>
       )}
+
+      <ThreadTimelinePanel
+        role={role}
+        anchor={{ table: "projects", id: project._id }}
+        title="Everything that happened"
+        description="The brief, the match, the movements and the evidence, on one line."
+      />
 
       {proof.commercial.sharedCosts.length > 0 && (
         <section className="space-y-4">

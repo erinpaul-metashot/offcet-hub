@@ -1,5 +1,5 @@
 /**
- * Custodian views — expected arrivals, what is physically here, and what has
+ * Custodian views: expected arrivals, what is physically here, and what has
  * been promised on to makers.
  *
  * Ownership and custody are separate: a custodian holding 300 kg does not own
@@ -7,33 +7,49 @@
  */
 
 import { round } from "./ledger";
-import type { Allocation, Id, MockDatabase, ResourceBatch } from "./types";
+import { findOpenArrivalIssue } from "./operations/allocations";
+import type { ActionItem, Allocation, Id, MockDatabase, ResourceBatch } from "./types";
 import type { ViewerScope } from "./visibility";
 import { orgName } from "./selectors-shared";
+import { now as currentTime } from "./clock";
 
 export interface ExpectedArrival {
   allocation: Allocation;
   batch?: ResourceBatch;
   fromName: string;
   late: boolean;
+  /** A reported quality issue CIRKA has not closed yet. */
+  openIssue?: ActionItem;
 }
 
+const OPEN_ARRIVAL_STATUSES = [
+  "proposed",
+  "accepted",
+  "awaiting_dispatch",
+  "in_transit",
+  "discrepancy",
+];
+
+/**
+ * A confirmed receipt normally leaves this list, but not while an issue the
+ * custodian reported is still open: they need somewhere to watch it.
+ */
 export function listExpectedArrivals(db: MockDatabase, orgId: Id): ExpectedArrival[] {
   return db.allocations
     .filter(
       (allocation) =>
         allocation.toOrgId === orgId &&
-        ["proposed", "accepted", "awaiting_dispatch", "in_transit", "discrepancy"].includes(
-          allocation.status,
-        ),
+        (OPEN_ARRIVAL_STATUSES.includes(allocation.status) ||
+          findOpenArrivalIssue(db, allocation._id) !== undefined),
     )
     .map((allocation) => ({
       allocation,
       batch: db.resourceBatches.find((batch) => batch._id === allocation.batchId),
       fromName: orgName(db, allocation.fromOrgId),
+      openIssue: findOpenArrivalIssue(db, allocation._id),
       late:
         allocation.expectedArrivalDate !== undefined &&
-        allocation.expectedArrivalDate < Date.now() &&
+        allocation.expectedArrivalDate < currentTime() &&
         allocation.status !== "received",
     }))
     .sort((left, right) => {
@@ -137,6 +153,7 @@ export function getCustodianDashboard(db: MockDatabase, viewer: ViewerScope) {
       awaitingReceipt: arrivals.filter((entry) => entry.allocation.status === "in_transit").length,
       awaitingAcceptance: arrivals.filter((entry) => entry.allocation.status === "proposed").length,
       openDiscrepancies: arrivals.filter((entry) => entry.allocation.status === "discrepancy").length,
+      reportedIssues: arrivals.filter((entry) => entry.openIssue !== undefined).length,
       makersServed: new Set(outgoing.map((entry) => entry.allocation.toOrgId)).size,
       overdue: arrivals.filter((entry) => entry.late).length,
     },

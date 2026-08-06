@@ -50,7 +50,7 @@ export function PersonForm({
   onSubmit,
   onCancel,
 }: {
-  /** The organisation the person belongs to. Fixed — this form is scoped to it. */
+  /** The organisation the person belongs to. Fixed: this form is scoped to it. */
   organisation: Organisation;
   /** Absent when adding someone new. */
   person?: User;
@@ -115,7 +115,7 @@ export function PersonForm({
 
       <FormSection
         title="Contact"
-        hint="Protected — visible only to CIRKA and this organisation."
+        hint="Protected"
       >
         <Field
           label="Email"
@@ -130,7 +130,7 @@ export function PersonForm({
             placeholder="name@company.com"
           />
         </Field>
-        <Field label="Phone" hint="Optional — recorded only where it is needed.">
+        <Field label="Phone" hint="Optional: recorded only where it is needed.">
           <Input
             type="tel"
             value={form.phone}

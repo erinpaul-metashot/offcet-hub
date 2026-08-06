@@ -16,14 +16,10 @@ export default function AdminImportsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="Imports"
-        title="Bulk and machine-to-machine arrivals"
-        description="Every import job keeps its row errors and the batches it created, so any record can be traced back to the file or system it came from."
-      />
+      <SectionHeading eyebrow="Imports" title="Bulk and machine-to-machine arrivals" />
 
       {rows.length === 0 ? (
-        <EmptyState title="No imports yet" body="CSV uploads and API pushes are logged here." />
+        <EmptyState title="No imports yet" body="Uploads and API pushes are logged here." />
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
           {rows.map(({ job, orgLabel, uploadedBy, batches }) => (
@@ -48,7 +44,6 @@ export default function AdminImportsPage() {
                 <DataRow
                   label="Updated"
                   value={job.updatedCount ?? 0}
-                  hint="Matched an existing external record"
                 />
                 <DataRow label="Failed" value={job.failedCount ?? 0} />
                 <DataRow label="Started" value={formatDateTime(job.createdAt)} />

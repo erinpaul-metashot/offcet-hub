@@ -13,19 +13,11 @@ export default function AdminExportsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="Exports"
-        title="Take the data out"
-        description="Reporting is a core feature, not an add-on. Every export carries the same provenance columns — data source, assurance level, who recorded it, when, and when it was last reviewed."
-      />
+      <SectionHeading eyebrow="Exports" title="Take the data out" />
 
       {error && <NoticeBanner tone="blocking" title="That export failed">{error}</NoticeBanner>}
 
-      <NoticeBanner tone="info" title="Scoped to who is asking">
-        These exports run as the CIRKA admin, so they include everything. The same definitions,
-        called as a brand, drop protected fields — and the production costs export returns nothing
-        at all.
-      </NoticeBanner>
+      <NoticeBanner tone="info" title="Running as admin · every field included" />
 
       <div className="grid gap-5 lg:grid-cols-2">
         {EXPORTS.map((definition) => {

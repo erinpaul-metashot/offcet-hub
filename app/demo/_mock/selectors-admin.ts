@@ -1,4 +1,4 @@
-/** CIRKA admin views — the action queue, matching workspace and oversight lists. */
+/** CIRKA admin views: the action queue, matching workspace and oversight lists. */
 
 import { auditForEntity } from "./audit";
 import { buildMonthBuckets } from "./buckets";
@@ -65,6 +65,22 @@ export function listProjects(
     .sort((left, right) => right.project.createdAt - left.project.createdAt);
 }
 
+/** High-level counts across every project: the admin projects dashboard header. */
+export function getProjectsOverview(db: MockDatabase, viewer: ViewerScope) {
+  const rows = listProjects(db, viewer);
+  const active = rows.filter((row) => row.project.status === "active");
+
+  return {
+    totalProjects: rows.length,
+    activeProjects: active.length,
+    overdueProjects: rows.filter((row) =>
+      row.journey.some((entry) => entry.status === "overdue"),
+    ).length,
+    openRequests: active.reduce((sum, row) => sum + row.requestCount, 0),
+    inProduction: active.reduce((sum, row) => sum + row.productionCount, 0),
+  };
+}
+
 export interface ManagedUser {
   user: User;
   organisation?: Organisation;
@@ -120,7 +136,7 @@ export interface OrganisationFacility {
   batchCount: number;
   allocationCount: number;
   productionCount: number;
-  /** False once material has moved through it — deactivate instead. */
+  /** False once material has moved through it: deactivate instead. */
   canRemove: boolean;
 }
 

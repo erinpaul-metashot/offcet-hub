@@ -13,7 +13,7 @@ import { useAction } from "../../_components/use-action";
 
 /**
  * A site never changes hands, so the patch deliberately drops `orgId`. Every
- * other key is sent even when empty — `updateFacility` reads key presence, so
+ * other key is sent even when empty: `updateFacility` reads key presence, so
  * an emptied field clears its column instead of being ignored.
  */
 function toPatch(input: FacilityInput): FacilityPatch {
@@ -28,6 +28,7 @@ function toPatch(input: FacilityInput): FacilityPatch {
     longitude: input.longitude,
     contactName: input.contactName,
     contactEmail: input.contactEmail,
+    storageCapacityKg: input.storageCapacityKg,
   };
 }
 
@@ -73,11 +74,7 @@ export default function ManufacturerFacilitiesPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading
-        eyebrow="Facilities"
-        title="Your sites"
-        description="A source facility is tracked separately from the organisation, so a batch can say which plant it actually came from. Site contact details are protected and never shown to brands."
-      />
+      <SectionHeading eyebrow="Facilities" title="Your sites" />
 
       {rowAction.error && (
         <NoticeBanner tone="blocking" title="That change was refused">
@@ -86,13 +83,13 @@ export default function ManufacturerFacilitiesPage() {
       )}
 
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--line)] pb-2">
-        <div className="space-y-1">
+        <div className="flex flex-wrap items-baseline gap-3">
           <h2 className="text-lg font-semibold text-[var(--ink)]">Sites ({facilities.length})</h2>
-          <p className="text-xs text-[var(--ink-muted)]">
-            {activeCount === facilities.length
-              ? "Where material is collected from, kept, or worked on."
-              : `${activeCount} taking material · ${facilities.length - activeCount} deactivated.`}
-          </p>
+          {activeCount !== facilities.length && (
+            <p className="text-xs tabular-nums text-[var(--ink-muted)]">
+              {activeCount} active · {facilities.length - activeCount} deactivated
+            </p>
+          )}
         </div>
         <Button size="sm" onClick={() => setEditing({})}>
           Add site
@@ -102,10 +99,8 @@ export default function ManufacturerFacilitiesPage() {
       {facilities.length === 0 ? (
         <Panel className="p-8 text-center">
           <p className="text-sm font-semibold text-[var(--ink)]">No sites recorded</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-[var(--ink-muted)]">
-            Batches are recorded against the site they came from, so{" "}
-            {organisation?.name ?? "your organisation"} needs at least one before it can log
-            material.
+          <p className="mt-1 text-sm text-[var(--ink-muted)]">
+            A batch needs a source site.
           </p>
         </Panel>
       ) : (
@@ -209,20 +204,10 @@ export default function ManufacturerFacilitiesPage() {
         </Panel>
       )}
 
-      <NoticeBanner tone="info" title="Sites are never removed here">
-        A site with material recorded against it can only be deactivated, and removing an empty
-        site is a CIRKA admin action — it keeps every batch pointing at a real record.
-      </NoticeBanner>
-
       {editing && (
         <Modal
           eyebrow={editing.facility ? "Edit site" : "New site"}
           title={editing.facility?.name ?? `Add a site to ${organisation?.name ?? "your organisation"}`}
-          description={
-            editing.facility
-              ? undefined
-              : "Material is recorded against the site it came from, so the address needs to be the real one."
-          }
           onClose={closeForm}
         >
           <FacilityForm

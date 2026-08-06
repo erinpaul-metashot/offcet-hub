@@ -51,7 +51,7 @@ interface ProductionRowProps {
   overdue: boolean;
 }
 
-/** Variant A — one row per batch, the 8-stage lifecycle ladder standing in for a status badge. */
+/** Variant A: one row per batch, the 8-stage lifecycle ladder standing in for a status badge. */
 export function ProductionListRow({ href, production, batchReference, outputs, overdue }: ProductionRowProps) {
   const unitsSummary = `${production.actualQuantity ?? 0} / ${production.plannedQuantity} units`;
 
@@ -73,7 +73,7 @@ export function ProductionListRow({ href, production, batchReference, outputs, o
         {overdue && (
           <p className="flex items-center gap-1.5 text-[11px] font-medium text-[#8A3D11]">
             <AlertTriangle size={12} />
-            Overdue — planned for {formatDate(production.plannedCompletionDate)}
+            Overdue: planned for {formatDate(production.plannedCompletionDate)}
           </p>
         )}
       </div>
@@ -96,7 +96,7 @@ export function ProductionListRow({ href, production, batchReference, outputs, o
   );
 }
 
-/** Variant B — one card per batch, material yield as the headline and a flow bar for where the material went. */
+/** Variant B: one card per batch, material yield as the headline and a flow bar for where the material went. */
 export function ProductionGridCard({ href, production, batchReference, outputs, overdue }: ProductionRowProps) {
   const segments = buildFlowSegments(production);
   const flowMax = production.qtyUsed ?? segments.reduce((total, segment) => total + segment.value, 0);
@@ -136,7 +136,7 @@ export function ProductionGridCard({ href, production, batchReference, outputs, 
           <FlowBar segments={segments} max={flowMax} unit={production.unit} />
         ) : (
           <p className="text-sm text-[var(--ink-muted)]">
-            Material use not recorded yet — {formatQuantity(production.qtyReceived ?? 0, production.unit)} received
+            Material use not recorded yet: {formatQuantity(production.qtyReceived ?? 0, production.unit)} received
             so far.
           </p>
         )}
