@@ -12,7 +12,7 @@ export default function AdminProductionPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Production" title="Every run in the network" />
+      <SectionHeading title="Network Production Runs" />
 
       {rows.length === 0 ? (
         <EmptyState title="No production yet" body="Makers create a batch against an allocation." />

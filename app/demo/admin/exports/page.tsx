@@ -13,11 +13,9 @@ export default function AdminExportsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Exports" title="Take the data out" />
+      <SectionHeading title="Data Exports" />
 
-      {error && <NoticeBanner tone="blocking" title="That export failed">{error}</NoticeBanner>}
-
-      <NoticeBanner tone="info" title="Running as admin · every field included" />
+      {error && <NoticeBanner tone="blocking" title="Export failed">{error}</NoticeBanner>}
 
       <div className="grid gap-5 lg:grid-cols-2">
         {EXPORTS.map((definition) => {
@@ -34,9 +32,6 @@ export default function AdminExportsPage() {
                     {rows.length} row{rows.length === 1 ? "" : "s"}
                   </span>
                 </div>
-                <p className="text-sm leading-relaxed text-[var(--ink-muted)]">
-                  {definition.description}
-                </p>
                 {definition.restricted && (
                   <p className="inline-flex rounded-full border border-dashed border-[var(--line-strong)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                     Restricted

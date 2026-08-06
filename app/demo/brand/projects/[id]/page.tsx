@@ -554,7 +554,7 @@ export default function BrandProofViewPage() {
               {formatPercent(material.yield)}
             </p>
             <p className="mt-2 text-sm tabular-nums text-[var(--ink-muted)]">
-              {formatQuantity(material.incorporated, material.unit)} ÷{" "}
+              {formatQuantity(material.incorporated, material.unit)} /{" "}
               {formatQuantity(material.used, material.unit)} used
             </p>
           </Panel>
@@ -788,7 +788,6 @@ export default function BrandProofViewPage() {
           role="brand"
           anchor={{ table: "projects", id: project._id }}
           title="Everything that happened"
-          description="Every step the six sections above summarise, in the order it was recorded."
         />
       </StoryStep>
     </div>

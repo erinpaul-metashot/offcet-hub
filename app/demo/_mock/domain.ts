@@ -97,7 +97,7 @@ export interface IntakeChannelConfig {
   name: string;
   kind: "manual" | "upload" | "connector" | "unavailable";
   dataSource: DataSource;
-  description: string;
+  description?: string;
 }
 
 /**
@@ -132,28 +132,24 @@ export const INTAKE_CHANNELS: IntakeChannelConfig[] = [
     name: "Manual entry",
     kind: "manual",
     dataSource: "manual_entry",
-    description: "One at a time",
   },
   {
     id: "csv_import",
     name: "Spreadsheet import",
     kind: "upload",
     dataSource: "csv_import",
-    description: "Paste or upload, then map columns",
   },
   {
     id: "erp_import",
     name: "ERP system",
     kind: "connector",
     dataSource: "erp_import",
-    description: "Pushed records await confirmation",
   },
   {
     id: "sorting_system",
     name: `${RETEXCIR.systemName} sorting`,
     kind: "connector",
     dataSource: "sorting_system",
-    description: "Connect the account, then pull sorted batches",
   },
 ];
 

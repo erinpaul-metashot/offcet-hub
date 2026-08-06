@@ -232,11 +232,6 @@ export function OrganisationPeople({
         <Modal
           eyebrow={editing.person ? "Edit person" : "New person"}
           title={editing.person?.name ?? `Add someone to ${organisation.name}`}
-          description={
-            editing.person
-              ? undefined
-              : "They join with access to everything this organisation can see."
-          }
           onClose={closeForm}
         >
           <PersonForm

@@ -358,3 +358,61 @@ export function writeOffAvailableQuantity(
     notes: `${quantity} written off: ${reason}`,
   });
 }
+
+/**
+ * The custodian's one adjustment: material that spoiled on their floor. Water,
+ * pests, a dropped bale. The quantity leaves `at_custodian` for `written_off`
+ * so the ledger still balances, and the batch carries the exception until CIRKA
+ * clears it.
+ */
+export function reportStorageDamage(
+  db: MockDatabase,
+  actor: ViewerScope,
+  args: { batchId: Id; quantity: number; reason: string },
+): MockDatabase {
+  const batch = requireRow(db, "resourceBatches", args.batchId, "Resource batch");
+  const reason = requireText(args.reason, "Describe what happened to the material.");
+  const quantity = requirePositive(args.quantity, "Quantity must be greater than zero.");
+
+  const holdsIt = db.allocations.some(
+    (allocation) =>
+      allocation.batchId === args.batchId &&
+      allocation.toOrgId === actor.orgId &&
+      allocation.hop === "manufacturer_to_custodian" &&
+      ["received", "discrepancy", "completed"].includes(allocation.status),
+  );
+
+  if (!holdsIt && actor.role !== "admin") {
+    throw new OperationError(
+      `Only the custodian holding ${batch.reference} can report damage against it.`,
+    );
+  }
+
+  const moved = applyMovement(db, {
+    batchId: args.batchId,
+    fromBucket: "at_custodian",
+    toBucket: "written_off",
+    quantity,
+    reason: "written_off",
+    performedByUserId: actor.userId,
+    performedByOrgId: actor.orgId,
+    notes: reason,
+  });
+
+  const flagged = patchRow(moved, "resourceBatches", args.batchId, {
+    exceptionStatus: "damaged",
+    exceptionNote: `${quantity} ${batch.unit} damaged in storage: ${reason}`,
+  });
+
+  return appendAudit(flagged, {
+    entityTable: "resourceBatches",
+    entityId: args.batchId,
+    action: "quantity_moved",
+    actorUserId: actor.userId,
+    actorOrgId: actor.orgId,
+    fieldChanges: [
+      { field: "exceptionStatus", previousValue: batch.exceptionStatus, newValue: "damaged" },
+    ],
+    notes: `${quantity} ${batch.unit} damaged in storage and written off: ${reason}`,
+  });
+}

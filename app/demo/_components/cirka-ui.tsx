@@ -373,6 +373,36 @@ export function FlowBar({
   );
 }
 
+const MATERIAL_FLOW_COLOUR = {
+  incorporated: "bg-[var(--brand-secondary)]",
+  prototypes: "bg-[var(--brand-primary)]",
+  reusable: "bg-[#2F6F7A]",
+  offcuts: "bg-[#C8A96B]",
+  loss: "bg-[#D14343]",
+} as const;
+
+const MATERIAL_FLOW_LABEL: Record<keyof typeof MATERIAL_FLOW_COLOUR, string> = {
+  incorporated: "Incorporated",
+  prototypes: "Prototypes",
+  reusable: "Reusable",
+  offcuts: "Offcuts",
+  loss: "Loss",
+};
+
+export type MaterialDisposition = Partial<Record<keyof typeof MATERIAL_FLOW_COLOUR, number>>;
+
+/** Where used material ended up, as `FlowBar` segments. Dispositions with nothing in them are dropped. */
+export function materialFlowSegments(material: MaterialDisposition): FlowSegment[] {
+  return (Object.keys(MATERIAL_FLOW_COLOUR) as Array<keyof typeof MATERIAL_FLOW_COLOUR>)
+    .filter((key) => (material[key] ?? 0) > 0)
+    .map((key) => ({
+      key,
+      label: MATERIAL_FLOW_LABEL[key],
+      value: material[key] as number,
+      colourClass: MATERIAL_FLOW_COLOUR[key],
+    }));
+}
+
 const LIFECYCLE_STATUSES = [
   "planned",
   "awaiting_material",
@@ -430,7 +460,6 @@ export function ProductionLadder({ status }: { status: string }) {
 export function SectionHeading({
   eyebrow,
   title,
-  description,
   action,
 }: {
   eyebrow?: string;
@@ -440,16 +469,13 @@ export function SectionHeading({
 }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="space-y-2">
+      <div className="space-y-1">
         {eyebrow && (
           <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--brand-primary)]">
             {eyebrow}
           </p>
         )}
         <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
-        {description && (
-          <p className="max-w-2xl text-sm leading-relaxed text-[var(--ink-muted)]">{description}</p>
-        )}
       </div>
       {action}
     </div>

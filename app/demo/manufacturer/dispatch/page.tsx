@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Package, PackageCheck, Truck, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight, Package, PackageCheck, Truck, type LucideIcon } from "lucide-react";
 import { Button, EmptyState, Field, Input, Panel } from "@/components/ui";
 import { DEMO_NOW } from "../../_mock/data";
 import { getManufacturerDashboard } from "../../_mock/selectors-manufacturer";
@@ -47,20 +48,33 @@ export default function ManufacturerDispatchPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Dispatch" title="Material leaving your site" />
+      <SectionHeading title="Material Dispatch Log" />
 
       {error && <NoticeBanner tone="blocking" title="That step was refused">{error}</NoticeBanner>}
 
       {view.discrepancies.length > 0 && (
         <NoticeBanner tone="warning" title="Awaiting your response on a discrepancy">
-          {view.discrepancies.map((entry) => (
-            <p key={entry.allocation._id}>
-              {entry.allocation.reference}: {entry.counterpartyName} received{" "}
-              {formatQuantity(entry.allocation.quantityReceived ?? 0, entry.allocation.unit)} against{" "}
-              {formatQuantity(entry.allocation.quantityDispatched ?? 0, entry.allocation.unit)}{" "}
-              dispatched.
-            </p>
-          ))}
+          <div className="space-y-2">
+            {view.discrepancies.map((entry) => (
+              <div key={entry.allocation._id} className="flex flex-wrap items-center justify-between gap-2">
+                <p>
+                  <span className="font-semibold">{entry.allocation.reference}</span>: {entry.counterpartyName} received{" "}
+                  {formatQuantity(entry.allocation.quantityReceived ?? 0, entry.allocation.unit)} against{" "}
+                  {formatQuantity(entry.allocation.quantityDispatched ?? 0, entry.allocation.unit)}{" "}
+                  dispatched.
+                </p>
+                {(entry.batch?._id ?? entry.allocation.batchId) && (
+                  <Link
+                    href={`/demo/manufacturer/batches/${entry.batch?._id ?? entry.allocation.batchId}`}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand-primary)] hover:underline shrink-0"
+                  >
+                    <span>View batch {entry.batch?.reference ?? ""}</span>
+                    <ArrowUpRight size={14} />
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
         </NoticeBanner>
       )}
 
@@ -91,9 +105,19 @@ export default function ManufacturerDispatchPage() {
                       <CirkaBadge status={allocation.status} />
                       {isOverdue && <CirkaBadge status="overdue" label="Overdue" />}
                     </div>
-                    <p className="text-sm text-[var(--ink-muted)]">
-                      {batch?.name} · {batch?.reference}
-                    </p>
+                    {batch ? (
+                      <Link
+                        href={`/demo/manufacturer/batches/${batch._id}`}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--ink-muted)] hover:text-[var(--brand-primary)] hover:underline transition-colors"
+                      >
+                        <span>{batch.name} · {batch.reference}</span>
+                        <ArrowUpRight size={14} className="shrink-0" />
+                      </Link>
+                    ) : (
+                      <p className="text-sm text-[var(--ink-muted)]">
+                        Batch {allocation.batchId}
+                      </p>
+                    )}
                   </div>
                   <p className="text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)]">
                     {formatQuantity(headlineQuantity, allocation.unit)}
@@ -130,6 +154,22 @@ export default function ManufacturerDispatchPage() {
                 )}
 
                 <dl className="grid gap-x-8 sm:grid-cols-2">
+                  <DataRow
+                    label="Resource Lot"
+                    value={
+                      batch ? (
+                        <Link
+                          href={`/demo/manufacturer/batches/${batch._id}`}
+                          className="inline-flex items-center gap-1 font-semibold text-[var(--brand-primary)] hover:underline"
+                        >
+                          <span>{batch.reference}</span>
+                          <ArrowUpRight size={13} />
+                        </Link>
+                      ) : (
+                        "-"
+                      )
+                    }
+                  />
                   <DataRow
                     label="Expected dispatch"
                     value={formatDate(allocation.expectedDispatchDate)}
@@ -222,6 +262,21 @@ export default function ManufacturerDispatchPage() {
                   <p className="border-t border-[var(--line)] pt-4 text-sm text-[var(--ink-muted)]">
                     Awaiting acceptance from {toName}
                   </p>
+                )}
+
+                {batch && (
+                  <div className="border-t border-[var(--line)] pt-3 flex items-center justify-end">
+                    <Button
+                      as={Link}
+                      href={`/demo/manufacturer/batches/${batch._id}`}
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-xs text-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+                    >
+                      <span>View linked batch details</span>
+                      <ArrowUpRight size={14} />
+                    </Button>
+                  </div>
                 )}
               </Panel>
             );

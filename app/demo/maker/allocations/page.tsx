@@ -32,6 +32,7 @@ function bucketFor(status: AllocationStatus, hasFeedback: boolean): Bucket {
 const TABS = [
   { key: "all", label: "All" },
   { key: "needs-you", label: "Needs you" },
+  { key: "in-progress", label: "In progress" },
   { key: "settled", label: "Settled" },
 ] as const;
 
@@ -63,16 +64,16 @@ export default function MakerAllocationsPage() {
   const counts: Record<TabKey, number> = {
     all: grouped.length,
     "needs-you": grouped.filter((group) => group.bucket === "needs-you").length,
+    "in-progress": grouped.filter((group) => group.bucket === "in-progress").length,
     settled: grouped.filter((group) => group.bucket === "settled").length,
   };
-  const inProgressCount = counts.all - counts["needs-you"] - counts.settled;
 
   const visible = tab === "all" ? grouped : grouped.filter((group) => group.bucket === tab);
   const openEntry = openId ? allocations.find((entry) => entry.allocation._id === openId) ?? null : null;
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Allocations" title="Material offered to you" />
+      <SectionHeading title="Material Allocations" />
 
       {error && !openEntry && (
         <NoticeBanner tone="blocking" title="That step was refused">
@@ -87,11 +88,35 @@ export default function MakerAllocationsPage() {
         />
       ) : (
         <>
-          <AllocationMixBar
-            needsYou={counts["needs-you"]}
-            inProgress={inProgressCount}
-            settled={counts.settled}
-          />
+          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <OverviewStat
+              label="Total Allocations"
+              value={counts.all}
+              active={tab === "all"}
+              onClick={() => setTab("all")}
+            />
+            <OverviewStat
+              label="Needs You"
+              value={counts["needs-you"]}
+              tone={counts["needs-you"] > 0 ? "warn" : undefined}
+              active={tab === "needs-you"}
+              onClick={() => setTab(tab === "needs-you" ? "all" : "needs-you")}
+            />
+            <OverviewStat
+              label="In Progress"
+              value={counts["in-progress"]}
+              tone="progress"
+              active={tab === "in-progress"}
+              onClick={() => setTab(tab === "in-progress" ? "all" : "in-progress")}
+            />
+            <OverviewStat
+              label="Settled"
+              value={counts.settled}
+              tone={counts.settled > 0 ? "positive" : undefined}
+              active={tab === "settled"}
+              onClick={() => setTab(tab === "settled" ? "all" : "settled")}
+            />
+          </dl>
 
           <div className="flex gap-6 border-b border-[var(--line)]">
             {TABS.map((entry) => (
@@ -187,49 +212,50 @@ export default function MakerAllocationsPage() {
   );
 }
 
-function AllocationMixBar({
-  needsYou,
-  inProgress,
-  settled,
+function OverviewStat({
+  label,
+  value,
+  tone,
+  active,
+  onClick,
 }: {
-  needsYou: number;
-  inProgress: number;
-  settled: number;
+  label: string;
+  value: number;
+  tone?: "warn" | "progress" | "positive";
+  active?: boolean;
+  onClick?: () => void;
 }) {
-  const total = needsYou + inProgress + settled;
-  const segments = [
-    { key: "needs-you", label: "Needs you", value: needsYou, colourClass: "bg-[var(--brand-primary)]" },
-    { key: "in-progress", label: "In progress", value: inProgress, colourClass: "bg-[var(--line-strong)]" },
-    { key: "settled", label: "Settled", value: settled, colourClass: "bg-[var(--brand-secondary)]" },
-  ];
-
   return (
-    <div className="space-y-2 rounded-2xl border border-[var(--line)] bg-[var(--paper)] px-5 py-4">
-      <div className="flex h-2 w-full overflow-hidden rounded-full bg-[var(--surface)]">
-        {segments.map((segment) =>
-          segment.value > 0 ? (
-            <div
-              key={segment.key}
-              className={segment.colourClass}
-              style={{ width: `${total > 0 ? Math.max((segment.value / total) * 100, 1.5) : 0}%` }}
-              title={`${segment.label}: ${segment.value}`}
-            />
-          ) : null,
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group space-y-2 py-4 px-4 text-left transition-all duration-150 ease-[var(--ease-out)] cursor-pointer rounded-xl border ${
+        active
+          ? "bg-[var(--surface)] border-[var(--brand-primary)]/40 shadow-xs ring-1 ring-[var(--brand-primary)]/20"
+          : "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--surface)]/60"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)] group-hover:text-[var(--ink)]">
+          {label}
+        </dt>
+        {active && (
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-primary)]" />
         )}
       </div>
-      <div className="flex flex-wrap gap-x-5 gap-y-1.5">
-        {segments.map((segment) => (
-          <div key={segment.key} className="flex items-center gap-1.5">
-            <span className={`h-2 w-2 shrink-0 rounded-full ${segment.colourClass}`} />
-            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-muted)]">
-              {segment.label}
-            </span>
-            <span className="text-[11px] font-medium tabular-nums text-[var(--ink)]">
-              {segment.value}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
+      <dd
+        className={`text-[34px] font-semibold leading-none tracking-[-0.05em] tabular-nums ${
+          tone === "warn" && value > 0
+            ? "text-[var(--brand-primary)]"
+            : tone === "positive" && value > 0
+              ? "text-[var(--brand-secondary)]"
+              : tone === "progress" && value > 0
+                ? "text-[var(--ink)]"
+                : "text-[var(--ink)]"
+        }`}
+      >
+        {value}
+      </dd>
+    </button>
   );
 }

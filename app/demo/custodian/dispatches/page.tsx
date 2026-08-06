@@ -149,7 +149,7 @@ export default function CustodianDispatchesPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading eyebrow="Out to makers" title="Sub-allocations from this node" />
+      <SectionHeading title="Maker Dispatches" />
 
       {error && (
         <NoticeBanner tone="blocking" title="That step was refused">
@@ -159,8 +159,8 @@ export default function CustodianDispatchesPage() {
 
       {view.outgoing.length === 0 ? (
         <EmptyState
-          title="Nothing allocated to makers"
-          body="Allocate a holding from the Stock screen."
+          title="Nothing assigned to makers"
+          body="When CIRKA assigns a lot you hold to a maker, the hand-over appears here."
         />
       ) : (
         <>

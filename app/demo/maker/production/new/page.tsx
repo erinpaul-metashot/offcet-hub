@@ -65,7 +65,7 @@ export default function NewProductionBatchPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="New production batch" title="Plan a run against an allocation" />
+      <SectionHeading title="New Production Batch" />
 
       {error && <NoticeBanner tone="blocking" title="The batch was not created">{error}</NoticeBanner>}
 

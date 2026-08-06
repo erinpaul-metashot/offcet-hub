@@ -67,9 +67,12 @@ export interface Holding {
   ownerName: string;
   receivedAt?: number;
   sourceAllocation?: Allocation;
+  /** Who this lot came in from, and who CIRKA has since sent it on to. */
+  receivedFromName: string;
+  outgoing: { allocation: Allocation; makerName: string }[];
 }
 
-/** Batches physically at this custodian's site, with what is still uncommitted. */
+/** Batches physically at this custodian's site, with what CIRKA has not yet assigned on. */
 export function listHoldings(db: MockDatabase, orgId: Id): Holding[] {
   const receivedHere = db.allocations.filter(
     (allocation) =>
@@ -89,14 +92,17 @@ export function listHoldings(db: MockDatabase, orgId: Id): Holding[] {
       continue;
     }
 
+    const outgoingHere = db.allocations.filter(
+      (allocation) =>
+        allocation.batchId === batchId &&
+        allocation.fromOrgId === orgId &&
+        allocation.hop === "custodian_to_maker",
+    );
+
     const promised = round(
-      db.allocations
-        .filter(
-          (allocation) =>
-            allocation.batchId === batchId &&
-            allocation.fromOrgId === orgId &&
-            allocation.hop === "custodian_to_maker" &&
-            ["proposed", "accepted", "awaiting_dispatch"].includes(allocation.status),
+      outgoingHere
+        .filter((allocation) =>
+          ["proposed", "accepted", "awaiting_dispatch"].includes(allocation.status),
         )
         .reduce((total, allocation) => total + allocation.quantityAllocated, 0),
     );
@@ -111,6 +117,10 @@ export function listHoldings(db: MockDatabase, orgId: Id): Holding[] {
       ownerName: orgName(db, batch.ownerOrgId),
       receivedAt: sourceAllocation?.receivedAt,
       sourceAllocation,
+      receivedFromName: sourceAllocation ? orgName(db, sourceAllocation.fromOrgId) : "-",
+      outgoing: outgoingHere
+        .map((allocation) => ({ allocation, makerName: orgName(db, allocation.toOrgId) }))
+        .sort((left, right) => right.allocation.updatedAt - left.allocation.updatedAt),
     });
   }
 

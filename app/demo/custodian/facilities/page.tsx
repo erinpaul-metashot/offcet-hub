@@ -122,7 +122,7 @@ export default function CustodianFacilitiesPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading eyebrow="Sites" title="Warehouses & capacity" />
+      <SectionHeading title="Facilities & Capacity" />
 
       {rowAction.error && (
         <NoticeBanner tone="blocking" title="That change was refused">

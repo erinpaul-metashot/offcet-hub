@@ -335,7 +335,6 @@ export default function AdminProductionDetailPage() {
       <ThreadTimelinePanel
         role="admin"
         anchor={{ table: "productionBatches", id: production._id }}
-        description="What this run was made from, and everything that happened to the material first."
       />
     </div>
   );

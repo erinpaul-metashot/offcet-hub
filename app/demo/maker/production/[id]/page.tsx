@@ -25,6 +25,7 @@ import { useDemoPersona, useDemoStore } from "../../../_mock/store";
 import {
   CirkaBadge,
   DataRow,
+  Modal,
   NoticeBanner,
   SectionHeading,
   formatDate,
@@ -74,6 +75,9 @@ export default function MakerProductionDetailPage() {
   });
   const [costDraft, setCostDraft] = useState<Record<string, string>>({});
   const [makerNotes, setMakerNotes] = useState("");
+  const [isInputModalOpen, setIsInputModalOpen] = useState(false);
+  const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
+  const [isOutputModalOpen, setIsOutputModalOpen] = useState(false);
 
   if (!detail) {
     return <EmptyState title="Production batch not found" body="The demo data may have been reset." />;
@@ -301,9 +305,18 @@ export default function MakerProductionDetailPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel className="space-y-4 p-6">
-          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Other production inputs
-          </h2>
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
+              Other production inputs
+            </h2>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => setIsInputModalOpen(true)}
+            >
+              + Add input
+            </Button>
+          </div>
 
           {detail.inputs.length === 0 ? (
             <p className="text-sm text-[var(--ink-muted)]">
@@ -338,8 +351,131 @@ export default function MakerProductionDetailPage() {
               ))}
             </ul>
           )}
+        </Panel>
 
-          <div className="grid gap-4 border-t border-[var(--line)] pt-4 sm:grid-cols-2">
+        <Panel className="space-y-4 p-6">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
+              Production time
+            </h2>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => setIsTimeModalOpen(true)}
+            >
+              + Add time entry
+            </Button>
+          </div>
+
+          {detail.timeEntries.length === 0 ? (
+            <p className="text-sm text-[var(--ink-muted)]">No time recorded yet.</p>
+          ) : (
+            <ul className="divide-y divide-[var(--line)]">
+              {detail.timeEntries.map((entry) => (
+                <li key={entry._id} className="flex items-start justify-between gap-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--ink)]">
+                      {TIME_ACTIVITY_LABELS[entry.activity]} · {entry.hours} h
+                    </p>
+                    <p className="text-xs text-[var(--ink-muted)]">
+                      {entry.peopleInvolved ? `${entry.peopleInvolved} people · ` : ""}
+                      {entry.isEstimated ? "estimated" : "actual"}
+                      {entry.notes ? ` · ${entry.notes}` : ""}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={pending}
+                    onClick={() =>
+                      run(() => store.removeTimeEntry("maker", { timeEntryId: entry._id }))
+                    }
+                  >
+                    Remove
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <dl className="border-t border-[var(--line)] pt-4">
+            <DataRow
+              label="Total labour hours"
+              value={production.totalLabourHours ?? 0}
+              hint={
+                production.hoursPerSaleableUnit
+                  ? `${production.hoursPerSaleableUnit} h per saleable unit`
+                  : undefined
+              }
+            />
+            <DataRow label="People involved" value={production.peopleInvolved ?? "-"} />
+          </dl>
+        </Panel>
+      </div>
+
+      <Panel className="space-y-4 p-6">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Outputs</h2>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => setIsOutputModalOpen(true)}
+          >
+            + Add output line
+          </Button>
+        </div>
+
+        {detail.outputs.length === 0 ? (
+          <p className="text-sm text-[var(--ink-muted)]">No finished products recorded yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[36rem] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-[var(--line)] text-left text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                  <th className="py-3 pr-4">Product</th>
+                  <th className="py-3 pr-4 text-right">Planned</th>
+                  <th className="py-3 pr-4 text-right">Completed</th>
+                  <th className="py-3 pr-4 text-right">Rejected</th>
+                  <th className="py-3 text-right">Rework</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.outputs.map((output) => (
+                  <tr key={output._id} className="border-b border-[var(--line)] last:border-b-0">
+                    <td className="py-3 pr-4">
+                      <p className="font-medium text-[var(--ink)]">{output.productName}</p>
+                      <p className="text-xs text-[var(--ink-muted)]">
+                        {PRODUCT_CATEGORY_LABELS[output.productCategory]}
+                        {output.unitWeight ? ` · ${output.unitWeight} kg each` : ""}
+                      </p>
+                    </td>
+                    <td className="py-3 pr-4 text-right tabular-nums">{output.numberPlanned}</td>
+                    <td className="py-3 pr-4 text-right tabular-nums">
+                      {output.numberCompleted ?? "-"}
+                    </td>
+                    <td className="py-3 pr-4 text-right tabular-nums">
+                      {output.numberRejected ?? "-"}
+                    </td>
+                    <td className="py-3 text-right tabular-nums">
+                      {output.numberRequiringRework ?? "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+
+      {/* Modals for adding entries */}
+      {isInputModalOpen && (
+        <Modal
+          eyebrow="Input details"
+          title="Add production input"
+          width="lg"
+          onClose={() => setIsInputModalOpen(false)}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Input type">
               <Select
                 value={inputDraft.inputType}
@@ -422,81 +558,43 @@ export default function MakerProductionDetailPage() {
             </Field>
           </div>
 
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={pending}
-            onClick={() =>
-              run(async () => {
-                await store.addProductionInput("maker", {
-                  productionBatchId: production._id,
-                  inputType: inputDraft.inputType,
-                  description: inputDraft.description,
-                  quantity: Number(inputDraft.quantity),
-                  unit: inputDraft.unit,
-                  supplierName: inputDraft.supplierName || undefined,
-                  cost: inputDraft.cost ? Number(inputDraft.cost) : undefined,
-                  sourcingCategory: inputDraft.sourcingCategory,
-                });
-                setInputDraft((current) => ({ ...current, description: "", quantity: "", cost: "" }));
-              })
-            }
-          >
-            Add input
-          </Button>
-        </Panel>
-
-        <Panel className="space-y-4 p-6">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Production time
-            </h2>
-          </div>
-
-          {detail.timeEntries.length === 0 ? (
-            <p className="text-sm text-[var(--ink-muted)]">No time recorded yet.</p>
-          ) : (
-            <ul className="divide-y divide-[var(--line)]">
-              {detail.timeEntries.map((entry) => (
-                <li key={entry._id} className="flex items-start justify-between gap-4 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-[var(--ink)]">
-                      {TIME_ACTIVITY_LABELS[entry.activity]} · {entry.hours} h
-                    </p>
-                    <p className="text-xs text-[var(--ink-muted)]">
-                      {entry.peopleInvolved ? `${entry.peopleInvolved} people · ` : ""}
-                      {entry.isEstimated ? "estimated" : "actual"}
-                      {entry.notes ? ` · ${entry.notes}` : ""}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={pending}
-                    onClick={() =>
-                      run(() => store.removeTimeEntry("maker", { timeEntryId: entry._id }))
-                    }
-                  >
-                    Remove
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <dl className="border-t border-[var(--line)] pt-4">
-            <DataRow
-              label="Total labour hours"
-              value={production.totalLabourHours ?? 0}
-              hint={
-                production.hoursPerSaleableUnit
-                  ? `${production.hoursPerSaleableUnit} h per saleable unit`
-                  : undefined
+          <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-4">
+            <Button variant="ghost" onClick={() => setIsInputModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={pending}
+              onClick={() =>
+                run(async () => {
+                  await store.addProductionInput("maker", {
+                    productionBatchId: production._id,
+                    inputType: inputDraft.inputType,
+                    description: inputDraft.description,
+                    quantity: Number(inputDraft.quantity),
+                    unit: inputDraft.unit,
+                    supplierName: inputDraft.supplierName || undefined,
+                    cost: inputDraft.cost ? Number(inputDraft.cost) : undefined,
+                    sourcingCategory: inputDraft.sourcingCategory,
+                  });
+                  setInputDraft((current) => ({ ...current, description: "", quantity: "", cost: "" }));
+                  setIsInputModalOpen(false);
+                })
               }
-            />
-            <DataRow label="People involved" value={production.peopleInvolved ?? "-"} />
-          </dl>
+            >
+              Add input
+            </Button>
+          </div>
+        </Modal>
+      )}
 
+      {isTimeModalOpen && (
+        <Modal
+          eyebrow="Time record"
+          title="Add production time"
+          width="lg"
+          onClose={() => setIsTimeModalOpen(false)}
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Activity">
               <Select
@@ -550,183 +648,168 @@ export default function MakerProductionDetailPage() {
                 <option value="estimated">Estimated</option>
               </Select>
             </Field>
+            <div className="sm:col-span-2">
+              <Field label="Notes">
+                <Input
+                  value={timeDraft.notes}
+                  onChange={(event) =>
+                    setTimeDraft((current) => ({ ...current, notes: event.target.value }))
+                  }
+                  placeholder="Optional notes or details..."
+                />
+              </Field>
+            </div>
           </div>
 
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={pending}
-            onClick={() =>
-              run(async () => {
-                await store.addTimeEntry("maker", {
-                  productionBatchId: production._id,
-                  activity: timeDraft.activity,
-                  hours: Number(timeDraft.hours),
-                  peopleInvolved: timeDraft.peopleInvolved
-                    ? Number(timeDraft.peopleInvolved)
-                    : undefined,
-                  isEstimated: timeDraft.isEstimated,
-                  notes: timeDraft.notes || undefined,
-                });
-                setTimeDraft((current) => ({ ...current, hours: "", notes: "" }));
-              })
-            }
-          >
-            Add time entry
-          </Button>
-        </Panel>
-      </div>
-
-      <Panel className="space-y-4 p-6">
-        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Outputs</h2>
-
-        {detail.outputs.length === 0 ? (
-          <p className="text-sm text-[var(--ink-muted)]">No finished products recorded yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[36rem] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-[var(--line)] text-left text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  <th className="py-3 pr-4">Product</th>
-                  <th className="py-3 pr-4 text-right">Planned</th>
-                  <th className="py-3 pr-4 text-right">Completed</th>
-                  <th className="py-3 pr-4 text-right">Rejected</th>
-                  <th className="py-3 text-right">Rework</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.outputs.map((output) => (
-                  <tr key={output._id} className="border-b border-[var(--line)] last:border-b-0">
-                    <td className="py-3 pr-4">
-                      <p className="font-medium text-[var(--ink)]">{output.productName}</p>
-                      <p className="text-xs text-[var(--ink-muted)]">
-                        {PRODUCT_CATEGORY_LABELS[output.productCategory]}
-                        {output.unitWeight ? ` · ${output.unitWeight} kg each` : ""}
-                      </p>
-                    </td>
-                    <td className="py-3 pr-4 text-right tabular-nums">{output.numberPlanned}</td>
-                    <td className="py-3 pr-4 text-right tabular-nums">
-                      {output.numberCompleted ?? "-"}
-                    </td>
-                    <td className="py-3 pr-4 text-right tabular-nums">
-                      {output.numberRejected ?? "-"}
-                    </td>
-                    <td className="py-3 text-right tabular-nums">
-                      {output.numberRequiringRework ?? "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        <div className="grid gap-4 border-t border-[var(--line)] pt-4 sm:grid-cols-3 lg:grid-cols-6">
-          <Field label="Product name">
-            <Input
-              value={outputDraft.productName}
-              onChange={(event) =>
-                setOutputDraft((current) => ({ ...current, productName: event.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Category">
-            <Select
-              value={outputDraft.productCategory}
-              onChange={(event) =>
-                setOutputDraft((current) => ({
-                  ...current,
-                  productCategory: event.target.value as ProductCategory,
-                }))
+          <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-4">
+            <Button variant="ghost" onClick={() => setIsTimeModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={pending}
+              onClick={() =>
+                run(async () => {
+                  await store.addTimeEntry("maker", {
+                    productionBatchId: production._id,
+                    activity: timeDraft.activity,
+                    hours: Number(timeDraft.hours),
+                    peopleInvolved: timeDraft.peopleInvolved
+                      ? Number(timeDraft.peopleInvolved)
+                      : undefined,
+                    isEstimated: timeDraft.isEstimated,
+                    notes: timeDraft.notes || undefined,
+                  });
+                  setTimeDraft((current) => ({ ...current, hours: "", notes: "" }));
+                  setIsTimeModalOpen(false);
+                })
               }
             >
-              {PRODUCT_CATEGORIES.map((value) => (
-                <option key={value} value={value}>
-                  {PRODUCT_CATEGORY_LABELS[value]}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Planned">
-            <Input
-              type="number"
-              min="0"
-              value={outputDraft.numberPlanned}
-              onChange={(event) =>
-                setOutputDraft((current) => ({ ...current, numberPlanned: event.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Completed">
-            <Input
-              type="number"
-              min="0"
-              value={outputDraft.numberCompleted}
-              onChange={(event) =>
-                setOutputDraft((current) => ({ ...current, numberCompleted: event.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Rejected">
-            <Input
-              type="number"
-              min="0"
-              value={outputDraft.numberRejected}
-              onChange={(event) =>
-                setOutputDraft((current) => ({ ...current, numberRejected: event.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Rework">
-            <Input
-              type="number"
-              min="0"
-              value={outputDraft.numberRequiringRework}
-              onChange={(event) =>
-                setOutputDraft((current) => ({
-                  ...current,
-                  numberRequiringRework: event.target.value,
-                }))
-              }
-            />
-          </Field>
-        </div>
+              Add time entry
+            </Button>
+          </div>
+        </Modal>
+      )}
 
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={pending}
-          onClick={() =>
-            run(async () => {
-              await store.addProductionOutput("maker", {
-                productionBatchId: production._id,
-                productName: outputDraft.productName,
-                productCategory: outputDraft.productCategory,
-                numberPlanned: Number(outputDraft.numberPlanned),
-                numberCompleted: outputDraft.numberCompleted
-                  ? Number(outputDraft.numberCompleted)
-                  : undefined,
-                numberRejected: outputDraft.numberRejected
-                  ? Number(outputDraft.numberRejected)
-                  : undefined,
-                numberRequiringRework: outputDraft.numberRequiringRework
-                  ? Number(outputDraft.numberRequiringRework)
-                  : undefined,
-              });
-              setOutputDraft((current) => ({
-                ...current,
-                productName: "",
-                numberPlanned: "",
-                numberCompleted: "",
-                numberRejected: "",
-                numberRequiringRework: "",
-              }));
-            })
-          }
+      {isOutputModalOpen && (
+        <Modal
+          eyebrow="Output record"
+          title="Add output line"
+          width="lg"
+          onClose={() => setIsOutputModalOpen(false)}
         >
-          Add output line
-        </Button>
-      </Panel>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Field label="Product name">
+              <Input
+                value={outputDraft.productName}
+                onChange={(event) =>
+                  setOutputDraft((current) => ({ ...current, productName: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Category">
+              <Select
+                value={outputDraft.productCategory}
+                onChange={(event) =>
+                  setOutputDraft((current) => ({
+                    ...current,
+                    productCategory: event.target.value as ProductCategory,
+                  }))
+                }
+              >
+                {PRODUCT_CATEGORIES.map((value) => (
+                  <option key={value} value={value}>
+                    {PRODUCT_CATEGORY_LABELS[value]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Planned">
+              <Input
+                type="number"
+                min="0"
+                value={outputDraft.numberPlanned}
+                onChange={(event) =>
+                  setOutputDraft((current) => ({ ...current, numberPlanned: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Completed">
+              <Input
+                type="number"
+                min="0"
+                value={outputDraft.numberCompleted}
+                onChange={(event) =>
+                  setOutputDraft((current) => ({ ...current, numberCompleted: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Rejected">
+              <Input
+                type="number"
+                min="0"
+                value={outputDraft.numberRejected}
+                onChange={(event) =>
+                  setOutputDraft((current) => ({ ...current, numberRejected: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Rework">
+              <Input
+                type="number"
+                min="0"
+                value={outputDraft.numberRequiringRework}
+                onChange={(event) =>
+                  setOutputDraft((current) => ({
+                    ...current,
+                    numberRequiringRework: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
+
+          <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-4">
+            <Button variant="ghost" onClick={() => setIsOutputModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={pending}
+              onClick={() =>
+                run(async () => {
+                  await store.addProductionOutput("maker", {
+                    productionBatchId: production._id,
+                    productName: outputDraft.productName,
+                    productCategory: outputDraft.productCategory,
+                    numberPlanned: Number(outputDraft.numberPlanned),
+                    numberCompleted: outputDraft.numberCompleted
+                      ? Number(outputDraft.numberCompleted)
+                      : undefined,
+                    numberRejected: outputDraft.numberRejected
+                      ? Number(outputDraft.numberRejected)
+                      : undefined,
+                    numberRequiringRework: outputDraft.numberRequiringRework
+                      ? Number(outputDraft.numberRequiringRework)
+                      : undefined,
+                  });
+                  setOutputDraft((current) => ({
+                    ...current,
+                    productName: "",
+                    numberPlanned: "",
+                    numberCompleted: "",
+                    numberRejected: "",
+                    numberRequiringRework: "",
+                  }));
+                  setIsOutputModalOpen(false);
+                })
+              }
+            >
+              Add output line
+            </Button>
+          </div>
+        </Modal>
+      )}
 
       <Panel className="space-y-4 p-6">
         <div className="space-y-1">
@@ -776,7 +859,7 @@ export default function MakerProductionDetailPage() {
             <DataRow
               label="Base cost per unit"
               value={formatCurrency(costs.baseCostPerUnit)}
-              hint="Total batch cost ÷ saleable units"
+              hint="Total batch cost / saleable units"
             />
             <DataRow label="Revenue generated" value={formatCurrency(costs.revenueGenerated)} />
             <DataRow
@@ -917,7 +1000,6 @@ export default function MakerProductionDetailPage() {
       <ThreadTimelinePanel
         role="maker"
         anchor={{ table: "productionBatches", id: production._id }}
-        description="Where this material came from before it reached the workshop."
       />
     </div>
   );

@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Lock } from "lucide-react";
-import { Button, Panel } from "@/components/ui";
+import { Button } from "@/components/ui";
 import {
   DashboardHero,
   DashboardMetricCard,
@@ -20,8 +18,6 @@ export default function BrandDashboardPage() {
   const { db } = useDemoStore();
   const { scope, organisation } = useDemoPersona("brand");
   const view = getBrandDashboard(db, scope);
-
-  const [showPrivacyNotice, setShowPrivacyNotice] = useState(false);
 
   return (
     <div className="space-y-8">
@@ -101,40 +97,6 @@ export default function BrandDashboardPage() {
           )}
         </div>
       </DashboardSection>
-
-      {/* Privacy Guarantee Disclosure */}
-      <Panel className="p-4 border-dashed">
-        <button
-          onClick={() => setShowPrivacyNotice((prev) => !prev)}
-          className="flex items-center justify-between w-full text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors"
-        >
-          <span className="flex items-center gap-2">
-            <Lock size={14} className="text-[var(--brand-primary)]" />
-            What CIRKA will not show you
-          </span>
-          {showPrivacyNotice ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </button>
-
-        {showPrivacyNotice && (
-          <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--line)] pt-3 animate-stagger-in">
-            {[
-              "Cost breakdowns",
-              "Labour rates",
-              "Supplier prices",
-              "Margins",
-              "Personal contacts",
-            ].map((field) => (
-              <span
-                key={field}
-                className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--line-strong)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]"
-              >
-                <Lock size={11} />
-                {field}
-              </span>
-            ))}
-          </div>
-        )}
-      </Panel>
 
       <RoleActivityFeed role="brand" />
     </div>

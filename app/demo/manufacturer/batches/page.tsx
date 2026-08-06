@@ -38,11 +38,11 @@ export default function ManufacturerBatchesPage() {
         title="Everything your organisation has recorded"
         action={
           <div className="flex gap-3">
-            <Button as={Link} href="/demo/manufacturer/batches/import" variant="secondary" size="sm">
-              Import CSV
+            <Button as={Link} href="/demo/manufacturer/batches/new" variant="ghost" size="sm">
+              Record manually
             </Button>
-            <Button as={Link} href="/demo/manufacturer/batches/new" size="sm">
-              Record a batch
+            <Button as={Link} href="/demo/manufacturer/batches/import" size="sm">
+              Intake
             </Button>
           </div>
         }

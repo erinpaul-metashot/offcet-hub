@@ -8,6 +8,7 @@ const navItems: NavItem[] = [
   { label: "Overview", href: "/demo/maker/dashboard", icon: "overview" },
   { label: "Allocations", href: "/demo/maker/allocations", icon: "allocations" },
   { label: "Production", href: "/demo/maker/production", icon: "production" },
+  { label: "Projects", href: "/demo/maker/projects", icon: "projects" },
   { label: "My requests", href: "/demo/maker/requests", icon: "requests" },
 ];
 

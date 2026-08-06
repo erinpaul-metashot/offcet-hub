@@ -54,6 +54,7 @@ export function BatchDetailView({
     assuranceLevel: batch.assuranceLevel,
     notes: batch.reviewNotes ?? "",
   });
+  const [placement, setPlacement] = useState({ custodianOrgId: "", quantity: "", notes: "" });
   const [exception, setException] = useState<{ status: BatchException | ""; note: string }>({
     status: batch.exceptionStatus ?? "",
     note: batch.exceptionNote ?? "",
@@ -65,6 +66,10 @@ export function BatchDetailView({
   const isOwner = role === "manufacturer";
   const isAdmin = role === "admin";
   const canManage = isOwner || isAdmin;
+
+  const custodians = store.db.organisations.filter(
+    (org) => org.type === "custodian" && org.status === "approved",
+  );
 
   return (
     <div className="space-y-6">
@@ -296,11 +301,9 @@ export function BatchDetailView({
       {/* TAB 2: ACTIVITY & LEDGER */}
       {activeTab === "activity" && (
         <div className="space-y-6 animate-stagger-in">
-          {/* The whole story first, the underlying records below it. */}
           <ThreadTimelinePanel
             role={role}
             anchor={{ table: "resourceBatches", id: batch._id }}
-            description="Every recorded step, from the day this material was logged."
           />
 
           {detail.matches.length > 0 && (
@@ -479,6 +482,89 @@ export function BatchDetailView({
                   }
                 >
                   Save review
+                </Button>
+              </Panel>
+            )}
+
+            {/* Only CIRKA places a batch. The custodian then accepts before the
+                manufacturer dispatches: nothing moves on one party's say-so. */}
+            {isAdmin && (
+              <Panel className="space-y-4 p-6">
+                <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
+                  Send to a custodian
+                </h2>
+                {batch.reviewedAt ? (
+                  <p className="text-sm text-[var(--ink-muted)]">
+                    {formatQuantity(batch.pots.available, batch.unit)} unallocated. The custodian
+                    accepts before {detail.ownerName} can dispatch.
+                  </p>
+                ) : (
+                  <NoticeBanner tone="warning" title="Review this batch first">
+                    A batch is placed with a custodian only after CIRKA has reviewed it and set an
+                    assurance level.
+                  </NoticeBanner>
+                )}
+                <Field label="Custodian">
+                  <Select
+                    value={placement.custodianOrgId}
+                    onChange={(event) =>
+                      setPlacement((current) => ({
+                        ...current,
+                        custodianOrgId: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Choose a custodian</option>
+                    {custodians.map((org) => (
+                      <option key={org._id} value={org._id}>
+                        {org.name}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label={`Quantity (${batch.unit})`}>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      value={placement.quantity}
+                      onChange={(event) =>
+                        setPlacement((current) => ({ ...current, quantity: event.target.value }))
+                      }
+                    />
+                  </Field>
+                  <Field label="Note to the custodian">
+                    <Input
+                      value={placement.notes}
+                      onChange={(event) =>
+                        setPlacement((current) => ({ ...current, notes: event.target.value }))
+                      }
+                      placeholder="Hold for the Nordic spring line"
+                    />
+                  </Field>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={
+                    pending ||
+                    !batch.reviewedAt ||
+                    !placement.custodianOrgId ||
+                    Number(placement.quantity) <= 0
+                  }
+                  onClick={() =>
+                    run(async () => {
+                      await store.proposeAllocationToCustodian(role, {
+                        batchId: batch._id,
+                        toOrgId: placement.custodianOrgId,
+                        quantity: Number(placement.quantity),
+                        notes: placement.notes || undefined,
+                      });
+                      setPlacement({ custodianOrgId: "", quantity: "", notes: "" });
+                    })
+                  }
+                >
+                  Propose allocation
                 </Button>
               </Panel>
             )}

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Layers } from "lucide-react";
 import { Button, EmptyState } from "@/components/ui";
+import { statusLabel } from "../../_mock/domain";
 import { getCustodianDashboard } from "../../_mock/selectors-custodian";
 import type { Holding } from "../../_mock/selectors-custodian";
 import { potSlices } from "../../_mock/selectors-batches";
@@ -15,6 +15,7 @@ import {
 } from "../../_components/cirka-ui";
 import { useAction } from "../../_components/use-action";
 import { CustodianStockDrawer } from "../../_components/custodian-stock-drawer";
+import type { DamageDraft } from "../../_components/custodian-stock-drawer";
 
 /** Mini pot bar indicator for tabular rows */
 function MiniPotsBar({ holding }: { holding: Holding }) {
@@ -47,10 +48,10 @@ function MiniPotsBar({ holding }: { holding: Holding }) {
       </div>
       <p className="text-[10px] text-[var(--ink-muted)]">
         <span className="font-semibold text-[var(--brand-primary)]">
-          {holding.uncommitted} {holding.batch.unit} free
+          {holding.uncommitted} {holding.batch.unit} unassigned
         </span>
         {" / "}
-        {holding.promised} promised
+        {holding.promised} assigned out
       </p>
     </div>
   );
@@ -62,31 +63,19 @@ export default function CustodianStockPage() {
   const { run, error, pending, clearError } = useAction();
 
   const view = getCustodianDashboard(store.db, scope);
-  const makers = store.db.organisations.filter(
-    (org) => org.type === "maker" && org.status === "approved",
-  );
 
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
-  const [drafts, setDrafts] = useState<
-    Record<string, { makerOrgId: string; quantity: string; notes: string }>
-  >({});
+  const [drafts, setDrafts] = useState<Record<string, DamageDraft>>({});
 
   const selectedHolding =
     view.holdings.find((h) => h.batch._id === selectedBatchId) ?? null;
 
   function openDrawer(batchId: string) {
     clearError();
-    const holding = view.holdings.find((h) => h.batch._id === batchId);
-    if (holding) {
-      setDrafts((current) => ({
-        ...current,
-        [batchId]: current[batchId] ?? {
-          makerOrgId: "",
-          quantity: String(holding.uncommitted),
-          notes: "",
-        },
-      }));
-    }
+    setDrafts((current) => ({
+      ...current,
+      [batchId]: current[batchId] ?? { quantity: "", reason: "" },
+    }));
     setSelectedBatchId(batchId);
   }
 
@@ -96,13 +85,18 @@ export default function CustodianStockPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading eyebrow="Stock" title="What is physically here" />
+      <SectionHeading title="Physical Stock" />
 
       {error && (
-        <NoticeBanner tone="blocking" title="That allocation was refused">
+        <NoticeBanner tone="blocking" title="That adjustment was refused">
           {error}
         </NoticeBanner>
       )}
+
+      <NoticeBanner tone="info" title="CIRKA decides where this goes next">
+        You hold and hand over. Assignments to makers are made by CIRKA, and appear
+        under Out to makers once they are.
+      </NoticeBanner>
 
       {view.holdings.length === 0 ? (
         <EmptyState
@@ -126,7 +120,7 @@ export default function CustodianStockPage() {
                 {formatQuantity(view.metrics.uncommitted, "kg")}
               </p>
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.10em] text-[var(--ink-muted)]">
-                Uncommitted available
+                Not yet assigned
               </p>
             </div>
             <div className="bg-[var(--paper)] px-5 py-4 text-center">
@@ -137,7 +131,7 @@ export default function CustodianStockPage() {
                 )}
               </p>
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.10em] text-[var(--ink-muted)]">
-                Promised to makers
+                Assigned to makers
               </p>
             </div>
           </div>
@@ -150,9 +144,10 @@ export default function CustodianStockPage() {
                   <tr className="border-b border-[var(--line)] bg-[var(--surface)] text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
                     <th className="px-5 py-3.5">Material / Batch</th>
                     <th className="px-5 py-3.5">Owner</th>
+                    <th className="px-5 py-3.5">Custody</th>
                     <th className="px-5 py-3.5">Pot Allocation</th>
                     <th className="px-5 py-3.5">Held at Site</th>
-                    <th className="px-5 py-3.5">Uncommitted</th>
+                    <th className="px-5 py-3.5">Unassigned</th>
                     <th className="px-5 py-3.5 text-right">Action</th>
                   </tr>
                 </thead>
@@ -184,6 +179,25 @@ export default function CustodianStockPage() {
                         <td className="px-5 py-4 text-xs text-[var(--ink-muted)]">
                           {holding.ownerName}
                         </td>
+                        <td className="px-5 py-4 text-xs">
+                          <p className="text-[var(--ink-muted)]">
+                            Received from {holding.receivedFromName}
+                          </p>
+                          {holding.outgoing.length === 0 ? (
+                            <p className="text-[var(--ink-muted)]">
+                              Awaiting a CIRKA assignment
+                            </p>
+                          ) : (
+                            holding.outgoing.map(({ allocation, makerName }) => (
+                              <p key={allocation._id} className="text-[var(--ink)]">
+                                Sent to {makerName} ·{" "}
+                                <span className="text-[var(--ink-muted)]">
+                                  {statusLabel(allocation.status)}
+                                </span>
+                              </p>
+                            ))
+                          )}
+                        </td>
                         <td className="px-5 py-4">
                           <MiniPotsBar holding={holding} />
                         </td>
@@ -196,12 +210,13 @@ export default function CustodianStockPage() {
                         <td className="px-5 py-4 text-right">
                           <Button
                             size="sm"
+                            variant="secondary"
                             onClick={(e) => {
                               e.stopPropagation();
                               openDrawer(holding.batch._id);
                             }}
                           >
-                            Allocate to Maker
+                            Report Damage
                           </Button>
                         </td>
                       </tr>
@@ -218,12 +233,10 @@ export default function CustodianStockPage() {
       {selectedHolding && (
         <CustodianStockDrawer
           holding={selectedHolding}
-          makers={makers}
           draft={
             drafts[selectedHolding.batch._id] ?? {
-              makerOrgId: "",
-              quantity: String(selectedHolding.uncommitted),
-              notes: "",
+              quantity: "",
+              reason: "",
             }
           }
           onDraftChange={(next) =>

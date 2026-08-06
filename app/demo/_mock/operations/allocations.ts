@@ -84,6 +84,15 @@ export function respondToAllocation(
   args: { allocationId: Id; accept: boolean; note?: string },
 ): MockDatabase {
   const allocation = requireRow(db, "allocations", args.allocationId, "Allocation");
+
+  /* Only the receiver decides. A custodian approves what CIRKA sends it; it has
+     no say in the hand-over out of its own warehouse — that is the maker's. */
+  if (allocation.toOrgId !== actor.orgId && actor.role !== "admin") {
+    throw new OperationError(
+      `Only ${db.organisations.find((org) => org._id === allocation.toOrgId)?.name ?? "the receiving organisation"} can accept or decline ${allocation.reference}.`,
+    );
+  }
+
   const next = args.accept ? "accepted" : "declined";
   assertAllocationTransition(allocation.status, next);
 
@@ -485,8 +494,13 @@ export function resolveDiscrepancy(
   });
 }
 
-/** Custodian offers part of its holding to a maker. */
-export function proposeAllocationToMaker(
+/**
+ * CIRKA places a reviewed batch with a custodian. The first hop, opened without
+ * a brand request behind it: the manufacturer does not pick its own warehouse
+ * and the custodian does not help itself. The quantity is reserved here and
+ * only becomes the custodian's commitment once they accept.
+ */
+export function proposeAllocationToCustodian(
   db: MockDatabase,
   actor: ViewerScope,
   args: {
@@ -495,12 +509,134 @@ export function proposeAllocationToMaker(
     quantity: number;
     notes?: string;
     expectedArrivalDate?: number;
+  },
+): MockDatabase {
+  if (actor.role !== "admin") {
+    throw new OperationError(
+      "Only CIRKA places a batch with a custodian. A manufacturer does not pick its own warehouse.",
+    );
+  }
+
+  const batch = requireRow(db, "resourceBatches", args.batchId, "Resource batch");
+  const quantity = requirePositive(args.quantity, "Quantity must be greater than zero.");
+
+  if (!batch.reviewedAt) {
+    throw new OperationError(
+      `${batch.reference} is still awaiting CIRKA review: review it and set an assurance level before placing it with a custodian.`,
+    );
+  }
+
+  const custodian = requireRow(db, "organisations", args.toOrgId, "Custodian");
+
+  if (custodian.type !== "custodian" || custodian.status !== "approved") {
+    throw new OperationError(`${custodian.name} is not an approved custodian.`);
+  }
+
+  if (quantity > batch.pots.available + 0.001) {
+    throw new OperationError(
+      `Only ${batch.pots.available} ${batch.unit} of ${batch.reference} is still unallocated: the rest is reserved, allocated or already moving.`,
+    );
+  }
+
+  const allocationId = makeId("allocation");
+  const custodianFacility = db.facilities.find(
+    (facility) => facility.orgId === args.toOrgId && facility.type === "storage",
+  );
+
+  const allocation: Allocation = {
+    _id: allocationId,
+    reference: makeReference(
+      "ALC",
+      nextSequence(
+        db.allocations.map((entry) => entry.reference),
+        "CIRKA-ALC",
+      ),
+    ),
+    batchId: args.batchId,
+    hop: "manufacturer_to_custodian",
+    fromOrgId: batch.ownerOrgId,
+    fromFacilityId: batch.sourceFacilityId,
+    toOrgId: args.toOrgId,
+    toFacilityId: custodianFacility?._id,
+    quantityAllocated: quantity,
+    unit: batch.unit,
+    status: "proposed",
+    expectedArrivalDate: args.expectedArrivalDate,
+    proposedByUserId: actor.userId,
+    notes: args.notes?.trim() || undefined,
+    createdAt: currentTime(),
+    updatedAt: currentTime(),
+  };
+
+  /* Reserving is what stops the same quantity being promised twice. The
+     custodian's acceptance is what turns it into `allocated`. */
+  const reserved = applyMovement(insertRow(db, "allocations", allocation), {
+    batchId: args.batchId,
+    fromBucket: "available",
+    toBucket: "reserved",
+    quantity,
+    reason: "reserved",
+    performedByUserId: actor.userId,
+    performedByOrgId: actor.orgId,
+    allocationId,
+    notes: `Reserved for ${custodian.name}.`,
+  });
+
+  return appendAudit(reserved, {
+    entityTable: "allocations",
+    entityId: allocationId,
+    parentEntityTable: "resourceBatches",
+    parentEntityId: args.batchId,
+    action: "created",
+    actorUserId: actor.userId,
+    actorOrgId: actor.orgId,
+    notes: `Allocation of ${quantity} ${batch.unit} proposed to ${custodian.name}.`,
+  });
+}
+
+/**
+ * CIRKA assigns part of a custodian's holding on to a maker. The custodian is
+ * a warehouse: it accepts material in and hands it over, but it does not pick
+ * the destination, so `fromOrgId` is an argument rather than the actor.
+ */
+export function proposeAllocationToMaker(
+  db: MockDatabase,
+  actor: ViewerScope,
+  args: {
+    batchId: Id;
+    fromOrgId: Id;
+    toOrgId: Id;
+    quantity: number;
+    notes?: string;
+    expectedArrivalDate?: number;
     requestId?: Id;
     projectId?: Id;
   },
 ): MockDatabase {
+  if (actor.role !== "admin") {
+    throw new OperationError(
+      "Only CIRKA assigns a custodian's stock to a maker. A custodian stores and hands over; it does not choose who receives.",
+    );
+  }
+
   const batch = requireRow(db, "resourceBatches", args.batchId, "Resource batch");
   const quantity = requirePositive(args.quantity, "Quantity must be greater than zero.");
+
+  const custodianHasIt = db.allocations.some(
+    (allocation) =>
+      allocation.batchId === args.batchId &&
+      allocation.toOrgId === args.fromOrgId &&
+      allocation.hop === "manufacturer_to_custodian" &&
+      ["received", "discrepancy", "completed"].includes(allocation.status),
+  );
+
+  if (!custodianHasIt) {
+    const custodianName =
+      db.organisations.find((org) => org._id === args.fromOrgId)?.name ?? "That custodian";
+    throw new OperationError(
+      `${custodianName} has not confirmed receipt of ${batch.reference}, so nothing can be assigned out of it yet.`,
+    );
+  }
 
   const alreadyPromised = db.allocations
     .filter(
@@ -515,7 +651,7 @@ export function proposeAllocationToMaker(
 
   if (quantity > uncommitted + 0.001) {
     throw new OperationError(
-      `Only ${uncommitted} ${batch.unit} of this batch is uncommitted at your site: ${alreadyPromised} ${batch.unit} is already promised to makers.`,
+      `Only ${uncommitted} ${batch.unit} of this batch is unassigned at the custodian: ${alreadyPromised} ${batch.unit} is already assigned to makers.`,
     );
   }
 
@@ -524,7 +660,7 @@ export function proposeAllocationToMaker(
     (facility) => facility.orgId === args.toOrgId && facility.type === "production",
   );
   const custodianFacility = db.facilities.find(
-    (facility) => facility.orgId === actor.orgId && facility.type === "storage",
+    (facility) => facility.orgId === args.fromOrgId && facility.type === "storage",
   );
 
   const allocation: Allocation = {
@@ -540,7 +676,7 @@ export function proposeAllocationToMaker(
     requestId: args.requestId,
     projectId: args.projectId,
     hop: "custodian_to_maker",
-    fromOrgId: actor.orgId,
+    fromOrgId: args.fromOrgId,
     fromFacilityId: custodianFacility?._id,
     toOrgId: args.toOrgId,
     toFacilityId: makerFacility?._id,

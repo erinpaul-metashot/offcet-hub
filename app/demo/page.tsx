@@ -11,7 +11,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import { Button } from "@/components/ui";
-import { ROLE_DESCRIPTIONS, type CirkaRole } from "./_mock/domain";
+import { type CirkaRole } from "./_mock/domain";
 import { checkLedgerIntegrity } from "./_mock/ledger";
 import { PERSONA_IDS, useDemoStore } from "./_mock/store";
 import { formatQuantity } from "./_mock/selectors-shared";
@@ -44,7 +44,7 @@ export default function DemoRoleSelectorPage() {
   return (
     <main className="min-h-screen bg-[var(--sidebar-bg)] px-5 py-8 sm:px-8 lg:py-12 flex flex-col justify-between">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 w-full">
-        {/* Header: concise launchpad */}
+        {/* Header */}
         <header className="space-y-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -52,27 +52,9 @@ export default function DemoRoleSelectorPage() {
             alt="Cirka"
             className="h-10 w-auto object-contain object-left"
           />
-          <div className="space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--brand-primary)]">
-              Interactive product demo · revised MVP
-            </p>
-            <h1 className="max-w-2xl text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">
-              Select a persona.
-            </h1>
-          </div>
-
-          {/* The alternative to exploring: let the product explain itself in order. */}
-          <Link
-            href="/demo/story"
-            className="group inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/5 py-2 pl-5 pr-2 transition-[border-color,background-color] duration-200 ease-[var(--ease-out)] hover:border-[var(--brand-primary)] hover:bg-white/10"
-          >
-            <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-white">
-              Or take a guided walkthrough
-            </span>
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors duration-200 ease-[var(--ease-out)] group-hover:bg-[var(--brand-primary)]">
-              <PlayCircle size={16} />
-            </span>
-          </Link>
+          <h1 className="max-w-2xl text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">
+            Select Workspace Persona
+          </h1>
         </header>
 
         {/* 5-Role Cards Grid with Doppelrand Outer Shell */}
@@ -109,10 +91,6 @@ export default function DemoRoleSelectorPage() {
                         {organisation ? ` · ${organisation.name}` : ""}
                       </p>
                     </div>
-
-                    <p className="text-[13px] leading-relaxed text-[var(--ink-muted)] line-clamp-2">
-                      {ROLE_DESCRIPTIONS[role]}
-                    </p>
                   </div>
 
                   <div className="flex items-center justify-between border-t border-[var(--line)] pt-4">
@@ -160,6 +138,16 @@ export default function DemoRoleSelectorPage() {
           Mock dataset: {db.organisations.length} orgs · {Object.keys(PERSONA_IDS).length} personas · {db.resourceBatches.length} batches · {db.quantityMovements.length} movements. Safe browser sandbox.
         </p>
         <div className="flex flex-wrap gap-3">
+          <Button
+            as={Link}
+            href="/demo/story"
+            variant="primary"
+            size="sm"
+            className="gap-2"
+          >
+            <PlayCircle size={14} />
+            Guided Walkthrough
+          </Button>
           <Button
             onClick={resetDemo}
             variant="secondary"

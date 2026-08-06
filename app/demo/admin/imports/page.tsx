@@ -16,7 +16,7 @@ export default function AdminImportsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Imports" title="Bulk and machine-to-machine arrivals" />
+      <SectionHeading title="Data Imports" />
 
       {rows.length === 0 ? (
         <EmptyState title="No imports yet" body="Uploads and API pushes are logged here." />

@@ -1,11 +1,29 @@
 /** Maker views: allocations to respond to, production to run, evidence to submit. */
 
 import { auditForEntity } from "./audit";
+import type { Unit } from "./domain";
 import { round } from "./ledger";
 import { checkMaterialBalance } from "./transitions";
-import type { Allocation, Id, Match, MockDatabase, ProductionBatch, ResourceRequest } from "./types";
+import type {
+  Allocation,
+  Id,
+  Match,
+  MockDatabase,
+  ProductionBatch,
+  ProductionOutput,
+  Project,
+  ResourceBatch,
+  ResourceRequest,
+} from "./types";
 import { costsForViewer, type ViewerScope } from "./visibility";
-import { evidenceFor, findFacility, orgName, transfersFor } from "./selectors-shared";
+import {
+  buildJourney,
+  evidenceFor,
+  findFacility,
+  orgName,
+  transfersFor,
+  type JourneyRow,
+} from "./selectors-shared";
 import { now as currentTime } from "./clock";
 
 export interface MakerAllocation {
@@ -54,7 +72,14 @@ export function listMakerRequests(db: MockDatabase, orgId: Id): MakerRequestRow[
     }));
 }
 
-export function listMakerProduction(db: MockDatabase, orgId: Id) {
+export interface MakerProductionRow {
+  production: ProductionBatch;
+  batch?: ResourceBatch;
+  outputs: ProductionOutput[];
+  overdue: boolean;
+}
+
+export function listMakerProduction(db: MockDatabase, orgId: Id): MakerProductionRow[] {
   return db.productionBatches
     .filter((production) => production.makerOrgId === orgId && !production.deletedAt)
     .map((production) => ({
@@ -69,6 +94,128 @@ export function listMakerProduction(db: MockDatabase, orgId: Id) {
         !production.actualCompletionDate,
     }))
     .sort((left, right) => right.production.updatedAt - left.production.updatedAt);
+}
+
+/** Runs a maker took on without a brand brief behind them still have to be accounted for. */
+export const UNASSIGNED_PROJECT = "unassigned";
+
+export interface MakerProjectRow {
+  key: Id;
+  project?: Project;
+  title: string;
+  reference?: string;
+  brandName?: string;
+  runs: MakerProductionRow[];
+  outputs: ProductionOutput[];
+  material: {
+    allocated: number;
+    received: number;
+    used: number;
+    incorporated: number;
+    prototypes: number;
+    offcuts: number;
+    loss: number;
+    remaining: number;
+    yield?: number;
+    unit: Unit;
+  };
+  unitsCompleted: number;
+  unitsPlanned: number;
+  hours: number;
+  activeRuns: number;
+  reviewedRuns: number;
+  lastActivity: number;
+}
+
+const ACTIVE_PRODUCTION = [
+  "planned",
+  "awaiting_material",
+  "material_received",
+  "in_production",
+  "quality_review",
+];
+
+function summariseMakerProject(db: MockDatabase, key: Id, runs: MakerProductionRow[]): MakerProjectRow {
+  const project = key === UNASSIGNED_PROJECT ? undefined : db.projects.find((entry) => entry._id === key);
+  const outputs = runs.flatMap((row) => row.outputs);
+
+  const total = (pick: (production: ProductionBatch) => number | undefined) =>
+    round(runs.reduce((sum, row) => sum + (pick(row.production) ?? 0), 0));
+
+  const used = total((production) => production.qtyUsed);
+  const incorporated = total((production) => production.qtyIncorporated);
+
+  return {
+    key,
+    project,
+    title: project?.title ?? "Work without a brand brief",
+    reference: project?.reference,
+    brandName: project ? orgName(db, project.brandOrgId) : undefined,
+    runs,
+    outputs,
+    material: {
+      allocated: total((production) => production.qtyAllocated),
+      received: total((production) => production.qtyReceived),
+      used,
+      incorporated,
+      prototypes: total((production) => production.qtyPrototypes),
+      offcuts: total((production) => production.qtyOffcuts),
+      loss: total((production) => production.qtyLoss),
+      remaining: round(
+        total((production) => production.qtyReusableRemaining) +
+          total((production) => production.qtyReturned),
+      ),
+      yield: used > 0 ? round(incorporated / used) : undefined,
+      unit: runs[0]?.production.unit ?? "kg",
+    },
+    unitsCompleted: outputs.reduce((sum, output) => sum + (output.numberCompleted ?? 0), 0),
+    unitsPlanned: outputs.reduce((sum, output) => sum + output.numberPlanned, 0),
+    hours: round(
+      runs.reduce((sum, row) => sum + (row.production.totalLabourHours ?? 0), 0),
+    ),
+    activeRuns: runs.filter((row) => ACTIVE_PRODUCTION.includes(row.production.status)).length,
+    reviewedRuns: runs.filter((row) => row.production.evidenceStatus === "cirka_reviewed").length,
+    lastActivity: Math.max(...runs.map((row) => row.production.updatedAt)),
+  };
+}
+
+/**
+ * The maker's own portfolio: their production runs grouped by the brief they
+ * served. Scoped to their own runs only — a maker never sees what another maker
+ * made on the same project (05_SYSTEM_DESIGN §6.1).
+ */
+export function listMakerProjects(db: MockDatabase, orgId: Id): MakerProjectRow[] {
+  const groups = new Map<Id, MakerProductionRow[]>();
+
+  for (const row of listMakerProduction(db, orgId)) {
+    const allocation = db.allocations.find((entry) => entry._id === row.production.allocationId);
+    const key = row.production.projectId ?? allocation?.projectId ?? UNASSIGNED_PROJECT;
+
+    groups.set(key, [...(groups.get(key) ?? []), row]);
+  }
+
+  return Array.from(groups.entries())
+    .map(([key, runs]) => summariseMakerProject(db, key, runs))
+    .sort((left, right) => right.lastActivity - left.lastActivity);
+}
+
+export interface MakerProjectDetail extends MakerProjectRow {
+  project: Project;
+  journey: JourneyRow[];
+}
+
+export function getMakerProjectDetail(
+  db: MockDatabase,
+  orgId: Id,
+  projectId: Id,
+): MakerProjectDetail | null {
+  const row = listMakerProjects(db, orgId).find((entry) => entry.key === projectId);
+
+  if (!row?.project) {
+    return null;
+  }
+
+  return { ...row, project: row.project, journey: buildJourney(db, projectId) };
 }
 
 export function getProductionDetail(db: MockDatabase, viewer: ViewerScope, productionId: Id) {

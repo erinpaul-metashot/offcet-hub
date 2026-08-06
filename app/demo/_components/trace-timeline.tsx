@@ -198,9 +198,6 @@ export function ThreadTimelinePanel({
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--line)] px-5 py-4">
         <div>
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
-          {description && (
-            <p className="text-[13px] text-[var(--ink-muted)]">{description}</p>
-          )}
         </div>
         <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
           {thread.events.length} events

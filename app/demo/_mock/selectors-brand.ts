@@ -6,29 +6,19 @@
  * that can cross is `baseCostPerUnit`, and only when the maker has opted in.
  */
 
-import { MILESTONE_LABELS, type MilestoneStage } from "./domain";
 import { round } from "./ledger";
 import { materialYield } from "./transitions";
 import type { Id, Match, MockDatabase, Project, ResourceBatch, ResourceRequest } from "./types";
 import { sharedCostPerUnit, stripBatch, type ViewerScope } from "./visibility";
-import { daysBetween, orgName, scheduleNote } from "./selectors-shared";
+import { buildJourney, daysBetween, orgName } from "./selectors-shared";
 import { now as currentTime } from "./clock";
+
+export type { JourneyRow } from "./selectors-shared";
 
 export function listBrandProjects(db: MockDatabase, orgId: Id): Project[] {
   return db.projects
     .filter((project) => project.brandOrgId === orgId && !project.deletedAt)
     .sort((left, right) => right.createdAt - left.createdAt);
-}
-
-export interface JourneyRow {
-  stage: MilestoneStage;
-  label: string;
-  responsible: string;
-  plannedDate?: number;
-  actualDate?: number;
-  status: "completed" | "pending" | "overdue";
-  note?: string;
-  quantityNote?: string;
 }
 
 export function getProjectProofView(db: MockDatabase, viewer: ViewerScope, projectId: Id) {
@@ -70,12 +60,7 @@ export function getProjectProofView(db: MockDatabase, viewer: ViewerScope, proje
         (item.entityTable === "resourceBatches" && batchIds.includes(item.entityId))),
   );
 
-  const milestones = db.projectMilestones
-    .filter((milestone) => milestone.projectId === projectId)
-    .sort((left, right) => {
-      const order = Object.keys(MILESTONE_LABELS);
-      return order.indexOf(left.stage) - order.indexOf(right.stage);
-    });
+  const journey = buildJourney(db, projectId);
 
   /* --- Material accounting, from the ledger rather than a claim --- */
   const activated = round(
@@ -179,21 +164,6 @@ export function getProjectProofView(db: MockDatabase, viewer: ViewerScope, proje
           };
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
-
-  const journey: JourneyRow[] = milestones.map((milestone) => ({
-    stage: milestone.stage,
-    label: milestone.name || MILESTONE_LABELS[milestone.stage],
-    responsible: milestone.responsibleOrgId ? orgName(db, milestone.responsibleOrgId) : "CIRKA",
-    plannedDate: milestone.plannedDate,
-    actualDate: milestone.actualDate,
-    status:
-      milestone.status === "completed"
-        ? "completed"
-        : milestone.status === "overdue"
-          ? "overdue"
-          : "pending",
-    note: milestone.notes ?? scheduleNote(milestone.plannedDate, milestone.actualDate),
-  }));
 
   return {
     project,

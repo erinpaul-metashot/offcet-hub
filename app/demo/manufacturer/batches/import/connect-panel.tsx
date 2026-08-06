@@ -11,10 +11,10 @@
 import { useState } from "react";
 import { Check, ExternalLink, Loader2, Plug } from "lucide-react";
 import { Button, Panel } from "@/components/ui";
-import { RETEXCIR } from "../../../../_mock/domain";
-import { useDemoStore } from "../../../../_mock/store";
-import { NoticeBanner } from "../../../../_components/cirka-ui";
-import { useAction } from "../../../../_components/use-action";
+import { RETEXCIR } from "../../../_mock/domain";
+import { useDemoStore } from "../../../_mock/store";
+import { NoticeBanner } from "../../../_components/cirka-ui";
+import { useAction } from "../../../_components/use-action";
 
 const STEP_MS = 420;
 

@@ -13,34 +13,17 @@ import {
   FlowBar,
   ProductionLadder,
   formatDate,
-  type FlowSegment,
+  materialFlowSegments,
 } from "../../_components/cirka-ui";
 
-const MATERIAL_FLOW_COLOUR = {
-  incorporated: "bg-[var(--brand-secondary)]",
-  prototypes: "bg-[var(--brand-primary)]",
-  reusable: "bg-[#2F6F7A]",
-  offcuts: "bg-[#C8A96B]",
-  loss: "bg-[#D14343]",
-} as const;
-
-function buildFlowSegments(production: ProductionBatch): FlowSegment[] {
-  const entries: { key: keyof typeof MATERIAL_FLOW_COLOUR; label: string; value?: number }[] = [
-    { key: "incorporated", label: "Incorporated", value: production.qtyIncorporated },
-    { key: "prototypes", label: "Prototypes", value: production.qtyPrototypes },
-    { key: "reusable", label: "Reusable", value: production.qtyReusableRemaining },
-    { key: "offcuts", label: "Offcuts", value: production.qtyOffcuts },
-    { key: "loss", label: "Loss", value: production.qtyLoss },
-  ];
-
-  return entries
-    .filter((entry) => entry.value !== undefined && entry.value > 0)
-    .map((entry) => ({
-      key: entry.key,
-      label: entry.label,
-      value: entry.value as number,
-      colourClass: MATERIAL_FLOW_COLOUR[entry.key],
-    }));
+function buildFlowSegments(production: ProductionBatch) {
+  return materialFlowSegments({
+    incorporated: production.qtyIncorporated,
+    prototypes: production.qtyPrototypes,
+    reusable: production.qtyReusableRemaining,
+    offcuts: production.qtyOffcuts,
+    loss: production.qtyLoss,
+  });
 }
 
 interface ProductionRowProps {

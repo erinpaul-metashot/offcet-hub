@@ -10,6 +10,7 @@ import type { ViewerScope } from "./visibility";
 import { buildActionQueue, groupQueueByKind, groupQueueBySeverity } from "./selectors-actions";
 import { aggregatePotSlices, listMatchableBatches, type BatchRow } from "./selectors-batches";
 import { getProjectProofView, type JourneyRow } from "./selectors-brand";
+import { listHoldings, type Holding } from "./selectors-custodian";
 import { findFacility, orgName, topCategories, userName } from "./selectors-shared";
 
 export interface ProjectRow {
@@ -202,6 +203,27 @@ export function listRequests(db: MockDatabase) {
     });
 }
 
+/** High-level metrics across every request: the admin requests dashboard header. */
+export function getRequestsOverview(db: MockDatabase) {
+  const rows = listRequests(db);
+  const totalRequests = rows.length;
+  const awaitingMatch = rows.filter((r) =>
+    ["submitted", "under_review"].includes(r.request.status),
+  ).length;
+  const matched = rows.filter((r) =>
+    ["matched", "in_delivery", "fulfilled", "partially_matched"].includes(r.request.status),
+  ).length;
+  const totalMatches = rows.reduce((sum, r) => sum + r.matches.length, 0);
+
+  return {
+    totalRequests,
+    awaitingMatch,
+    matched,
+    totalMatches,
+  };
+}
+
+
 /**
  * Shortlisting is a convenience, not a decision (05_SYSTEM_DESIGN §5). The
  * system sorts candidates by category fit, quantity fit and distance; a person
@@ -301,6 +323,24 @@ export function listAllocationsOverview(db: MockDatabase) {
       project: db.projects.find((project) => project._id === allocation.projectId),
     }))
     .sort((left, right) => right.allocation.updatedAt - left.allocation.updatedAt);
+}
+
+export interface CustodianStockRow {
+  custodian: Organisation;
+  holding: Holding;
+}
+
+/**
+ * Every lot sitting in a warehouse, across all custodians. The second hop is
+ * CIRKA's call, so this is the list admin assigns makers from.
+ */
+export function listCustodianStock(db: MockDatabase): CustodianStockRow[] {
+  return db.organisations
+    .filter((org) => org.type === "custodian" && org.status === "approved")
+    .flatMap((custodian) =>
+      listHoldings(db, custodian._id).map((holding) => ({ custodian, holding })),
+    )
+    .sort((left, right) => right.holding.uncommitted - left.holding.uncommitted);
 }
 
 export function getAllocationDetail(db: MockDatabase, allocationId: Id) {

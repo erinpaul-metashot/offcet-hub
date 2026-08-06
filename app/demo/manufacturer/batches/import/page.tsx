@@ -1,34 +1,48 @@
 "use client";
 
+/**
+ * Intake, end to end. Retexcir is the flow: connect the account, receive what
+ * has been sorted, see exactly what came over the wire and what CIRKA did with
+ * it, then confirm it into the ledger. Manual entry, spreadsheets and the ERP
+ * connector are folded away underneath as the exceptions they are.
+ */
+
 import Link from "next/link";
-import { ArrowRight, RefreshCw } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button, EmptyState, Panel } from "@/components/ui";
-import { DATA_SOURCE_LABELS } from "../../../_mock/domain";
-import { listIntakeChannels, listIntakeJobs } from "../../../_mock/selectors-intake";
+import { RETEXCIR } from "../../../_mock/domain";
+import { categoryLabel, formatQuantity } from "../../../_mock/selectors-shared";
+import {
+  getRetexcirConnection,
+  listPendingArrivals,
+  listRetexcirBatches,
+  listRetexcirTransfers,
+} from "../../../_mock/selectors-intake";
 import { useDemoPersona, useDemoStore } from "../../../_mock/store";
-import { CirkaBadge, NoticeBanner, SectionHeading, formatDateTime } from "../../../_components/cirka-ui";
-import { useAction } from "../../../_components/use-action";
+import {
+  CirkaBadge,
+  SectionHeading,
+  formatDate,
+  formatDateTime,
+} from "../../../_components/cirka-ui";
+import { ConnectPanel } from "./connect-panel";
+import { OtherWaysIn } from "./other-ways";
+import { ConnectedPanel, INBOX_HREF, RetexcirLink, SystemBridge } from "./retexcir-link";
 
-const CHANNEL_HREF: Partial<Record<string, string>> = {
-  manual_entry: "/demo/manufacturer/batches/new",
-  csv_import: "/demo/manufacturer/batches/import/map",
-  /** Retexcir has its own connect-then-pull flow. */
-  sorting_system: "/demo/manufacturer/batches/import/retexcir",
-};
-
-export default function ImportBatchesPage() {
+export default function IntakePage() {
   const { db } = useDemoStore();
   const { scope } = useDemoPersona("manufacturer");
 
-  const channels = listIntakeChannels(db, scope);
-  const jobs = listIntakeJobs(db, scope);
-  const totalPending = channels.reduce((sum, channel) => sum + channel.pendingCount, 0);
+  const connection = getRetexcirConnection(db, scope);
+  const waiting = listPendingArrivals(db, scope, { channel: "sorting_system" });
+  const transfers = listRetexcirTransfers(db, scope);
+  const imported = listRetexcirBatches(db, scope);
 
   return (
     <div className="space-y-6">
       <SectionHeading
         eyebrow="Intake"
-        title="Where your material data comes in"
+        title={`Sorted material arrives from ${RETEXCIR.systemName}`}
         action={
           <Button as={Link} href="/demo/manufacturer/batches" variant="secondary" size="sm">
             All batches
@@ -36,170 +50,153 @@ export default function ImportBatchesPage() {
         }
       />
 
-      {totalPending > 0 ? (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--brand-primary)] bg-[var(--brand-primary-muted)] px-6 py-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--brand-primary)]">
-              Waiting on you
-            </p>
-            <p className="mt-1 text-sm tabular-nums text-[var(--ink)]">
-              {totalPending} pushed record{totalPending === 1 ? "" : "s"} awaiting confirmation
-            </p>
-          </div>
-          <Button as={Link} href="/demo/manufacturer/batches/import/inbox" size="sm">
-            Review them
-          </Button>
-        </div>
+      <SystemBridge connection={connection} />
+
+      {connection ? (
+        <ConnectedPanel connection={connection} waitingCount={waiting.length} />
       ) : (
-        <NoticeBanner tone="info" title="Nothing waiting on you" />
+        <ConnectPanel />
       )}
 
-      <Panel className="divide-y divide-[var(--line)] p-0">
-        {channels.map((channel) => {
-          const href = CHANNEL_HREF[channel.id];
-
-          if (href) {
-            return (
-              <Link
-                key={channel.id}
-                href={href}
-                className="group flex items-center justify-between gap-4 px-6 py-4 transition-[background-color,transform] duration-200 ease-[var(--ease-out)] hover:-translate-y-[1px] hover:bg-[var(--surface)]"
-              >
-                <div>
-                  <p className="font-semibold text-[var(--ink)]">{channel.name}</p>
-                  <p className="text-sm text-[var(--ink-muted)]">{channel.description}</p>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-[var(--ink-muted)]">
-                  <span>{formatDateTime(channel.lastActivityAt)}</span>
-                  <ArrowRight
-                    size={16}
-                    className="text-[var(--ink-muted)] transition-transform duration-200 ease-[var(--ease-out)] group-hover:translate-x-1 group-hover:text-[var(--brand-primary)]"
-                  />
-                </div>
-              </Link>
-            );
-          }
-
-          if (channel.kind === "connector") {
-            return (
-              <ConnectorRow
-                key={channel.id}
-                channelId={channel.id}
-                name={channel.name}
-                description={channel.description}
-                pendingCount={channel.pendingCount}
-                lastActivityAt={channel.lastActivityAt}
-              />
-            );
-          }
-
-          return (
-            <div key={channel.id} className="flex items-center justify-between gap-4 px-6 py-4">
-              <div>
-                <p className="font-semibold text-[var(--ink)]">{channel.name}</p>
-                <p className="text-sm text-[var(--ink-muted)]">{channel.description}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <CirkaBadge status="pending" label="Not connected" />
-                <Button size="sm" variant="ghost" disabled>
-                  Request an API key
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </Panel>
-
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Recent intake</h2>
-        {jobs.length === 0 ? (
-          <EmptyState title="No imports yet" body="Committed imports appear here." />
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
+          Received and waiting on you
+        </h2>
+        {waiting.length === 0 ? (
+          <EmptyState
+            title="Nothing waiting"
+            body={
+              connection
+                ? `Pull again once a batch has been sorted in ${RETEXCIR.systemName}.`
+                : `Connect the account to receive sorted batches from ${RETEXCIR.systemName}.`
+            }
+          />
         ) : (
           <Panel className="divide-y divide-[var(--line)] p-0">
-            {jobs.map((job) => (
-              <div key={job._id} className="flex items-center justify-between gap-4 px-6 py-4">
-                <div>
-                  <p className="font-medium text-[var(--ink)]">{job.fileName ?? "Pasted sheet"}</p>
-                  <p className="text-sm text-[var(--ink-muted)]">
-                    {DATA_SOURCE_LABELS[job.source]} · {formatDateTime(job.createdAt)}
+            {waiting.map((arrival) => (
+              <div
+                key={arrival._id}
+                className="flex flex-wrap items-center justify-between gap-4 px-6 py-4"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-[var(--ink)]">
+                    {arrival.name ?? "Untitled record"}
+                  </p>
+                  <p className="text-xs text-[var(--ink-muted)]">
+                    {arrival.externalRecordId} ·{" "}
+                    {arrival.materialCategory
+                      ? categoryLabel(arrival.materialCategory)
+                      : "no category sent"}{" "}
+                    ·{" "}
+                    {arrival.quantity !== undefined && arrival.unit
+                      ? formatQuantity(arrival.quantity, arrival.unit)
+                      : "quantity needs a person"}
                   </p>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-[var(--ink-muted)]">
-                  <span className="tabular-nums">{job.createdCount ?? 0} created</span>
-                  <span className="tabular-nums">{job.updatedCount ?? 0} updated</span>
-                  <span className="tabular-nums">{job.failedCount ?? 0} failed</span>
-                  <CirkaBadge status={job.status} />
+                <div className="flex items-center gap-3">
+                  {arrival.externalRecordUrl && (
+                    <RetexcirLink href={arrival.externalRecordUrl}>View in Retexcir</RetexcirLink>
+                  )}
+                  <Button as={Link} href={INBOX_HREF} size="sm">
+                    Review
+                  </Button>
                 </div>
               </div>
             ))}
           </Panel>
         )}
-      </div>
-    </div>
-  );
-}
+      </section>
 
-function ConnectorRow({
-  channelId,
-  name,
-  description,
-  pendingCount,
-  lastActivityAt,
-}: {
-  channelId: string;
-  name: string;
-  description: string;
-  pendingCount: number;
-  lastActivityAt?: number;
-}) {
-  const store = useDemoStore();
-  const { run, error, pending } = useAction();
-  /** Only the ERP channel lands here: Retexcir has its own page. */
-  const externalSystemName = "Nordväst ERP";
-
-  return (
-    <div className="space-y-3 px-6 py-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="font-semibold text-[var(--ink)]">{name}</p>
-          <p className="text-sm text-[var(--ink-muted)]">{description}</p>
-        </div>
-        <span className="text-sm text-[var(--ink-muted)]">{formatDateTime(lastActivityAt)}</span>
-      </div>
-
-      {error && (
-        <NoticeBanner tone="warning" title="Couldn't check for new records">
-          {error}
-        </NoticeBanner>
-      )}
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={pending}
-          onClick={() =>
-            run(async () => {
-              await store.receiveArrival("manufacturer", {
-                channel: "erp_import",
-                externalSystemName,
-              });
-            })
-          }
-        >
-          <RefreshCw size={15} />
-          Check for new records
-        </Button>
-        {pendingCount > 0 && (
-          <Button
-            as={Link}
-            href={`/demo/manufacturer/batches/import/inbox?channel=${channelId}`}
-            size="sm"
-          >
-            Review {pendingCount}
-          </Button>
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Transfer log</h2>
+        {transfers.length === 0 ? (
+          <EmptyState
+            title="No transfers yet"
+            body="Every record Retexcir hands over is logged here, accepted or rejected."
+          />
+        ) : (
+          <Panel className="divide-y divide-[var(--line)] p-0">
+            {transfers.map((transfer) => (
+              <div
+                key={transfer._id}
+                className="flex flex-wrap items-start justify-between gap-4 px-6 py-4"
+              >
+                <div className="min-w-0 space-y-1">
+                  <p className="font-mono text-[13px] text-[var(--ink)]">
+                    {transfer.externalRecordId}
+                  </p>
+                  <p className="text-xs text-[var(--ink-muted)]">
+                    {formatDateTime(transfer.createdAt)} · {transfer.payloadSummary}
+                  </p>
+                  {transfer.errorMessage && (
+                    <p className="max-w-2xl text-xs leading-relaxed text-[#8A3D11]">
+                      {transfer.errorMessage}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  {transfer.externalRecordUrl && (
+                    <RetexcirLink href={transfer.externalRecordUrl}>Payload source</RetexcirLink>
+                  )}
+                  <CirkaBadge
+                    status={transfer.status}
+                    label={transfer.status === "success" ? "Accepted" : "Rejected"}
+                  />
+                </div>
+              </div>
+            ))}
+          </Panel>
         )}
-      </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
+          Already in your ledger
+        </h2>
+        {imported.length === 0 ? (
+          <EmptyState
+            title="No sorted batches recorded yet"
+            body="Confirmed records appear here with a link back to their Retexcir record."
+          />
+        ) : (
+          <Panel className="divide-y divide-[var(--line)] p-0">
+            {imported.map((batch) => (
+              <div
+                key={batch._id}
+                className="flex flex-wrap items-center justify-between gap-4 px-6 py-4"
+              >
+                <div className="min-w-0">
+                  <Link
+                    href={`/demo/manufacturer/batches/${batch._id}`}
+                    className="group inline-flex items-center gap-2 font-medium text-[var(--ink)] transition-colors duration-200 ease-[var(--ease-out)] hover:text-[var(--brand-primary)]"
+                  >
+                    {batch.name}
+                    <ArrowRight
+                      size={14}
+                      className="transition-transform duration-200 ease-[var(--ease-out)] group-hover:translate-x-1"
+                    />
+                  </Link>
+                  <p className="text-xs text-[var(--ink-muted)]">
+                    {batch.reference} · {batch.externalRecordId ?? "no Retexcir reference"} ·
+                    imported {formatDate(batch.importedAt ?? batch.createdAt)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm tabular-nums text-[var(--ink-muted)]">
+                    {formatQuantity(batch.quantityOriginal, batch.unit)}
+                  </span>
+                  <CirkaBadge status={batch.status} />
+                  {batch.externalRecordUrl && (
+                    <RetexcirLink href={batch.externalRecordUrl}>Retexcir record</RetexcirLink>
+                  )}
+                </div>
+              </div>
+            ))}
+          </Panel>
+        )}
+      </section>
+
+      <OtherWaysIn />
     </div>
   );
 }

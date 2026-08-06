@@ -64,6 +64,10 @@ interface DemoStoreValue {
     role: CirkaRole,
     args: Parameters<typeof batchOps.writeOffAvailableQuantity>[2],
   ) => Promise<void>;
+  reportStorageDamage: (
+    role: CirkaRole,
+    args: Parameters<typeof batchOps.reportStorageDamage>[2],
+  ) => Promise<void>;
 
   // Demand and matching
   createProject: (role: CirkaRole, input: demandOps.ProjectInput) => Promise<Id>;
@@ -105,6 +109,10 @@ interface DemoStoreValue {
   resolveDiscrepancy: (
     role: CirkaRole,
     args: Parameters<typeof allocationOps.resolveDiscrepancy>[2],
+  ) => Promise<void>;
+  proposeAllocationToCustodian: (
+    role: CirkaRole,
+    args: Parameters<typeof allocationOps.proposeAllocationToCustodian>[2],
   ) => Promise<void>;
   proposeAllocationToMaker: (
     role: CirkaRole,
@@ -319,6 +327,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       reviewBatch: simple(batchOps.reviewBatch),
       setBatchException: simple(batchOps.setBatchException),
       writeOffAvailableQuantity: simple(batchOps.writeOffAvailableQuantity),
+      reportStorageDamage: simple(batchOps.reportStorageDamage),
 
       createProject: async (role, input) =>
         commitWith(role, (current, actor) => demandOps.createProject(current, actor, input))
@@ -340,6 +349,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       confirmReceipt: simple(allocationOps.confirmReceipt),
       reportArrivalIssue: simple(allocationOps.reportArrivalIssue),
       resolveDiscrepancy: simple(allocationOps.resolveDiscrepancy),
+      proposeAllocationToCustodian: simple(allocationOps.proposeAllocationToCustodian),
       proposeAllocationToMaker: simple(allocationOps.proposeAllocationToMaker),
       returnMaterial: simple(allocationOps.returnMaterial),
 

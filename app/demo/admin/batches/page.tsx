@@ -25,7 +25,7 @@ export default function AdminBatchesPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Resource batches" title="Everything in the system" />
+      <SectionHeading title="Resource Batches" />
 
       <Panel className="p-5">
         <div className="grid gap-4 sm:grid-cols-3">

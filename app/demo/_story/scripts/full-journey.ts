@@ -406,17 +406,19 @@ export const fullJourney: StoryScript = {
       beats: [
         {
           id: "sub-allocate",
-          role: "custodian",
+          role: "admin",
           at: day(24),
-          route: "/demo/custodian/dispatches",
-          title: "Malmö passes 295 kg on to Atelier Rask",
-          detail: "The second hop. Custody moves again, and the ledger follows it.",
+          route: "/demo/admin/allocations",
+          title: "CIRKA sends Malmö's 295 kg on to Atelier Rask",
+          detail:
+            "The second hop. The custodian stores the lot; CIRKA decides who receives it.",
           run: (db, context) => {
             const next = allocationOps.proposeAllocationToMaker(
               db,
-              actor(db, "custodian"),
+              actor(db, "admin"),
               {
                 batchId: context.recall("batch"),
+                fromOrgId: ORG_MALMO_NODE,
                 toOrgId: ORG_RASK,
                 quantity: 295,
                 notes: "Whole consignment, no split.",

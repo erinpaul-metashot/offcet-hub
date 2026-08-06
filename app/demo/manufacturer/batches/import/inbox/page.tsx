@@ -34,11 +34,7 @@ export default function ArrivalsInboxPage() {
         action={
           <Button
             as={Link}
-            href={
-              channel === "sorting_system"
-                ? "/demo/manufacturer/batches/import/retexcir"
-                : "/demo/manufacturer/batches/import"
-            }
+            href="/demo/manufacturer/batches/import"
             variant="secondary"
             size="sm"
           >

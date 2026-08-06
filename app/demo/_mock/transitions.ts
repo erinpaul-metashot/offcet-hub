@@ -185,7 +185,7 @@ export function checkMaterialBalance(production: ProductionBatch): BalanceCheck 
   };
 }
 
-/** Material yield = quantity incorporated into finished outputs ÷ total used. */
+/** Material yield = quantity incorporated into finished outputs / total used. */
 export function materialYield(production: Pick<ProductionBatch, "qtyIncorporated" | "qtyUsed">) {
   const used = production.qtyUsed ?? 0;
   const incorporated = production.qtyIncorporated ?? 0;

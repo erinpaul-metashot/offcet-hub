@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { Button, Field, Input, Panel, Select, Textarea } from "@/components/ui";
 import {
   COMPOSITION_CONFIDENCES,
+  RETEXCIR,
   MATERIAL_CATEGORIES,
   MATERIAL_FORMATS,
   QUALITY_CLASSES,
@@ -107,7 +110,20 @@ export default function RecordBatchPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Manual entry" title="Record a resource batch" />
+      <SectionHeading
+        title="New Resource Batch"
+        action={
+          <Button as={Link} href="/demo/manufacturer/batches/import" variant="secondary" size="sm">
+            <ArrowLeft size={15} />
+            Back to intake
+          </Button>
+        }
+      />
+
+      <NoticeBanner tone="info" title={`For material ${RETEXCIR.systemName} never handled`}>
+        Sorted batches arrive on their own and carry their sorting data with them. Anything typed
+        here lands as self-reported until someone verifies it.
+      </NoticeBanner>
 
       {error && <NoticeBanner tone="blocking" title="The batch was not saved">{error}</NoticeBanner>}
 

@@ -68,7 +68,7 @@ const isoOrBlank = (timestamp?: number) => (timestamp ? new Date(timestamp).toIS
 export interface ExportDefinition {
   key: string;
   label: string;
-  description: string;
+  description?: string;
   build: (db: MockDatabase, viewer: ViewerScope) => ExportRow[];
   restricted?: boolean;
 }
@@ -77,7 +77,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "resource-batches",
     label: "Resource batches",
-    description: "Every batch with its quantity pots, provenance and assurance level.",
     build: (db, viewer) =>
       db.resourceBatches.map((batch) => ({
         reference: batch.reference,
@@ -113,7 +112,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "demand-requests",
     label: "Demand requests",
-    description: "Requests from brands and makers, with how much has been matched.",
     build: (db) =>
       db.resourceRequests.map((request) => ({
         reference: request.reference,
@@ -135,7 +133,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "matching-decisions",
     label: "Matching decisions",
-    description: "Every proposal with its written rationale and outcome.",
     build: (db) =>
       db.matches.map((match) => ({
         request: db.resourceRequests.find((entry) => entry._id === match.requestId)?.reference,
@@ -158,7 +155,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "allocations",
     label: "Allocations",
-    description: "Every hand-off, including dispatch, receipt and discrepancy resolution.",
     build: (db) =>
       db.allocations.map((allocation) => ({
         reference: allocation.reference,
@@ -185,7 +181,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "quantity-movements",
     label: "Quantity movements",
-    description: "The append-only ledger: every pour between pots.",
     build: (db) =>
       db.quantityMovements.map((movement) => ({
         batch: db.resourceBatches.find((entry) => entry._id === movement.batchId)?.reference,
@@ -208,7 +203,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "production-batches",
     label: "Production batches",
-    description: "Material use, yield and evidence status. Costs are not included.",
     build: (db) =>
       db.productionBatches.map((production) => ({
         reference: production.reference,
@@ -238,7 +232,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "production-inputs",
     label: "Production inputs",
-    description: "Everything added alongside the secondary resource. Supplier and cost are protected.",
     build: (db, viewer) =>
       db.productionInputs.map((input) => {
         const production = db.productionBatches.find(
@@ -267,7 +260,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "production-time",
     label: "Production time",
-    description: "Hours by activity. Labour rates are never included.",
     build: (db) =>
       db.productionTimeEntries.map((entry) => {
         const production = db.productionBatches.find(
@@ -291,7 +283,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "production-outputs",
     label: "Production outputs",
-    description: "Finished products, rejects and rework.",
     build: (db) =>
       db.productionOutputs.map((output) => {
         const production = db.productionBatches.find(
@@ -319,7 +310,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "production-costs",
     label: "Production costs",
-    description: "Restricted: the maker and CIRKA only. Blocked entirely for a brand.",
     restricted: true,
     build: (db, viewer) =>
       db.productionCosts
@@ -355,7 +345,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "suitability-feedback",
     label: "Suitability feedback",
-    description: "What makers thought of the material once it arrived.",
     build: (db) =>
       db.suitabilityFeedback.map((feedback) => ({
         batch: db.resourceBatches.find((entry) => entry._id === feedback.batchId)?.reference,
@@ -376,7 +365,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "programme-milestones",
     label: "Programme milestones",
-    description: "Planned against actual, per project stage.",
     build: (db) =>
       db.projectMilestones.map((milestone) => {
         const project = db.projects.find((entry) => entry._id === milestone.projectId);
@@ -402,7 +390,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "data-source-references",
     label: "Data-source references",
-    description: "Where imported records came from, and every transfer attempt.",
     build: (db) =>
       db.integrationTransfers.map((transfer) => ({
         entity_table: transfer.entityTable,
@@ -426,7 +413,6 @@ export const EXPORTS: ExportDefinition[] = [
   {
     key: "project-summary",
     label: "Project summary",
-    description: "One row per project: the funder-facing roll-up.",
     build: (db) =>
       db.projects.map((project) => {
         const requests = db.resourceRequests.filter((entry) => entry.projectId === project._id);

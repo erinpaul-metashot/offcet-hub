@@ -16,7 +16,7 @@ export default function BrandApprovalsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Approvals" title="Proposed matches waiting on you" />
+      <SectionHeading title="Pending Approvals" />
 
       {view.pendingApprovals.length === 0 ? (
         <EmptyState

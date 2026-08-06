@@ -105,7 +105,7 @@ export default function NewBriefPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="New brief" title="Tell CIRKA what you want to make" />
+      <SectionHeading title="Create New Brief" />
 
       {error && <NoticeBanner tone="blocking" title="The brief was not created">{error}</NoticeBanner>}
 

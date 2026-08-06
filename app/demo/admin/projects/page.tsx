@@ -59,7 +59,7 @@ export default function AdminProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Projects" title="Brand programmes CIRKA is coordinating" />
+      <SectionHeading title="Project Programmes" />
 
       <dl className="grid grid-cols-2 divide-[var(--line)] border-y border-[var(--line)] sm:grid-cols-4 sm:divide-x">
         <OverviewStat label="Active" value={overview.activeProjects} of={overview.totalProjects} />

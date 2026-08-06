@@ -21,7 +21,7 @@ export default function AdminIntegrationsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Integrations" title="Data moving in and out" />
+      <SectionHeading title="System Integrations" />
 
       {error && <NoticeBanner tone="blocking" title="The retry was refused">{error}</NoticeBanner>}
 

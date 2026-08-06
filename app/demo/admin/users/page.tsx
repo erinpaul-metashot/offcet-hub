@@ -122,7 +122,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="People" title="Accounts and access" />
+      <SectionHeading title="User Accounts & Access" />
 
       {error && <NoticeBanner tone="blocking" title="That change was refused">{error}</NoticeBanner>}
 

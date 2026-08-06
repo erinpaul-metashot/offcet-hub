@@ -183,12 +183,9 @@ export function AllocationDetailView({
         </NoticeBanner>
       )}
 
-      {/* The allocation's own audit trail is a subset of this: one hop of a
-          longer journey reads better with the rest of the journey around it. */}
       <ThreadTimelinePanel
         role="admin"
         anchor={{ table: "allocations", id: allocation._id }}
-        description="This hop in the context of the whole material journey."
       />
     </div>
   );

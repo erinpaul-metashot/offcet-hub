@@ -74,7 +74,7 @@ export default function ManufacturerFacilitiesPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Facilities" title="Your sites" />
+      <SectionHeading title="Manufacturing Facilities" />
 
       {rowAction.error && (
         <NoticeBanner tone="blocking" title="That change was refused">

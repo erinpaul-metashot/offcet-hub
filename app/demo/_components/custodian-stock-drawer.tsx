@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { X } from "lucide-react";
-import { Button, Field, Input, Select } from "@/components/ui";
+import { Button, Field, Input } from "@/components/ui";
 import type { Holding } from "../_mock/selectors-custodian";
-import type { Organisation } from "../_mock/types";
 import { potSlices } from "../_mock/selectors-batches";
 import { categoryLabel, formatQuantity } from "../_mock/selectors-shared";
 import type { useAction } from "./use-action";
@@ -18,15 +17,13 @@ import {
   formatDate,
 } from "./cirka-ui";
 
-interface AllocationDraft {
-  makerOrgId: string;
+export interface DamageDraft {
   quantity: string;
-  notes: string;
+  reason: string;
 }
 
 export function CustodianStockDrawer({
   holding,
-  makers,
   draft,
   onDraftChange,
   store,
@@ -36,16 +33,24 @@ export function CustodianStockDrawer({
   onClose,
 }: {
   holding: Holding;
-  makers: Organisation[];
-  draft: AllocationDraft;
-  onDraftChange: (next: AllocationDraft) => void;
+  draft: DamageDraft;
+  onDraftChange: (next: DamageDraft) => void;
   store: ReturnType<typeof useDemoStore>;
   run: ReturnType<typeof useAction>["run"];
   pending: boolean;
   error: string | null;
   onClose: () => void;
 }) {
-  const { batch, held, promised, uncommitted, ownerName, receivedAt, sourceAllocation } = holding;
+  const {
+    batch,
+    held,
+    promised,
+    uncommitted,
+    ownerName,
+    receivedAt,
+    receivedFromName,
+    outgoing,
+  } = holding;
 
   // Keypress listener for Escape & Body Scroll-lock
   useEffect(() => {
@@ -61,9 +66,8 @@ export function CustodianStockDrawer({
     };
   }, [onClose]);
 
-  const maxQuantity = uncommitted;
   const quantityNum = Number(draft.quantity);
-  const isOverLimit = quantityNum > maxQuantity;
+  const isOverLimit = quantityNum > held;
 
   return (
     <div
@@ -108,7 +112,7 @@ export function CustodianStockDrawer({
         {/* Scrollable Body */}
         <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
           {error && (
-            <NoticeBanner tone="blocking" title="That allocation was refused">
+            <NoticeBanner tone="blocking" title="That adjustment was refused">
               {error}
             </NoticeBanner>
           )}
@@ -125,7 +129,7 @@ export function CustodianStockDrawer({
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                Uncommitted Available
+                Not yet assigned
               </p>
               <p className="mt-0.5 text-2xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--brand-primary)]">
                 {formatQuantity(uncommitted, batch.unit)}
@@ -148,70 +152,81 @@ export function CustodianStockDrawer({
           {/* Batch Details */}
           <dl>
             <DataRow label="Owned by" value={ownerName} />
+            <DataRow label="Received from" value={receivedFromName} />
+            <DataRow label="Received at site" value={formatDate(receivedAt)} />
             <DataRow
-              label="Promised to makers"
+              label="Assigned to makers"
               value={formatQuantity(promised, batch.unit)}
             />
-            <DataRow
-              label="Uncommitted here"
-              value={formatQuantity(uncommitted, batch.unit)}
-            />
-            <DataRow label="Received at site" value={formatDate(receivedAt)} />
           </dl>
 
-          {/* Allocation Form */}
-          <div className="space-y-4 rounded-2xl bg-[var(--surface)] p-5">
+          {/* Where CIRKA has sent it on */}
+          <div className="space-y-3 rounded-2xl border border-[var(--line)] p-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Propose Allocation to a Maker
+              Sent to makers
             </p>
-            <Field label="Maker Organisation">
-              <Select
-                value={draft.makerOrgId}
-                onChange={(e) =>
-                  onDraftChange({ ...draft, makerOrgId: e.target.value })
-                }
-              >
-                <option value="">Choose a maker</option>
-                {makers.map((maker) => (
-                  <option key={maker._id} value={maker._id}>
-                    {maker.name} · {maker.city}
-                  </option>
+            {outgoing.length === 0 ? (
+              <p className="text-sm text-[var(--ink-muted)]">
+                CIRKA has not assigned any of this lot to a maker yet. You hold it until they do.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {outgoing.map(({ allocation, makerName }) => (
+                  <li
+                    key={allocation._id}
+                    className="flex items-center justify-between gap-3 text-sm"
+                  >
+                    <span className="min-w-0 truncate text-[var(--ink)]">
+                      {makerName}
+                      <span className="text-[var(--ink-muted)]">
+                        {" "}
+                        · {formatQuantity(allocation.quantityAllocated, allocation.unit)}
+                      </span>
+                    </span>
+                    <CirkaBadge status={allocation.status} />
+                  </li>
                 ))}
-              </Select>
-            </Field>
+              </ul>
+            )}
+          </div>
+
+          {/* Damage report */}
+          <div className="space-y-4 rounded-2xl bg-[var(--surface)] p-5">
+            <div className="space-y-1">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                Report damage in storage
+              </p>
+              <p className="text-sm text-[var(--ink-muted)]">
+                Water, pests, a dropped bale. The quantity you report is written off the
+                lot, so the ledger keeps balancing.
+              </p>
+            </div>
 
             <Field
-              label={`Quantity (${batch.unit})`}
-              hint={`Maximum uncommitted available: ${formatQuantity(uncommitted, batch.unit)}`}
+              label={`Quantity damaged (${batch.unit})`}
+              hint={`Held at your site: ${formatQuantity(held, batch.unit)}`}
             >
               <Input
                 type="number"
                 min="0"
-                max={uncommitted}
+                max={held}
                 step="0.001"
                 value={draft.quantity}
-                onChange={(e) =>
-                  onDraftChange({ ...draft, quantity: e.target.value })
-                }
+                onChange={(e) => onDraftChange({ ...draft, quantity: e.target.value })}
               />
             </Field>
 
-            <Field label="Note for Maker (optional)">
+            <Field label="What happened">
               <Input
-                value={draft.notes}
-                onChange={(e) =>
-                  onDraftChange({ ...draft, notes: e.target.value })
-                }
-                placeholder="For the lined pouch run"
+                value={draft.reason}
+                onChange={(e) => onDraftChange({ ...draft, reason: e.target.value })}
+                placeholder="Roof leak during the storm: two bales soaked through"
               />
             </Field>
 
             {isOverLimit && (
-              <NoticeBanner
-                tone="warning"
-                title="Exceeds uncommitted quantity"
-              >
-                You cannot allocate more than {formatQuantity(uncommitted, batch.unit)}.
+              <NoticeBanner tone="warning" title="More than you hold">
+                You cannot write off more than {formatQuantity(held, batch.unit)}.
               </NoticeBanner>
             )}
           </div>
@@ -222,26 +237,23 @@ export function CustodianStockDrawer({
           <Button
             disabled={
               pending ||
-              !draft.makerOrgId ||
               !draft.quantity ||
+              !draft.reason.trim() ||
               isOverLimit ||
               quantityNum <= 0
             }
             onClick={() =>
               run(async () => {
-                await store.proposeAllocationToMaker("custodian", {
+                await store.reportStorageDamage("custodian", {
                   batchId: batch._id,
-                  toOrgId: draft.makerOrgId,
                   quantity: Number(draft.quantity),
-                  notes: draft.notes || undefined,
-                  requestId: sourceAllocation?.requestId,
-                  projectId: sourceAllocation?.projectId,
+                  reason: draft.reason,
                 });
                 onClose();
               })
             }
           >
-            Propose Allocation
+            Report Damage
           </Button>
           <Button variant="secondary" onClick={onClose}>
             Cancel

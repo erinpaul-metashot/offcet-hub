@@ -238,7 +238,7 @@ export default function AdminOrganisationsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Organisations" title="Who is in the network" />
+      <SectionHeading title="Network Organisations" />
 
       {error && <NoticeBanner tone="blocking" title="That change was refused">{error}</NoticeBanner>}
 

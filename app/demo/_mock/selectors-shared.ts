@@ -2,8 +2,10 @@
 
 import {
   MATERIAL_CATEGORY_LABELS,
+  MILESTONE_LABELS,
   UNIT_LABELS,
   type MaterialCategory,
+  type MilestoneStage,
   type Unit,
 } from "./domain";
 import { activeQuantity, round } from "./ledger";
@@ -154,6 +156,40 @@ export function scheduleNote(planned?: number, actual?: number): string | undefi
   }
 
   return `${difference} day${difference === 1 ? "" : "s"} ${actual ? "late" : "overdue"}`;
+}
+
+export interface JourneyRow {
+  stage: MilestoneStage;
+  label: string;
+  responsible: string;
+  plannedDate?: number;
+  actualDate?: number;
+  status: "completed" | "pending" | "overdue";
+  note?: string;
+  quantityNote?: string;
+}
+
+/** A project's milestones in stage order: the brand proof view and the maker project view draw the same line. */
+export function buildJourney(db: MockDatabase, projectId: Id): JourneyRow[] {
+  const order = Object.keys(MILESTONE_LABELS);
+
+  return db.projectMilestones
+    .filter((milestone) => milestone.projectId === projectId)
+    .sort((left, right) => order.indexOf(left.stage) - order.indexOf(right.stage))
+    .map((milestone) => ({
+      stage: milestone.stage,
+      label: milestone.name || MILESTONE_LABELS[milestone.stage],
+      responsible: milestone.responsibleOrgId ? orgName(db, milestone.responsibleOrgId) : "CIRKA",
+      plannedDate: milestone.plannedDate,
+      actualDate: milestone.actualDate,
+      status:
+        milestone.status === "completed"
+          ? "completed"
+          : milestone.status === "overdue"
+            ? "overdue"
+            : "pending",
+      note: milestone.notes ?? scheduleNote(milestone.plannedDate, milestone.actualDate),
+    }));
 }
 
 export function topCategories(records: Array<{ materialCategory: MaterialCategory }>, limit = 5) {

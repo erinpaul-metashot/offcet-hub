@@ -168,7 +168,7 @@ export default function CustodianArrivalsPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading eyebrow="Arrivals" title="Confirm what actually arrived" />
+      <SectionHeading title="Incoming Shipments" />
 
       {error && (
         <NoticeBanner tone="blocking" title="That step was refused">

@@ -72,7 +72,7 @@ export function ProjectDetailView({
       )}
 
       <section className="space-y-4">
-        <SectionHeading eyebrow="Journey" title="Where this project stands" />
+        <SectionHeading title="Project Journey" />
         {proof.journey.length === 0 ? (
           <NoticeBanner tone="info" title="The journey hasn't started" />
         ) : (
@@ -83,7 +83,7 @@ export function ProjectDetailView({
       </section>
 
       <section className="space-y-4">
-        <SectionHeading eyebrow="Material" title="What moved, from the ledger" />
+        <SectionHeading title="Material Ledger" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MaterialTile label="Activated" value={formatQuantity(material.activated, material.unit)} />
           <MaterialTile label="Received" value={formatQuantity(material.received, material.unit)} />
@@ -114,7 +114,7 @@ export function ProjectDetailView({
       </section>
 
       <section className="space-y-4">
-        <SectionHeading eyebrow="Activity" title="Requests, matches and allocations" />
+        <SectionHeading title="Allocations & Matches" />
         <Panel className="p-5">
           <dl>
             <DataRow label="Requests" value={proof.requests.length} />
@@ -138,7 +138,7 @@ export function ProjectDetailView({
 
       {proof.production.length > 0 && (
         <section className="space-y-4">
-          <SectionHeading eyebrow="Production" title="Per production run" />
+          <SectionHeading title="Production Runs" />
           <Panel className="divide-y divide-[var(--line)] p-0">
             {proof.production.map((entry) => (
               <div key={entry.production._id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
@@ -167,12 +167,11 @@ export function ProjectDetailView({
         role={role}
         anchor={{ table: "projects", id: project._id }}
         title="Everything that happened"
-        description="The brief, the match, the movements and the evidence, on one line."
       />
 
       {proof.commercial.sharedCosts.length > 0 && (
         <section className="space-y-4">
-          <SectionHeading eyebrow="Commercial" title="What makers opted to share" />
+          <SectionHeading title="Shared Commercial Data" />
           <Panel className="p-5">
             <dl>
               {proof.commercial.sharedCosts.map((entry) => (

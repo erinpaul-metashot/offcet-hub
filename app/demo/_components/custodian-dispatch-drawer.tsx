@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { X } from "lucide-react";
 import { Button, Field, Input } from "@/components/ui";
 import type { Allocation, ResourceBatch } from "../_mock/types";
@@ -199,7 +199,10 @@ export function CustodianDispatchDrawer({
           )}
 
           {isProposed && (
-            <NoticeBanner tone="info" title={`Waiting on ${makerName}`} />
+            <NoticeBanner tone="info" title={`Waiting on ${makerName}`}>
+              CIRKA assigned this lot to {makerName}. Once they accept, stage it for
+              hand-over.
+            </NoticeBanner>
           )}
 
           {isInTransit && (
