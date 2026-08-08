@@ -273,7 +273,108 @@ export function SummaryPill({
     </div>
   );
 }
-
 export function dashboardDateMeta(date: number) {
   return formatDate(date);
+}
+
+export function PieChart({
+  items,
+  emptyLabel = "No data yet",
+}: {
+  items: Array<{ label: string; value: number; tone?: "default" | "accent" }>;
+  emptyLabel?: string;
+}) {
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+
+  if (!items.length || total === 0) {
+    return <p className="text-sm text-[var(--ink-muted)]">{emptyLabel}</p>;
+  }
+
+  let cumulativeValue = 0;
+  
+  const colors = [
+    "#FF5C00", // Cirka Orange
+    "#8CC63F", // Cirka Green
+    "#545454", // Charcoal Grey
+    "#A3A3A3", // Mid Grey
+    "#E5E5E5", // Light Grey
+    "#222222", // Dark Grey
+  ];
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-6 items-center">
+      <div className="relative w-32 h-32 flex-shrink-0">
+        <svg viewBox="-1 -1 2 2" style={{ transform: 'rotate(-90deg)' }} className="overflow-visible w-full h-full drop-shadow-sm">
+          {items.map((item, index) => {
+            const startFraction = cumulativeValue / total;
+            cumulativeValue += item.value;
+            const endFraction = cumulativeValue / total;
+            
+            const color = colors[index % colors.length];
+
+            if (endFraction - startFraction >= 1) {
+              return (
+                <path
+                  key={item.label}
+                  d="M 0.5 0 A 0.5 0.5 0 1 1 -0.5 0 A 0.5 0.5 0 1 1 0.5 0 M 1 0 A 1 1 0 1 0 -1 0 A 1 1 0 1 0 1 0 Z"
+                  fill={color}
+                  stroke="var(--paper)"
+                  strokeWidth="0.03"
+                />
+              )
+            }
+            
+            const startAngle = startFraction * 2 * Math.PI;
+            const endAngle = endFraction * 2 * Math.PI;
+            
+            const startX_outer = Math.cos(startAngle);
+            const startY_outer = Math.sin(startAngle);
+            const endX_outer = Math.cos(endAngle);
+            const endY_outer = Math.sin(endAngle);
+
+            const startX_inner = 0.5 * Math.cos(startAngle);
+            const startY_inner = 0.5 * Math.sin(startAngle);
+            const endX_inner = 0.5 * Math.cos(endAngle);
+            const endY_inner = 0.5 * Math.sin(endAngle);
+
+            const largeArcFlag = endFraction - startFraction > 0.5 ? 1 : 0;
+            
+            const pathData = [
+              `M ${startX_inner} ${startY_inner}`,
+              `L ${startX_outer} ${startY_outer}`,
+              `A 1 1 0 ${largeArcFlag} 1 ${endX_outer} ${endY_outer}`,
+              `L ${endX_inner} ${endY_inner}`,
+              `A 0.5 0.5 0 ${largeArcFlag} 0 ${startX_inner} ${startY_inner}`,
+              `Z`
+            ].join(" ");
+            
+            return (
+              <path
+                key={item.label}
+                d={pathData}
+                fill={color}
+                stroke="var(--paper)"
+                strokeWidth="0.04"
+                className="transition-all duration-300 hover:opacity-90 cursor-pointer"
+              />
+            );
+          })}
+        </svg>
+      </div>
+      <div className="flex-1 space-y-3 w-full">
+        {items.map((item, index) => (
+          <div key={item.label} className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <span 
+                className="w-3 h-3 rounded-full flex-shrink-0" 
+                style={{ backgroundColor: colors[index % colors.length] }} 
+              />
+              <span className="font-medium text-[var(--ink)]">{item.label}</span>
+            </div>
+            <span className="text-[var(--ink-muted)]">{item.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

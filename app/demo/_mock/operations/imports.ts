@@ -10,7 +10,7 @@ import { appendAudit } from "../audit";
 import { MATERIAL_CATEGORIES, UNITS } from "../domain";
 import type { ImportSource, MaterialCategory, Unit } from "../domain";
 import { makeId } from "../ids";
-import type { Id, ImportJob, ImportRowError, MockDatabase } from "../types";
+import type { Id, ImportJob, ImportRowError, MockDatabase, PendingArrival } from "../types";
 import type { ViewerScope } from "../visibility";
 import { createResourceBatch } from "./batches";
 import { insertRow, patchRow } from "./helpers";
@@ -200,32 +200,38 @@ export function commitImport(
 
   const startingCount = db.resourceBatches.length;
 
-  const withBatches = validRows.reduce((current, row) => {
-    const result = createResourceBatch(current, actor, {
+  const withArrivals = validRows.reduce((current, row) => {
+    const arrival: PendingArrival = {
+      _id: makeId("arrival"),
+      ownerOrgId: actor.orgId,
+      channel: args.source,
+      externalSystemName: args.externalSystemName || "Spreadsheet upload",
+      externalRecordId: row.values.externalRecordId || undefined,
       name: row.values.name,
       description: row.values.description,
       materialCategory: row.values.materialCategory as MaterialCategory,
-      composition: row.values.composition || undefined,
       quantity: Number(row.values.quantity),
       unit: row.values.unit as Unit,
+      composition: row.values.composition || undefined,
       locationText: row.values.locationText || undefined,
-      dataSource: args.source,
-      externalSystemName: args.externalSystemName,
-      externalRecordId: row.values.externalRecordId || undefined,
-      importJobId: jobId,
-      releaseImmediately: false,
-    });
+      arrivedAt: currentTime(),
+      status: "pending",
+    };
 
-    return result.db;
+    return appendAudit(insertRow(current, "pendingArrivals", arrival), {
+      entityTable: "pendingArrivals",
+      entityId: arrival._id,
+      action: "created",
+      actorOrgId: actor.orgId,
+      actorType: args.source === "csv_import" ? "import" : "api",
+      notes: `Queued from bulk import ${jobId}.`,
+    });
   }, insertRow(db, "importJobs", job));
 
-  const created = withBatches.resourceBatches.length - startingCount;
-  const updated = validRows.length - created;
-
-  const completed = patchRow(withBatches, "importJobs", jobId, {
+  const completed = patchRow(withArrivals, "importJobs", jobId, {
     status: failedRows.length === validRows.length && validRows.length === 0 ? "failed" : "completed",
-    createdCount: created,
-    updatedCount: updated,
+    createdCount: validRows.length,
+    updatedCount: 0,
     completedAt: currentTime(),
   });
 
@@ -237,11 +243,11 @@ export function commitImport(
       actorUserId: actor.userId,
       actorOrgId: actor.orgId,
       actorType: args.source === "csv_import" ? "import" : "api",
-      notes: `${created} batches created, ${updated} updated, ${failedRows.length} rows failed.`,
+      notes: `${validRows.length} arrivals queued, ${failedRows.length} rows failed.`,
     }),
     jobId,
-    created,
-    updated,
+    created: validRows.length,
+    updated: 0,
     failed: failedRows.length,
   };
 }

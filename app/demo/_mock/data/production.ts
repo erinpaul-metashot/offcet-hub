@@ -465,7 +465,7 @@ export const suitabilityFeedback: SuitabilityFeedback[] = [
     recommendedApplications: "Panelled bags, pouches, anything where 40 x 60 cm pieces are workable.",
     limitations: "Piece size rules out single-panel garments.",
     notes: "Best jersey we have had through the atelier. Would take the rest of the batch.",
-    imageUrls: [PHOTO.textileWaste],
+    imageUrls: [PHOTO.jerseyOffcuts],
     createdAt: daysAgo(32),
   },
   {
@@ -484,7 +484,7 @@ export const suitabilityFeedback: SuitabilityFeedback[] = [
     recommendedApplications: "Liners and inner panels where shade variation is hidden.",
     limitations: "Heather grey and black cannot be mixed in a visible panel.",
     notes: "Set the quilting loft with eight prototypes before committing the run.",
-    imageUrls: [],
+    imageUrls: [PHOTO.fleeceTrimmings],
     createdAt: daysAgo(19),
   },
 ];

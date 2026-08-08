@@ -28,10 +28,15 @@ import { useAction } from "../../../_components/use-action";
 import { BatchPreviewCard } from "./batch-preview-card";
 
 const PHOTO_CHOICES = [
-  { url: "/cirka_textile_waste.png", label: "Baled offcuts" },
+  { url: "/cirka_batch_jersey_offcuts.png", label: "Jersey offcuts" },
+  { url: "/cirka_batch_denim_rolls.png", label: "Denim rolls" },
+  { url: "/cirka_batch_merino_knit.png", label: "Merino knit" },
+  { url: "/cirka_batch_cotton_twill.png", label: "Cotton twill" },
+  { url: "/cirka_batch_flax_linen.png", label: "Flax linen" },
+  { url: "/cirka_batch_fleece_trimmings.png", label: "Fleece trimmings" },
+  { url: "/cirka_batch_melton_wool.png", label: "Melton wool" },
   { url: "/cirka_pattern_maker.png", label: "Cutting table" },
-  { url: "/cirka_sewing_machine.png", label: "Rolls in store" },
-  { url: "/cirka_shopping_bags.png", label: "Finished stock" },
+  { url: "/cirka_sewing_machine.png", label: "Sewing line" },
 ];
 
 function toTimestamp(value: string): number | undefined {

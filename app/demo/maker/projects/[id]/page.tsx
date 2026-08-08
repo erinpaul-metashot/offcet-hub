@@ -16,6 +16,7 @@ import {
   formatDate,
   materialFlowSegments,
 } from "../../../_components/cirka-ui";
+import { ProjectBriefPack } from "../../../_components/project-brief-pack";
 import { ProjectJourneyStepper } from "../../../_components/project-journey-stepper";
 import { ProductionListRow } from "../../production/production-views";
 
@@ -30,7 +31,7 @@ export default function MakerProjectDetailPage() {
     return (
       <EmptyState
         title="Project not found"
-        body="Either you have no production on this project, or the demo data has been reset."
+        body="No production on this project."
       />
     );
   }
@@ -82,6 +83,14 @@ export default function MakerProjectDetailPage() {
           Expected {formatDate(overdue.plannedDate)}, responsible: {overdue.responsible}.
         </NoticeBanner>
       )}
+
+      <section className="space-y-4">
+        <SectionHeading title={`Brief from ${detail.brandName}`} />
+        <ProjectBriefPack
+          items={detail.references}
+          emptyBody={`${detail.brandName} has not attached any references or drawings to this project.`}
+        />
+      </section>
 
       <section className="space-y-4">
         <SectionHeading title="Material Usage" />

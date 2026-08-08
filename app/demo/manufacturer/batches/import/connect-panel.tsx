@@ -42,17 +42,33 @@ export function ConnectPanel() {
   };
 
   return (
-    <Panel className="space-y-5 p-6">
-      <div className="flex items-start gap-3">
-        <Plug size={18} className="mt-1 shrink-0 text-[var(--brand-primary)]" />
-        <div className="space-y-1">
-          <p className="font-semibold text-[var(--ink)]">
-            Connect your {RETEXCIR.systemName} account
-          </p>
-          <p className="text-sm text-[var(--ink-muted)]">
-            CIRKA registers a push endpoint on {RETEXCIR.systemName}, so everything you sort from
-            then on arrives here on its own.
-          </p>
+    <Panel className="space-y-4 p-5 border-[var(--line)] bg-[var(--surface)] shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--line-strong)] text-[var(--ink-muted)]">
+            <Plug size={20} />
+          </div>
+          <div className="space-y-0.5">
+            <p className="font-semibold tracking-[-0.02em] text-[var(--ink)]">
+              Not connected to {RETEXCIR.systemName}
+            </p>
+            <p className="text-xs text-[var(--ink-muted)] max-w-md">
+              Connect to receive sorted batches automatically.
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2 shrink-0">
+          <Button disabled={running} onClick={() => void connect()} size="sm">
+            {running ? (
+              <>
+                <Loader2 size={14} className="mr-2 animate-spin" />
+                Connecting
+              </>
+            ) : (
+              "Connect Account"
+            )}
+          </Button>
         </div>
       </div>
 
@@ -61,16 +77,6 @@ export function ConnectPanel() {
           {error}
         </NoticeBanner>
       )}
-
-      <div className="flex flex-wrap gap-3">
-        <Button disabled={running} onClick={() => void connect()}>
-          {running ? "Connecting" : "Connect"}
-        </Button>
-        <Button as="a" href={RETEXCIR.appUrl} target="_blank" rel="noreferrer" variant="secondary">
-          Open {RETEXCIR.systemName}
-          <ExternalLink size={15} className="ml-2" />
-        </Button>
-      </div>
 
       {step >= 0 && (
         <ol className="space-y-2 border-t border-[var(--line)] pt-4">
@@ -82,9 +88,9 @@ export function ConnectPanel() {
               }`}
             >
               {index < step ? (
-                <Check size={15} className="text-[var(--brand-secondary)]" />
+                <Check size={15} className="text-[#8CC63F]" />
               ) : index === step ? (
-                <Loader2 size={15} className="animate-spin text-[var(--brand-primary)]" />
+                <Loader2 size={15} className="animate-spin text-[#FF5C00]" />
               ) : (
                 <span className="h-[15px] w-[15px] rounded-full border border-dashed border-[var(--line-strong)]" />
               )}

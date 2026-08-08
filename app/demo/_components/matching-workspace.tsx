@@ -243,6 +243,11 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                   />
 
                   <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em]">
+                    {candidate.requested && (
+                      <span className="rounded-full border border-[var(--brand-primary)] bg-[var(--brand-primary-muted)] px-2.5 py-1 text-[var(--brand-primary)]">
+                        Asked for this lot
+                      </span>
+                    )}
                     <span
                       className={
                         candidate.categoryFit

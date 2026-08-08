@@ -235,6 +235,8 @@ export interface Candidate {
   quantityFit: boolean;
   distanceKm?: number;
   score: number;
+  /** The requester enquired about this exact lot on the marketplace. */
+  requested: boolean;
 }
 
 function distanceBetween(
@@ -270,13 +272,17 @@ export function shortlistCandidates(
       const categoryFit = row.batch.materialCategory === request.materialCategory;
       const quantityFit = row.batch.pots.available >= request.quantityNeeded;
       const distance = distanceBetween(owner, requester);
+      /* An enquiry names its lot. That is a stated preference, not a decision:
+         it sorts first, and the administrator still chooses. */
+      const requested = row.batch._id === request.sourceBatchId;
 
       const score =
+        (requested ? 1000 : 0) +
         (categoryFit ? 100 : 0) +
         (quantityFit ? 50 : 0) +
         (distance === undefined ? 0 : Math.max(0, 40 - distance / 25));
 
-      return { row, categoryFit, quantityFit, distanceKm: distance, score };
+      return { row, categoryFit, quantityFit, distanceKm: distance, score, requested };
     })
     .sort((left, right) => right.score - left.score);
 }

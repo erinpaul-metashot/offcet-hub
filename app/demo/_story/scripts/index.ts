@@ -6,6 +6,7 @@ import { followTheQuantity } from "./follow-the-quantity";
 import { proveIt } from "./prove-it";
 import { whenTheAnswerIsNo } from "./when-the-answer-is-no";
 import { theDamagedArrival } from "./the-damaged-arrival";
+import { theOpenWindow } from "./the-open-window";
 
 export const STORY_SCRIPTS: StoryScript[] = [
   fullJourney,
@@ -13,6 +14,7 @@ export const STORY_SCRIPTS: StoryScript[] = [
   proveIt,
   whenTheAnswerIsNo,
   theDamagedArrival,
+  theOpenWindow,
 ];
 
 export function findScript(id: string): StoryScript | undefined {

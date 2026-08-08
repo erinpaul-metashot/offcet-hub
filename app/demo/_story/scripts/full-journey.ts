@@ -614,7 +614,7 @@ export const fullJourney: StoryScript = {
               {
                 kind: "remaining_material" as const,
                 fileName: "tote-remaining-jersey.jpg",
-                fileUrl: PHOTO.textileWaste,
+                fileUrl: PHOTO.jerseyRolls,
                 caption: "Offcuts and the 15 kg going back to stock.",
               },
             ].reduce(

@@ -37,7 +37,7 @@ import { useAction } from "../../../_components/use-action";
 const EVIDENCE_CHOICES = [
   { kind: "wip_photo" as const, url: "/cirka_sewing_machine.png", label: "Work in progress" },
   { kind: "finished_product" as const, url: "/cirka_shopping_bags.png", label: "Finished product" },
-  { kind: "remaining_material" as const, url: "/cirka_textile_waste.png", label: "Remaining material" },
+  { kind: "remaining_material" as const, url: "/cirka_batch_jersey_rolls.png", label: "Remaining material" },
 ];
 
 export default function MakerProductionDetailPage() {

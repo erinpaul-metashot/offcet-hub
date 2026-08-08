@@ -40,9 +40,8 @@ export default function StoryPickerPage() {
             Watch the record being written.
           </h1>
           <p className="max-w-2xl text-[13px] leading-relaxed text-[var(--sidebar-text-muted)]">
-            Each walkthrough steps through the product one beat at a time, running the real
-            operations against the real ledger. Advance with the Next button, the arrow keys, or let
-            it play on its own. You can stop at any point and click around what the story built.
+            Each walkthrough runs the real operations against the real ledger. Advance with Next,
+            the arrow keys, or let it play.
           </p>
         </header>
 

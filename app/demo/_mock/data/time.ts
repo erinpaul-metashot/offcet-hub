@@ -21,8 +21,25 @@ export function monthsAgo(months: number) {
 }
 
 export const PHOTO = {
+  // Legacy / Process
   textileWaste: "/cirka_textile_waste.png",
   sewingMachine: "/cirka_sewing_machine.png",
   patternMaker: "/cirka_pattern_maker.png",
   shoppingBags: "/cirka_shopping_bags.png",
+  groupSelfie: "/cirka_group_selfie.png",
+
+  // Context-specific Material Batches
+  jerseyOffcuts: "/cirka_batch_jersey_offcuts.png",
+  denimRolls: "/cirka_batch_denim_rolls.png",
+  merinoKnit: "/cirka_batch_merino_knit.png",
+  cottonTwill: "/cirka_batch_cotton_twill.png",
+  flaxLinen: "/cirka_batch_flax_linen.png",
+  canvasWebbing: "/cirka_batch_canvas_webbing.png",
+  fleeceTrimmings: "/cirka_batch_fleece_trimmings.png",
+  meltonWool: "/cirka_batch_melton_wool.png",
+  linenDrapery: "/cirka_batch_linen_drapery.png",
+  woolFelt: "/cirka_batch_wool_felt.png",
+  viscoseLining: "/cirka_batch_viscose_lining.png",
+  ribTrims: "/cirka_batch_rib_trims.png",
+  jerseyRolls: "/cirka_batch_jersey_rolls.png",
 } as const;

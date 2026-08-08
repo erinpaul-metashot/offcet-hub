@@ -160,7 +160,7 @@ export default function CustodianDispatchesPage() {
       {view.outgoing.length === 0 ? (
         <EmptyState
           title="Nothing assigned to makers"
-          body="When CIRKA assigns a lot you hold to a maker, the hand-over appears here."
+          body="Hand-overs to makers appear here."
         />
       ) : (
         <>

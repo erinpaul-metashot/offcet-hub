@@ -136,7 +136,7 @@ export function OtherWaysIn() {
                     </p>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-[var(--ink-muted)]">
-                    <span className="tabular-nums">{job.createdCount ?? 0} created</span>
+                    <span className="tabular-nums">{job.createdCount ?? 0} queued</span>
                     <span className="tabular-nums">{job.updatedCount ?? 0} updated</span>
                     <span className="tabular-nums">{job.failedCount ?? 0} failed</span>
                     <CirkaBadge status={job.status} />

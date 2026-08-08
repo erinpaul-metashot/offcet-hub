@@ -13,7 +13,7 @@ import { RETEXCIR } from "../domain";
 import { BATCH_JERSEY, BATCH_LINEN_CURTAIN, BATCH_LINING, BATCH_WEBBING } from "./batches";
 import { ALLOC_JERSEY2_TO_NODE, ALLOC_JERSEY_TO_NODE, ALLOC_WOOL_TO_HUB } from "./allocations";
 import { PROD_FLEECE_LINER, PROD_JERSEY_TOTE } from "./production";
-import { MATCH_JERSEY, REQUEST_LINEN } from "./demand";
+import { MATCH_JERSEY, PROJECT_JERSEY, REQUEST_LINEN } from "./demand";
 import {
   DEMO_ADMIN_ID,
   DEMO_BRAND_ID,
@@ -31,7 +31,7 @@ import { PHOTO, daysAgo, monthsAgo } from "./time";
 export const evidenceItems: EvidenceItem[] = [
   {
     _id: "evidence_1",
-    fileUrl: PHOTO.textileWaste,
+    fileUrl: PHOTO.jerseyOffcuts,
     entityTable: "resourceBatches",
     entityId: BATCH_JERSEY,
     kind: "resource_photo",
@@ -95,7 +95,7 @@ export const evidenceItems: EvidenceItem[] = [
   },
   {
     _id: "evidence_5",
-    fileUrl: PHOTO.textileWaste,
+    fileUrl: PHOTO.jerseyRolls,
     entityTable: "productionBatches",
     entityId: PROD_JERSEY_TOTE,
     kind: "remaining_material",
@@ -111,7 +111,7 @@ export const evidenceItems: EvidenceItem[] = [
   },
   {
     _id: "evidence_6",
-    fileUrl: PHOTO.sewingMachine,
+    fileUrl: PHOTO.fleeceTrimmings,
     entityTable: "productionBatches",
     entityId: PROD_FLEECE_LINER,
     kind: "finished_product",
@@ -124,6 +124,55 @@ export const evidenceItems: EvidenceItem[] = [
     caption: "118 completed liners submitted for review.",
     containsPeople: false,
     createdAt: daysAgo(2),
+  },
+  /* The brief pack Bythorn handed the makers before the jersey capsule started. */
+  {
+    _id: "evidence_7",
+    fileUrl: PHOTO.shoppingBags,
+    entityTable: "projects",
+    entityId: PROJECT_JERSEY,
+    kind: "design_reference",
+    fileName: "tote-silhouette-reference.jpg",
+    mimeType: "image/jpeg",
+    sizeBytes: 524_800,
+    uploadedByUserId: DEMO_BRAND_ID,
+    uploadedByOrgId: ORG_BYTHORN,
+    visibility: "project_participants",
+    caption: "Proportion we are after: wide base, short handle drop, no external hardware.",
+    containsPeople: false,
+    createdAt: monthsAgo(2),
+  },
+  {
+    _id: "evidence_8",
+    fileUrl: PHOTO.patternMaker,
+    entityTable: "projects",
+    entityId: PROJECT_JERSEY,
+    kind: "technical_drawing",
+    fileName: "tote-panel-layout-v3.png",
+    mimeType: "image/png",
+    sizeBytes: 1_284_990,
+    uploadedByUserId: DEMO_BRAND_ID,
+    uploadedByOrgId: ORG_BYTHORN,
+    visibility: "project_participants",
+    caption: "Panel layout v3 — nest the side panels across the shade break, not around it.",
+    containsPeople: false,
+    createdAt: monthsAgo(2),
+  },
+  {
+    _id: "evidence_9",
+    fileUrl: PHOTO.jerseyRolls,
+    entityTable: "projects",
+    entityId: PROJECT_JERSEY,
+    kind: "document",
+    fileName: "capsule-spec-sheet.pdf",
+    mimeType: "application/pdf",
+    sizeBytes: 318_442,
+    uploadedByUserId: DEMO_BRAND_ID,
+    uploadedByOrgId: ORG_BYTHORN,
+    visibility: "project_participants",
+    caption: "Stitch, seam allowance and label placement for both the tote and the pouch.",
+    containsPeople: false,
+    createdAt: daysAgo(48),
   },
 ];
 

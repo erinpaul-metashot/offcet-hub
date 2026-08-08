@@ -16,6 +16,11 @@ import { type JourneyRow } from "../../../_mock/selectors-brand";
 import { useDemoStore } from "../../../_mock/store";
 import { CirkaBadge, NoticeBanner, SectionHeading, formatDate } from "../../../_components/cirka-ui";
 import { ProjectJourneyStepper } from "../../../_components/project-journey-stepper";
+import {
+  BriefResourceDraftList,
+  BriefResourcePicker,
+  type BriefResourceDraft,
+} from "../../../_components/project-brief-pack";
 import { useAction } from "../../../_components/use-action";
 
 function toTimestamp(value: string): number | undefined {
@@ -41,6 +46,9 @@ export default function NewBriefPage() {
     impactObjectives: "",
     targetCompletionDate: "",
   });
+
+  /* Held until the project exists — references attach to a project id. */
+  const [references, setReferences] = useState<BriefResourceDraft[]>([]);
 
   const [demand, setDemand] = useState({
     include: true,
@@ -71,6 +79,10 @@ export default function NewBriefPage() {
       });
 
       await store.activateProject("brand", { projectId });
+
+      for (const reference of references) {
+        await store.addProjectReference("brand", { projectId, ...reference });
+      }
 
       if (demand.include) {
         await store.createResourceRequest("brand", {
@@ -200,6 +212,33 @@ export default function NewBriefPage() {
                   placeholder="Activate 250 kg and keep production within 300 km"
                 />
               </Field>
+            </div>
+
+            <div className="space-y-4 border-t border-[var(--line)] pt-5">
+              <div className="space-y-1">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                  What the makers build from
+                </p>
+                <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
+                  References, drawings and specifications. They attach when the brief is created,
+                  and every maker on the project works from them.
+                </p>
+              </div>
+
+              <BriefResourceDraftList
+                drafts={references}
+                onRemove={(index) =>
+                  setReferences((current) => current.filter((_, position) => position !== index))
+                }
+              />
+
+              <BriefResourcePicker
+                pending={pending}
+                onAdd={async (draft) => {
+                  setReferences((current) => [...current, draft]);
+                  return true;
+                }}
+              />
             </div>
           </Panel>
 
@@ -499,7 +538,10 @@ export default function NewBriefPage() {
 
               {/* Preview Footer */}
               <div className="pt-3 border-t border-[var(--line)] flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                <span>1 request · Matching pending</span>
+                <span>
+                  {demand.include ? "1 request" : "No request"} ·{" "}
+                  {references.length === 1 ? "1 resource" : `${references.length} resources`}
+                </span>
                 <span className="text-[var(--brand-primary)] flex items-center gap-1">
                   Open proof view <ArrowRight className="h-3 w-3" />
                 </span>

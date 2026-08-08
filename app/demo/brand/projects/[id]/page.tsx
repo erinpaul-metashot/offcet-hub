@@ -34,6 +34,7 @@ import {
   formatDate,
 } from "../../../_components/cirka-ui";
 import { EvidenceGrid } from "../../../_components/records";
+import { AddBriefResource, ProjectBriefPack } from "../../../_components/project-brief-pack";
 import { ThreadTimelinePanel } from "../../../_components/trace-timeline";
 import { downloadCsv, downloadJson } from "../../../_mock/exports";
 import { useAction } from "../../../_components/use-action";
@@ -338,6 +339,17 @@ export default function BrandProofViewPage() {
               ))}
             </div>
           )}
+
+          <div className="mt-5 space-y-4 border-t border-[var(--line)] pt-5">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+              What the makers build from
+            </p>
+            <ProjectBriefPack
+              items={proof.references}
+              emptyBody="Attach the references, drawings and specifications your makers should work to."
+            />
+            <AddBriefResource projectId={project._id} />
+          </div>
 
           <div className="mt-5 border-t border-[var(--line)] pt-5">
             <AddDemandForm projectId={project._id} projectTitle={project.title} />

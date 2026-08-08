@@ -133,7 +133,6 @@ export default function MakerProjectsPage() {
       <SectionHeading
         eyebrow="Projects"
         title="What you have made"
-        description="Your production runs grouped by the brief they served. Only your own work appears here."
         action={
           <Button as={Link} href="/demo/maker/production/new" size="sm">
             New production batch
@@ -144,7 +143,7 @@ export default function MakerProjectsPage() {
       {rows.length === 0 ? (
         <EmptyState
           title="Nothing made yet"
-          body="Accept an allocation and open a production batch against it: the work will collect here by project."
+          body="Open a production batch against an allocation."
         />
       ) : (
         <>
