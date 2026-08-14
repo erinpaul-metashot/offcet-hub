@@ -46,11 +46,6 @@ export default function AdminAllocationsPage() {
       {/* The second hop is CIRKA's decision: custodians store, they do not choose. */}
       <section className="space-y-3">
         <SectionHeading eyebrow="Second hop" title="Stock sitting in warehouses" />
-        <p className="text-sm text-[var(--ink-muted)]">
-          Custodians hold this material but do not choose where it goes. Assign it on to
-          a maker.
-        </p>
-
         {stock.length === 0 ? (
           <EmptyState
             title="No stock at a custodian"

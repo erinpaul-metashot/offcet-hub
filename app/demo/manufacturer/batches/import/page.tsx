@@ -1,16 +1,14 @@
 "use client";
 
 /**
- * Intake, end to end. Retexcir is the flow: connect the account, receive what
- * has been sorted, see exactly what came over the wire and what CIRKA did with
- * it, then confirm it into the ledger. Manual entry, spreadsheets and the ERP
- * connector are folded away underneath as the exceptions they are.
+ * Material Intake Center — Redesigned for visual clarity, intuitive 1-click channel access,
+ * and high scannability without complex modal pie menus or empty whitespace boxes.
  */
 
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Button, EmptyState, Panel } from "@/components/ui";
-import { RETEXCIR } from "../../../_mock/domain";
+import { ArrowRight, Settings, Inbox, History, CheckCircle2 } from "lucide-react";
+import { Button, Panel } from "@/components/ui";
 import { categoryLabel, formatQuantity } from "../../../_mock/selectors-shared";
 import {
   getRetexcirConnection,
@@ -22,16 +20,17 @@ import { useDemoPersona, useDemoStore } from "../../../_mock/store";
 import {
   CirkaBadge,
   SectionHeading,
-  formatDate,
   formatDateTime,
 } from "../../../_components/cirka-ui";
-import { ConnectPanel } from "./connect-panel";
-import { OtherWaysIn } from "./other-ways";
-import { ConnectedPanel, INBOX_HREF, RetexcirLink, SystemBridge } from "./retexcir-link";
+import { INBOX_HREF, RetexcirLink } from "./retexcir-link";
+import { ImportChannelsGrid } from "./import-channels";
+import { IntegrationSettingsModal } from "./integration-settings-modal";
 
 export default function IntakePage() {
   const { db } = useDemoStore();
   const { scope } = useDemoPersona("manufacturer");
+  
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const connection = getRetexcirConnection(db, scope);
   const waiting = listPendingArrivals(db, scope, { channel: "sorting_system" });
@@ -39,66 +38,113 @@ export default function IntakePage() {
   const imported = listRetexcirBatches(db, scope);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      <IntegrationSettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        connection={connection}
+      />
+
+      {/* Header */}
       <SectionHeading
         eyebrow="Intake"
-        title={`Sorted material arrives from ${RETEXCIR.systemName}`}
+        title="Material Import Center"
         action={
-          <Button as={Link} href="/demo/manufacturer/batches" variant="secondary" size="sm">
-            All batches
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setIsSettingsOpen(true)}>
+              <Settings size={15} className="mr-2" />
+              Integrations
+            </Button>
+            <Button as={Link} href="/demo/manufacturer/batches" variant="secondary" size="sm">
+              All Batches
+              <ArrowRight size={14} className="ml-1.5" />
+            </Button>
+          </div>
         }
       />
 
-      <SystemBridge connection={connection} />
+      {/* 1. Direct Import Channel Action Cards Grid */}
+      <ImportChannelsGrid 
+        connection={connection} 
+        onOpenSettings={() => setIsSettingsOpen(true)} 
+      />
 
-      {connection ? (
-        <ConnectedPanel connection={connection} waitingCount={waiting.length} />
-      ) : (
-        <ConnectPanel />
-      )}
-
+      {/* 2. Intake Queue — Pending Arrivals Needing Review */}
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-          Received and waiting on you
-        </h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-base font-semibold tracking-[-0.02em] text-[var(--ink)]">
+              Received & Waiting for Review
+            </h2>
+            {waiting.length > 0 ? (
+              <span className="flex h-5 items-center justify-center rounded-full bg-[#FF5C00] px-2.5 text-[11px] font-bold text-white shadow-sm">
+                {waiting.length} Action{waiting.length === 1 ? "" : "s"} Required
+              </span>
+            ) : (
+              <span className="flex h-5 items-center justify-center rounded-full bg-[#8CC63F]/20 px-2 text-[11px] font-semibold text-[#5a8720]">
+                Queue Clear
+              </span>
+            )}
+          </div>
+          {waiting.length > 0 && (
+            <Link 
+              href={INBOX_HREF} 
+              className="text-xs font-semibold text-[#FF5C00] hover:underline inline-flex items-center gap-1"
+            >
+              Open Intake Inbox <ArrowRight size={13} />
+            </Link>
+          )}
+        </div>
+
         {waiting.length === 0 ? (
-          <EmptyState
-            title="Nothing waiting"
-            body={
-              connection
-                ? `Pull again once a batch has been sorted in ${RETEXCIR.systemName}.`
-                : `Connect the account to receive sorted batches from ${RETEXCIR.systemName}.`
-            }
-          />
+          <div className="flex items-center gap-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 text-left shadow-sm">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-[var(--ink-muted)]">
+              <Inbox size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[var(--ink)]">No items waiting in intake queue</p>
+            </div>
+          </div>
         ) : (
-          <Panel className="divide-y divide-[var(--line)] p-0">
+          <Panel className="divide-y divide-[var(--line)] border-[#FF5C00]/30 p-0 shadow-sm ring-1 ring-[#FF5C00]/15 bg-[var(--surface)]">
             {waiting.map((arrival) => (
               <div
                 key={arrival._id}
-                className="flex flex-wrap items-center justify-between gap-4 px-6 py-4"
+                className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 hover:bg-stone-50/50 transition-colors"
               >
-                <div className="min-w-0">
-                  <p className="font-medium text-[var(--ink)]">
-                    {arrival.name ?? "Untitled record"}
-                  </p>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-[var(--ink)]">
+                      {arrival.name ?? "Untitled Record"}
+                    </p>
+                    <span className="rounded bg-[#FF5C00]/10 px-2 py-0.5 text-[10px] font-bold text-[#FF5C00]">
+                      {arrival.externalRecordId}
+                    </span>
+                  </div>
                   <p className="text-xs text-[var(--ink-muted)]">
-                    {arrival.externalRecordId} ·{" "}
-                    {arrival.materialCategory
-                      ? categoryLabel(arrival.materialCategory)
-                      : "no category sent"}{" "}
-                    ·{" "}
-                    {arrival.quantity !== undefined && arrival.unit
-                      ? formatQuantity(arrival.quantity, arrival.unit)
-                      : "quantity needs a person"}
+                    <span className="font-medium text-[var(--ink)]">
+                      {arrival.materialCategory ? categoryLabel(arrival.materialCategory) : "Unclassified Material"}
+                    </span>
+                    {" · "}
+                    <span className="tabular-nums font-semibold text-[var(--ink)]">
+                      {arrival.quantity !== undefined && arrival.unit
+                        ? formatQuantity(arrival.quantity, arrival.unit)
+                        : "Quantity Pending"}
+                    </span>
                   </p>
                 </div>
+                
                 <div className="flex items-center gap-3">
                   {arrival.externalRecordUrl && (
                     <RetexcirLink href={arrival.externalRecordUrl}>View in Retexcir</RetexcirLink>
                   )}
-                  <Button as={Link} href={INBOX_HREF} size="sm">
-                    Review
+                  <Button
+                    as={Link}
+                    href={INBOX_HREF}
+                    size="sm"
+                    className="bg-[#FF5C00] text-white hover:bg-[#E55300] shadow-sm font-medium"
+                  >
+                    Review & Confirm
                   </Button>
                 </div>
               </div>
@@ -107,96 +153,106 @@ export default function IntakePage() {
         )}
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Transfer log</h2>
-        {transfers.length === 0 ? (
-          <EmptyState
-            title="No transfers yet"
-            body="Every record Retexcir hands over is logged here, accepted or rejected."
-          />
-        ) : (
-          <Panel className="divide-y divide-[var(--line)] p-0">
-            {transfers.map((transfer) => (
-              <div
-                key={transfer._id}
-                className="flex flex-wrap items-start justify-between gap-4 px-6 py-4"
-              >
-                <div className="min-w-0 space-y-1">
-                  <p className="font-mono text-[13px] text-[var(--ink)]">
-                    {transfer.externalRecordId}
-                  </p>
-                  <p className="text-xs text-[var(--ink-muted)]">
-                    {formatDateTime(transfer.createdAt)} · {transfer.payloadSummary}
-                  </p>
-                  {transfer.errorMessage && (
-                    <p className="max-w-2xl text-xs leading-relaxed text-[#8A3D11]">
-                      {transfer.errorMessage}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  {transfer.externalRecordUrl && (
-                    <RetexcirLink href={transfer.externalRecordUrl}>Payload source</RetexcirLink>
-                  )}
-                  <CirkaBadge
-                    status={transfer.status}
-                    label={transfer.status === "success" ? "Accepted" : "Rejected"}
-                  />
-                </div>
-              </div>
-            ))}
-          </Panel>
-        )}
-      </section>
+      {/* 3. Activity & Ledger Section (Two Columns) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Left Column: Already in Ledger */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
+              Already in Your Ledger
+            </h2>
+            <span className="text-xs font-semibold text-[var(--ink-muted)]">
+              {imported.length} Recorded
+            </span>
+          </div>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-          Already in your ledger
-        </h2>
-        {imported.length === 0 ? (
-          <EmptyState
-            title="No sorted batches recorded yet"
-            body="Confirmed records appear here with a link back to their Retexcir record."
-          />
-        ) : (
-          <Panel className="divide-y divide-[var(--line)] p-0">
-            {imported.map((batch) => (
-              <div
-                key={batch._id}
-                className="flex flex-wrap items-center justify-between gap-4 px-6 py-4"
-              >
-                <div className="min-w-0">
-                  <Link
-                    href={`/demo/manufacturer/batches/${batch._id}`}
-                    className="group inline-flex items-center gap-2 font-medium text-[var(--ink)] transition-colors duration-200 ease-[var(--ease-out)] hover:text-[var(--brand-primary)]"
+          {imported.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-center bg-[var(--surface)]/50">
+              <p className="text-xs font-medium text-[var(--ink-muted)]">No sorted batches recorded in ledger yet</p>
+            </div>
+          ) : (
+            <Panel className="divide-y divide-[var(--line)] p-0 bg-[var(--surface)] shadow-sm">
+              <div className="max-h-[320px] overflow-y-auto">
+                {imported.map((batch) => (
+                  <div
+                    key={batch._id}
+                    className="flex flex-col gap-1.5 px-5 py-3.5 hover:bg-stone-50/50 transition-colors"
                   >
-                    {batch.name}
-                    <ArrowRight
-                      size={14}
-                      className="transition-transform duration-200 ease-[var(--ease-out)] group-hover:translate-x-1"
-                    />
-                  </Link>
-                  <p className="text-xs text-[var(--ink-muted)]">
-                    {batch.reference} · {batch.externalRecordId ?? "no Retexcir reference"} ·
-                    imported {formatDate(batch.importedAt ?? batch.createdAt)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm tabular-nums text-[var(--ink-muted)]">
-                    {formatQuantity(batch.quantityOriginal, batch.unit)}
-                  </span>
-                  <CirkaBadge status={batch.status} />
-                  {batch.externalRecordUrl && (
-                    <RetexcirLink href={batch.externalRecordUrl}>Retexcir record</RetexcirLink>
-                  )}
-                </div>
+                    <div className="flex items-center justify-between">
+                      <Link
+                        href={`/demo/manufacturer/batches/${batch._id}`}
+                        className="group inline-flex items-center gap-1.5 font-medium text-[var(--ink)] transition-colors hover:text-[#FF5C00]"
+                      >
+                        {batch.name}
+                        <ArrowRight
+                          size={13}
+                          className="transition-transform group-hover:translate-x-1"
+                        />
+                      </Link>
+                      <CirkaBadge status={batch.status} />
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-[var(--ink-muted)]">
+                      <span className="font-mono text-[11px]">{batch.reference}</span>
+                      <span className="tabular-nums font-semibold text-[var(--ink)]">
+                        {formatQuantity(batch.quantityOriginal, batch.unit)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </Panel>
-        )}
-      </section>
+            </Panel>
+          )}
+        </section>
 
-      <OtherWaysIn />
+        {/* Right Column: Transfer Log */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
+              System Transfer Log
+            </h2>
+            <span className="text-xs font-semibold text-[var(--ink-muted)]">
+              {transfers.length} Events
+            </span>
+          </div>
+
+          {transfers.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-center bg-[var(--surface)]/50">
+              <p className="text-xs font-medium text-[var(--ink-muted)]">No system transfer history recorded</p>
+            </div>
+          ) : (
+            <Panel className="divide-y divide-[var(--line)] p-0 bg-[var(--surface)] shadow-sm">
+              <div className="max-h-[320px] overflow-y-auto">
+                {transfers.map((transfer) => (
+                  <div
+                    key={transfer._id}
+                    className="flex flex-col gap-1.5 px-5 py-3.5 hover:bg-stone-50/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-mono text-[11px] font-semibold text-[var(--ink)] break-all">
+                        {transfer.externalRecordId}
+                      </p>
+                      <CirkaBadge
+                        status={transfer.status}
+                        label={transfer.status === "success" ? "Accepted" : "Rejected"}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-[var(--ink-muted)]">
+                        {formatDateTime(transfer.createdAt)} · {transfer.payloadSummary}
+                      </p>
+                      {transfer.errorMessage && (
+                        <p className="text-xs leading-relaxed font-medium text-red-600">
+                          {transfer.errorMessage}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

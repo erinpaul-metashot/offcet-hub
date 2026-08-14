@@ -16,6 +16,7 @@ import {
   requireRow,
   requireText,
 } from "./helpers";
+import { addEvidenceItem } from "./production";
 import { now as currentTime } from "../clock";
 
 /* ------------------------------------------------------------------ *
@@ -108,12 +109,54 @@ export function activateProject(
   });
 }
 
+/** What the brand hands the maker to work from: references, drawings, spec sheets. */
+export interface ProjectReferenceInput {
+  projectId: Id;
+  kind: "design_reference" | "technical_drawing" | "document";
+  fileName: string;
+  fileUrl: string;
+  mimeType: string;
+  caption?: string;
+}
+
+export function addProjectReference(
+  db: MockDatabase,
+  actor: ViewerScope,
+  input: ProjectReferenceInput,
+): MockDatabase {
+  const project = requireRow(db, "projects", input.projectId, "Project");
+
+  if (project.brandOrgId !== actor.orgId) {
+    throw new OperationError("Only the brand that owns this project can add brief resources.");
+  }
+
+  if (project.status === "completed" || project.status === "cancelled") {
+    throw new OperationError(
+      `The brief is closed: this project is ${project.status.replace(/_/g, " ")}.`,
+    );
+  }
+
+  return addEvidenceItem(db, actor, {
+    entityTable: "projects",
+    entityId: project._id,
+    kind: input.kind,
+    fileName: input.fileName,
+    fileUrl: input.fileUrl,
+    mimeType: input.mimeType,
+    caption: input.caption,
+    /* The makers, custodians and manufacturers on the project all work from it. */
+    visibility: "project_participants",
+  });
+}
+
 /* ------------------------------------------------------------------ *
  * Demand requests
  * ------------------------------------------------------------------ */
 
 export interface RequestInput {
   projectId?: Id;
+  /** Only set by `requestListedLot`: the lot this enquiry came from. */
+  sourceBatchId?: Id;
   title: string;
   materialCategory: MaterialCategory;
   materialDescription?: string;
@@ -151,6 +194,7 @@ export function createResourceRequest(
     projectId: input.projectId,
     requesterOrgId: actor.orgId,
     requesterUserId: actor.userId,
+    sourceBatchId: input.sourceBatchId,
     title,
     materialCategory: input.materialCategory,
     materialDescription: input.materialDescription?.trim() || undefined,

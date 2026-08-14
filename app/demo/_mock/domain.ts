@@ -388,6 +388,8 @@ export const ACTOR_TYPES = ["user", "import", "api", "system"] as const;
 export type ActorType = (typeof ACTOR_TYPES)[number];
 
 export const EVIDENCE_KINDS = [
+  "design_reference",
+  "technical_drawing",
   "resource_photo",
   "dispatch_note",
   "arrival_photo",

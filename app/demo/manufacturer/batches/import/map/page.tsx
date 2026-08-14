@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, UploadCloud } from "lucide-react";
 import { Button, EmptyState, Field, Input, Panel, Select, Textarea } from "@/components/ui";
 import {
@@ -19,7 +20,7 @@ import { CirkaBadge, GapNote, NoticeBanner, SectionHeading } from "../../../../_
 import { useAction } from "../../../../_components/use-action";
 
 type ImportColumn = (typeof IMPORT_COLUMNS)[number];
-type Stage = 1 | 2 | 3;
+type Stage = 1 | 2;
 type RowClassification = "new" | "update" | "invalid";
 
 const COLUMN_LABELS: Record<ImportColumn, string> = {
@@ -82,6 +83,7 @@ function classifyRow(
 }
 
 export default function ImportMappingWizardPage() {
+  const router = useRouter();
   const store = useDemoStore();
   const commitAction = useAction();
 
@@ -156,13 +158,13 @@ export default function ImportMappingWizardPage() {
 
   const handleCommit = () =>
     commitAction.run(async () => {
-      const outcome = await store.commitImport("manufacturer", {
+      await store.commitImport("manufacturer", {
         fileName,
         source: "csv_import",
         rows: validatedRows,
         externalSystemName: externalSystemName || undefined,
       });
-      setResult(outcome);
+      router.push("/demo/manufacturer/batches/import/inbox?channel=csv_import");
     });
 
   return (
@@ -221,20 +223,9 @@ export default function ImportMappingWizardPage() {
           columnMap={columnMap}
           onChangeMap={(header, field) => setColumnMap((current) => ({ ...current, [header]: field }))}
           onBack={() => setStage(1)}
-          onContinue={() => setStage(3)}
-        />
-      )}
-
-      {stage === 3 && (
-        <StageResolve
-          classifiedRows={classifiedRows}
-          totals={totals}
-          error={commitAction.error}
+          onContinue={handleCommit}
           pending={commitAction.pending}
-          result={result}
-          onBack={() => setStage(2)}
-          onCommit={handleCommit}
-          onStartOver={startOver}
+          error={commitAction.error}
         />
       )}
     </div>
@@ -244,8 +235,7 @@ export default function ImportMappingWizardPage() {
 function StepIndicator({ stage }: { stage: Stage }) {
   const steps: Array<{ step: Stage; label: string }> = [
     { step: 1, label: "Paste sheet" },
-    { step: 2, label: "Map columns" },
-    { step: 3, label: "Resolve & commit" },
+    { step: 2, label: "Map & send to inbox" },
   ];
 
   return (
@@ -276,12 +266,16 @@ function StageMap({
   onChangeMap,
   onBack,
   onContinue,
+  pending,
+  error,
 }: {
   sheet: DelimitedSheet;
   columnMap: Record<string, string>;
   onChangeMap: (header: string, field: string) => void;
   onBack: () => void;
   onContinue: () => void;
+  pending?: boolean;
+  error?: string | null;
 }) {
   if (sheet.headers.length === 0) {
     return (
@@ -307,157 +301,83 @@ function StageMap({
         {sheet.rows.length} row{sheet.rows.length === 1 ? "" : "s"}. Map each one to a CIRKA field:         unmapped columns are ignored.
       </p>
 
-      <div className="divide-y divide-[var(--line)]">
-        {sheet.headers.map((header) => (
-          <div
-            key={header}
-            className="grid grid-cols-1 items-center gap-3 py-3 sm:grid-cols-[1fr_auto_14rem]"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-[var(--ink)]">{header}</p>
-              {previewRow && (
-                <p className="truncate text-xs text-[var(--ink-muted)]">
-                  e.g. {previewRow[header] || "-"}
-                </p>
-              )}
-            </div>
-            <ArrowRight size={14} className="hidden text-[var(--line-strong)] sm:block" />
-            <Select
-              value={columnMap[header] ?? ""}
-              onChange={(event) => onChangeMap(header, event.target.value)}
-            >
-              <option value="">Ignore this column</option>
-              {IMPORT_COLUMNS.map((field) => (
-                <option key={field} value={field}>
-                  {COLUMN_LABELS[field]}
-                </option>
-              ))}
-            </Select>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex justify-between border-t border-[var(--line)] pt-4">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft size={15} />
-          Back
-        </Button>
-        <Button onClick={onContinue}>
-          Continue to resolution
-          <ArrowRight size={15} />
-        </Button>
-      </div>
-    </Panel>
-  );
-}
-
-function StageResolve({
-  classifiedRows,
-  totals,
-  error,
-  pending,
-  result,
-  onBack,
-  onCommit,
-  onStartOver,
-}: {
-  classifiedRows: Array<{ row: ValidatedRow; classification: RowClassification }>;
-  totals: Record<RowClassification, number>;
-  error: string | null;
-  pending: boolean;
-  result: { created: number; updated: number; failed: number } | null;
-  onBack: () => void;
-  onCommit: () => void;
-  onStartOver: () => void;
-}) {
-  if (result) {
-    return (
-      <div className="space-y-5">
-        <NoticeBanner tone="info" title="Import committed">
-          {result.created} batch{result.created === 1 ? "" : "es"} created, {result.updated} updated,{" "}
-          {result.failed} row{result.failed === 1 ? "" : "s"} could not be imported.
-        </NoticeBanner>
-        <div className="flex gap-3">
-          <Button as={Link} href="/demo/manufacturer/batches/import" variant="secondary">
-            Back to intake
-          </Button>
-          <Button onClick={onStartOver}>Map another sheet</Button>
-        </div>
-      </div>
-    );
-  }
-
-  const committable = totals.new + totals.update;
-
-  return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-6 rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] px-6 py-4">
-        <Total label="New" count={totals.new} />
-        <Total label="Update" count={totals.update} />
-        <Total label="Cannot import" count={totals.invalid} />
-      </div>
-
       {error && (
-        <NoticeBanner tone="blocking" title="Couldn't commit this import">
+        <NoticeBanner tone="blocking" title="Couldn't queue these imports">
           {error}
         </NoticeBanner>
       )}
 
-      <Panel className="divide-y divide-[var(--line)] p-0">
-        {classifiedRows.map(({ row, classification }) => (
-          <div key={row.rowNumber} className="space-y-2 px-6 py-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-medium text-[var(--ink)]">
-                  {row.values.name || `Row ${row.rowNumber}`}
-                </p>
-                <p className="text-sm text-[var(--ink-muted)]">
-                  {row.values.quantity && row.values.unit
-                    ? formatQuantity(Number(row.values.quantity), row.values.unit as Unit)
-                    : "No quantity mapped"}
-                  {row.values.materialCategory &&
-                  MATERIAL_CATEGORIES.includes(row.values.materialCategory as MaterialCategory)
-                    ? ` · ${categoryLabel(row.values.materialCategory as MaterialCategory)}`
-                    : ""}
-                </p>
-              </div>
-              {classification === "new" && <CirkaBadge status="available" label="New" />}
-              {classification === "update" && <CirkaBadge status="in_progress" label="Update" />}
-              {classification === "invalid" && <CirkaBadge status="failed" label="Cannot import" />}
-            </div>
-            {row.errors.length > 0 && (
-              <ul className="space-y-1">
-                {row.errors.map((issue, index) => (
-                  <li key={index} className="text-sm">
-                    <GapNote>{issue.message}</GapNote>
-                  </li>
-                ))}
-              </ul>
-            )}
+      <div className="space-y-4 rounded-xl border border-[var(--line)] bg-[#545454]/5 p-6 relative overflow-hidden">
+        
+        {/* Column Headers */}
+        <div className="hidden sm:flex items-center gap-2 pb-2 border-b border-[var(--line)]/50">
+          <div className="w-[42%] text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+            Incoming Spreadsheet
           </div>
-        ))}
-      </Panel>
+          <div className="flex-1" />
+          <div className="w-[42%] text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+            Cirka System
+          </div>
+        </div>
+
+        {sheet.headers.map((header) => {
+          const isMapped = !!columnMap[header];
+          return (
+            <div key={header} className="flex flex-col sm:flex-row items-center gap-2">
+              
+              {/* Incoming Node (Spreadsheet Field) */}
+              <div className="flex w-full sm:w-[42%] flex-col justify-center rounded-lg border border-[var(--line)] bg-[var(--surface)] p-3 shadow-sm relative z-10">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-[var(--ink-muted)] opacity-50" />
+                  <p className="truncate text-sm font-semibold tracking-tight text-[var(--ink)]">{header}</p>
+                </div>
+                {previewRow && (
+                  <p className="truncate text-[11px] font-mono text-[var(--ink-muted)] mt-1.5 ml-4">
+                    "{previewRow[header] || "-"}"
+                  </p>
+                )}
+              </div>
+              
+              {/* Connection Wire */}
+              <div className="hidden sm:flex flex-1 items-center justify-center relative">
+                <div className={`h-[2px] w-full transition-all duration-300 ease-out ${isMapped ? "bg-[#FF5C00]" : "bg-[var(--line-strong)]"}`} />
+                <div className={`absolute right-1/2 translate-x-1/2 w-2 h-2 rounded-full transition-all duration-300 ease-out ${isMapped ? "bg-[#FF5C00] shadow-[0_0_8px_#FF5C00]" : "bg-[var(--line-strong)]"}`} />
+              </div>
+              
+              {/* Down Wire for Mobile */}
+              <div className="flex sm:hidden py-1">
+                <div className={`h-4 w-[2px] ${isMapped ? "bg-[#FF5C00]" : "bg-[var(--line-strong)]"}`} />
+              </div>
+
+              {/* Destination Node (CIRKA Field) */}
+              <div className={`flex w-full sm:w-[42%] flex-col justify-center rounded-lg border p-3 shadow-sm relative z-10 transition-colors duration-300 ease-out ${isMapped ? "border-[#FF5C00]/40 bg-[#FF5C00]/[0.02]" : "border-[var(--line)] bg-[var(--surface)]"}`}>
+                <Select
+                  value={columnMap[header] ?? ""}
+                  onChange={(event) => onChangeMap(header, event.target.value)}
+                >
+                  <option value="">Ignore this column</option>
+                  {IMPORT_COLUMNS.map((field) => (
+                    <option key={field} value={field}>
+                      {COLUMN_LABELS[field]}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       <div className="flex justify-between border-t border-[var(--line)] pt-4">
-        <Button variant="ghost" onClick={onBack}>
+        <Button variant="ghost" onClick={onBack} disabled={pending}>
           <ArrowLeft size={15} />
-          Back to mapping
+          Back
         </Button>
-        <Button disabled={pending || committable === 0} onClick={onCommit}>
-          Commit {committable} batch{committable === 1 ? "" : "es"}
+        <Button onClick={onContinue} disabled={pending}>
+          Send to inbox
+          <ArrowRight size={15} />
         </Button>
       </div>
-    </div>
-  );
-}
-
-function Total({ label, count }: { label: string; count: number }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-lg font-semibold tabular-nums text-[var(--ink)]">{count}</span>
-      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-        {label}
-      </span>
-    </div>
+    </Panel>
   );
 }

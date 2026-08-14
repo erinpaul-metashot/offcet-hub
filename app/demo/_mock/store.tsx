@@ -14,6 +14,7 @@ import type { Id, MockDatabase, User } from "./types";
 import type { ViewerScope } from "./visibility";
 import * as batchOps from "./operations/batches";
 import * as demandOps from "./operations/demand";
+import * as marketplaceOps from "./operations/marketplace";
 import * as allocationOps from "./operations/allocations";
 import * as productionOps from "./operations/production";
 import * as adminOps from "./operations/admin";
@@ -72,7 +73,13 @@ interface DemoStoreValue {
   // Demand and matching
   createProject: (role: CirkaRole, input: demandOps.ProjectInput) => Promise<Id>;
   activateProject: (role: CirkaRole, args: { projectId: Id }) => Promise<void>;
+  addProjectReference: (role: CirkaRole, input: demandOps.ProjectReferenceInput) => Promise<void>;
   createResourceRequest: (role: CirkaRole, input: demandOps.RequestInput) => Promise<Id>;
+  /** Marketplace enquiry. Creates demand only — it never reserves quantity. */
+  requestListedLot: (
+    role: CirkaRole,
+    input: marketplaceOps.RequestListedLotInput,
+  ) => Promise<Id>;
   submitResourceRequest: (role: CirkaRole, args: { requestId: Id }) => Promise<void>;
   markRequestUnfulfillable: (
     role: CirkaRole,
@@ -333,9 +340,14 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
         commitWith(role, (current, actor) => demandOps.createProject(current, actor, input))
           .projectId,
       activateProject: simple(demandOps.activateProject),
+      addProjectReference: simple(demandOps.addProjectReference),
       createResourceRequest: async (role, input) =>
         commitWith(role, (current, actor) =>
           demandOps.createResourceRequest(current, actor, input),
+        ).requestId,
+      requestListedLot: async (role, input) =>
+        commitWith(role, (current, actor) =>
+          marketplaceOps.requestListedLot(current, actor, input),
         ).requestId,
       submitResourceRequest: simple(demandOps.submitResourceRequest),
       markRequestUnfulfillable: simple(demandOps.markRequestUnfulfillable),

@@ -118,7 +118,7 @@ export function OrganisationFacilities({
           <h3 className="text-lg font-semibold text-[var(--ink)]">Sites ({facilities.length})</h3>
           <p className="text-xs text-[var(--ink-muted)]">
             {activeCount === facilities.length
-              ? "Where material is collected from, kept, or worked on."
+              ? "Sites where material is collected, kept, or worked on."
               : `${activeCount} taking material · ${facilities.length - activeCount} deactivated.`}
           </p>
         </div>

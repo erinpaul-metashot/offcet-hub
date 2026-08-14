@@ -10,8 +10,9 @@
  * Reads come from `selectors-timeline.ts` — this file renders, it never scopes.
  */
 
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Panel } from "@/components/ui";
 import { classNames } from "@/lib/utils";
 import { BUCKET_LABELS, type CirkaRole } from "../_mock/domain";
@@ -183,27 +184,27 @@ export function ThreadTimelinePanel({
   anchor,
   title = "Journey",
   description,
+  collapsible = true,
+  defaultExpanded = true,
+  plain = false,
+  showHeader = true,
 }: {
   role: CirkaRole;
   anchor: EntityRef;
   title?: string;
   description?: string;
+  collapsible?: boolean;
+  defaultExpanded?: boolean;
+  plain?: boolean;
+  showHeader?: boolean;
 }) {
   const db = useDemoDatabase();
   const { scope } = useDemoPersona(role);
   const thread = getThreadTimeline(db, scope, anchor);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
-  return (
-    <Panel className="overflow-hidden">
-      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--line)] px-5 py-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
-        </div>
-        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-          {thread.events.length} events
-        </span>
-      </div>
-
+  const innerTimeline = (
+    <>
       <CustodyChain chain={thread.custodyChain} />
 
       {/* The permission matrix, made visible to the only role allowed to see
@@ -219,8 +220,49 @@ export function ThreadTimelinePanel({
       <div className="max-h-[32rem] overflow-y-auto">
         <TraceTimeline events={thread.events} />
       </div>
-    </Panel>
+    </>
   );
+
+  const content = (
+    <>
+      {showHeader && (
+        <div
+          className={classNames(
+            "flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] px-5 py-4",
+            collapsible ? "cursor-pointer select-none hover:bg-[var(--surface)] transition-colors" : "",
+          )}
+          onClick={collapsible ? () => setIsExpanded((prev) => !prev) : undefined}
+        >
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
+            {description && (
+              <p className="text-xs text-[var(--ink-muted)] mt-0.5">{description}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+              {thread.events.length} events
+            </span>
+            {collapsible && (
+              isExpanded ? (
+                <ChevronUp className="size-4 text-[var(--ink-muted)]" />
+              ) : (
+                <ChevronDown className="size-4 text-[var(--ink-muted)]" />
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      {showHeader ? (isExpanded && innerTimeline) : innerTimeline}
+    </>
+  );
+
+  if (plain) {
+    return <div>{content}</div>;
+  }
+
+  return <Panel className="overflow-hidden">{content}</Panel>;
 }
 
 /**
@@ -240,16 +282,32 @@ export function RoleActivityFeed({
   const db = useDemoDatabase();
   const { scope } = useDemoPersona(role);
   const events = getRoleTimeline(db, scope, { limit });
+  const [isExpanded, setIsExpanded] = useState(true);
 
   return (
     <Panel className="overflow-hidden">
-      <p className="border-b border-[var(--line)] px-5 py-4 text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--ink-muted)]">
-        {title}
-      </p>
-      <TraceTimeline
-        events={events}
-        emptyLabel="Nothing has been recorded against your organisation yet."
-      />
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex w-full items-center justify-between border-b border-[var(--line)] px-5 py-4 text-left transition-colors hover:bg-[var(--surface)] focus:outline-none"
+      >
+        <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--ink-muted)]">
+          {title}
+        </span>
+        {isExpanded ? (
+          <ChevronUp className="size-4 text-[var(--ink-muted)]" />
+        ) : (
+          <ChevronDown className="size-4 text-[var(--ink-muted)]" />
+        )}
+      </button>
+      {isExpanded && (
+        <div className="max-h-[22rem] overflow-y-auto">
+          <TraceTimeline
+            events={events}
+            emptyLabel="Nothing has been recorded against your organisation yet."
+          />
+        </div>
+      )}
     </Panel>
   );
 }

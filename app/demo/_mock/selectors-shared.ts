@@ -128,6 +128,14 @@ export function evidenceFor(db: MockDatabase, entityTable: string, entityId: Id)
     .sort((left, right) => right.createdAt - left.createdAt);
 }
 
+/**
+ * The brief pack: reference images, technical drawings and spec documents the
+ * brand attached to the project for everyone working on it to build from.
+ */
+export function projectReferences(db: MockDatabase, projectId: Id) {
+  return evidenceFor(db, "projects", projectId).filter((item) => item.visibility !== "private");
+}
+
 export function transfersFor(db: MockDatabase, entityTable: string, entityId: Id) {
   return db.integrationTransfers
     .filter((transfer) => transfer.entityTable === entityTable && transfer.entityId === entityId)

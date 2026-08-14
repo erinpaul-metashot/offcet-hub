@@ -192,15 +192,9 @@ export function CustodianStockDrawer({
 
           {/* Damage report */}
           <div className="space-y-4 rounded-2xl bg-[var(--surface)] p-5">
-            <div className="space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                Report damage in storage
-              </p>
-              <p className="text-sm text-[var(--ink-muted)]">
-                Water, pests, a dropped bale. The quantity you report is written off the
-                lot, so the ledger keeps balancing.
-              </p>
-            </div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+              Report damage in storage
+            </p>
 
             <Field
               label={`Quantity damaged (${batch.unit})`}

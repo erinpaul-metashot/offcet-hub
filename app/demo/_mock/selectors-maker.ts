@@ -6,6 +6,7 @@ import { round } from "./ledger";
 import { checkMaterialBalance } from "./transitions";
 import type {
   Allocation,
+  EvidenceItem,
   Id,
   Match,
   MockDatabase,
@@ -21,6 +22,7 @@ import {
   evidenceFor,
   findFacility,
   orgName,
+  projectReferences,
   transfersFor,
   type JourneyRow,
 } from "./selectors-shared";
@@ -202,6 +204,8 @@ export function listMakerProjects(db: MockDatabase, orgId: Id): MakerProjectRow[
 export interface MakerProjectDetail extends MakerProjectRow {
   project: Project;
   journey: JourneyRow[];
+  /** The brand's brief pack: references, drawings and specs to build against. */
+  references: EvidenceItem[];
 }
 
 export function getMakerProjectDetail(
@@ -215,7 +219,12 @@ export function getMakerProjectDetail(
     return null;
   }
 
-  return { ...row, project: row.project, journey: buildJourney(db, projectId) };
+  return {
+    ...row,
+    project: row.project,
+    journey: buildJourney(db, projectId),
+    references: projectReferences(db, projectId),
+  };
 }
 
 export function getProductionDetail(db: MockDatabase, viewer: ViewerScope, productionId: Id) {

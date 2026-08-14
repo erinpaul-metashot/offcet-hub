@@ -10,7 +10,7 @@ import { round } from "./ledger";
 import { materialYield } from "./transitions";
 import type { Id, Match, MockDatabase, Project, ResourceBatch, ResourceRequest } from "./types";
 import { sharedCostPerUnit, stripBatch, type ViewerScope } from "./visibility";
-import { buildJourney, daysBetween, orgName } from "./selectors-shared";
+import { buildJourney, daysBetween, orgName, projectReferences } from "./selectors-shared";
 import { now as currentTime } from "./clock";
 
 export type { JourneyRow } from "./selectors-shared";
@@ -188,6 +188,7 @@ export function getProjectProofView(db: MockDatabase, viewer: ViewerScope, proje
     })),
     outputs,
     evidence,
+    references: projectReferences(db, projectId),
     journey,
     material: {
       activated,

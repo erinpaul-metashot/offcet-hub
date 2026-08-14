@@ -784,6 +784,8 @@ export function addEvidenceItem(
     kind: EvidenceKind;
     fileName: string;
     fileUrl: string;
+    mimeType?: string;
+    sizeBytes?: number;
     caption?: string;
     containsPeople?: boolean;
     visibility?: "private" | "cirka" | "project_participants" | "brand" | "public";
@@ -796,8 +798,8 @@ export function addEvidenceItem(
     entityId: args.entityId,
     kind: args.kind,
     fileName: requireText(args.fileName, "Give the file a name."),
-    mimeType: "image/jpeg",
-    sizeBytes: 640_000,
+    mimeType: args.mimeType ?? "image/jpeg",
+    sizeBytes: args.sizeBytes ?? 640_000,
     uploadedByUserId: actor.userId,
     uploadedByOrgId: actor.orgId,
     visibility: args.visibility ?? "project_participants",

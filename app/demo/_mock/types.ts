@@ -242,6 +242,8 @@ export interface ResourceRequest {
   projectId?: Id;
   requesterOrgId: Id;
   requesterUserId: Id;
+  /** Set when the request began as an enquiry against a specific listed lot. */
+  sourceBatchId?: Id;
   title: string;
   materialCategory: MaterialCategory;
   materialDescription?: string;
