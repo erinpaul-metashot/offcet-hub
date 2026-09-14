@@ -5,7 +5,7 @@ import { DemoAppLayout } from "../_components/demo-app-layout";
 import { useDemoPersona } from "../_mock/store";
 
 const navItems: NavItem[] = [
-  { label: "Overview", href: "/demo/manufacturer/dashboard", icon: "overview", group: "Inventory" },
+  { label: "Dashboard", href: "/demo/manufacturer/dashboard", icon: "overview", group: "Inventory" },
   { label: "Resource batches", href: "/demo/manufacturer/batches", icon: "batches", group: "Inventory" },
   /** Intake is the Retexcir connector; manual entry hangs off it rather than the sidebar. */
   { label: "Intake", href: "/demo/manufacturer/batches/import", icon: "imports", group: "Inventory" },

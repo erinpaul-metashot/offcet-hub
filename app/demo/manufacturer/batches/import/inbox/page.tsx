@@ -4,12 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
-import { Button, EmptyState, Field, Input, Panel, Select } from "@/components/ui";
+import { Button, EmptyState, Field, Input, Select } from "@/components/ui";
 import { MATERIAL_CATEGORIES, UNITS, type MaterialCategory, type Unit } from "../../../../_mock/domain";
 import { categoryLabel, formatQuantity } from "../../../../_mock/selectors-shared";
 import { listPendingArrivals, type PendingArrivalRow } from "../../../../_mock/selectors-intake";
 import { useDemoPersona, useDemoStore } from "../../../../_mock/store";
-import { DataRow, GapNote, NoticeBanner, SectionHeading, formatDateTime } from "../../../../_components/cirka-ui";
+import { NoticeBanner, SectionHeading, formatDateTime } from "../../../../_components/cirka-ui";
 import { useAction } from "../../../../_components/use-action";
 import type { ArrivalCorrection } from "../../../../_mock/operations/arrivals";
 
@@ -29,8 +29,7 @@ export default function ArrivalsInboxPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <SectionHeading
-        eyebrow="Intake · Automated Arrivals"
-        title="Confirm what came in"
+        title="Intake inbox"
         action={
           <Button
             as={Link}
@@ -46,21 +45,13 @@ export default function ArrivalsInboxPage() {
       />
 
       {arrivals.length === 0 ? (
-        <EmptyState
-          title="Nothing left to review"
-          body="Every pushed record has been processed into the CIRKA ledger."
-        />
+        <EmptyState title="Nothing left to review" />
       ) : (
         <div className="rounded-2xl border border-[var(--line)] bg-white shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-[20rem_1fr] items-stretch">
           {/* Queue Navigation Panel */}
           <div className="flex flex-col bg-[var(--surface)] border-b lg:border-b-0 lg:border-r border-[var(--line)]">
             <div className="px-5 py-4 border-b border-[var(--line)] flex items-center justify-between bg-[#545454]">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#8CC63F] animate-pulse" />
-                <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-white">
-                  Incoming Queue
-                </h3>
-              </div>
+              <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-white">Queue</h3>
               <span className="inline-flex items-center justify-center h-5 min-w-5 rounded-full bg-[#FF5C00] px-2 text-[11px] font-bold text-white shadow-sm">
                 {arrivals.length}
               </span>
@@ -154,9 +145,8 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
         <div className="flex flex-wrap items-start justify-between gap-4 pb-6 border-b border-[var(--line)]">
           <div className="space-y-2">
             <div className="flex items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8CC63F]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#545454]">
-                <span className="w-2 h-2 rounded-full bg-[#8CC63F] animate-pulse" />
-                {arrival.externalSystemName} Verified Feed
+              <span className="inline-flex items-center rounded-full bg-[var(--surface)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                {arrival.externalSystemName}
               </span>
               <span className="text-xs text-[var(--ink-muted)] font-mono">
                 ID: {arrival.externalRecordId ?? "N/A"}
@@ -166,7 +156,7 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
               {arrival.name ?? "Untitled Record"}
             </h2>
             <p className="text-xs text-[var(--ink-muted)]">
-              Pushed to CIRKA • {formatDateTime(arrival.arrivedAt)}
+              {formatDateTime(arrival.arrivedAt)}
             </p>
           </div>
 
@@ -183,61 +173,17 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
           )}
         </div>
 
-        {/* Network Node Data Pipeline Banner (Cirka SOT Visual Motif) */}
-        <div className="rounded-xl bg-[#545454]/5 border border-[#545454]/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="w-8 h-8 rounded-full bg-[#545454] flex items-center justify-center text-white shrink-0 font-mono text-xs font-bold">
-              R
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
-                {arrival.externalSystemName}
-              </p>
-              <p className="text-[11px] text-[var(--ink-muted)]">External Sorting Engine</p>
-            </div>
-          </div>
-
-          {/* Connection Line with Orange Node */}
-          <div className="flex-1 max-w-xs w-full flex items-center gap-2 px-2">
-            <div className="h-0.5 flex-1 bg-gradient-to-r from-[#545454]/30 via-[#FF5C00] to-[#8CC63F]" />
-            <div className="w-3 h-3 rounded-full bg-[#FF5C00] shadow-[0_0_8px_#FF5C00] shrink-0" />
-            <div className="h-0.5 flex-1 bg-gradient-to-r from-[#FF5C00] via-[#8CC63F] to-[#8CC63F]/30" />
-          </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <div className="text-right">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
-                CIRKA Ledger
-              </p>
-              <p className="text-[11px] text-[#8CC63F] font-semibold">Intake Verification</p>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-[#FF5C00] flex items-center justify-center text-white shrink-0 font-bold text-xs">
-              C
-            </div>
-          </div>
-        </div>
-
         {arrival.updateOf && (
-          <div className="rounded-xl border-l-4 border-l-[#FF5C00] bg-[#FF5C00]/5 p-4">
-            <h4 className="text-sm font-bold text-[var(--ink)]">Updating Existing Batch Record</h4>
-            <p className="text-xs text-[var(--ink-muted)] mt-1">
-              Confirming this record will update <strong>{arrival.updateOf.reference}</strong> ({arrival.updateOf.name}) rather than creating a duplicate entry.
-            </p>
-          </div>
+          <p className="rounded-xl border-l-4 border-l-[#FF5C00] bg-[#FF5C00]/5 p-4 text-sm font-bold text-[var(--ink)]">
+            Updates {arrival.updateOf.reference} · {arrival.updateOf.name}
+          </p>
         )}
 
         {/* Material Specification Grid */}
         <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Material Specifications
-            </h3>
-            {correcting && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#FF5C00]">
-                Editing mode active
-              </span>
-            )}
-          </div>
+          <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+            Material
+          </h3>
 
           {correcting ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 rounded-xl border border-[var(--line)] bg-[var(--surface)]">
@@ -414,9 +360,12 @@ function SpecRow({
         {label}
       </p>
       {value === undefined || value === "" ? (
-        <div className="inline-flex items-center gap-1.5 rounded-md bg-[#FF5C00]/10 px-2.5 py-1 text-xs font-semibold text-[#FF5C00]">
-          CIRKA required field — missing from {source}
-        </div>
+        <span
+          className="inline-flex items-center rounded-md bg-[#FF5C00]/10 px-2.5 py-1 text-xs font-semibold text-[#FF5C00]"
+          title={`Required by CIRKA · not sent by ${source}`}
+        >
+          Missing
+        </span>
       ) : (
         <p className="text-sm font-semibold text-[var(--ink)] leading-snug">
           {value}

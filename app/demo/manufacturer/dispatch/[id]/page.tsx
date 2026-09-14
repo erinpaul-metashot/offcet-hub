@@ -7,7 +7,7 @@ import { Button, EmptyState, Field, Input, Panel } from "@/components/ui";
 import { getAllocationDetail } from "../../../_mock/selectors-admin";
 import { useDemoPersona, useDemoStore } from "../../../_mock/store";
 import { formatQuantity } from "../../../_mock/selectors-shared";
-import { CirkaBadge, DataRow, formatDate, SectionHeading } from "../../../_components/cirka-ui";
+import { CirkaBadge, DataRow, NoticeBanner, formatDate, SectionHeading } from "../../../_components/cirka-ui";
 import { useAction } from "../../../_components/use-action";
 import { ArrowUpRight } from "lucide-react";
 import { AllocationJourney } from "../../../_components/allocation-journey";
@@ -17,7 +17,7 @@ import { ThreadTimelinePanel } from "../../../_components/trace-timeline";
 export default function ManufacturerDispatchDetailPage() {
   const params = useParams<{ id: string }>();
   const store = useDemoStore();
-  const { run, pending } = useAction();
+  const { run, error, pending } = useAction();
   const { scope } = useDemoPersona("manufacturer");
 
   // We can use the admin selector to get the detail data safely for the UI
@@ -27,10 +27,7 @@ export default function ManufacturerDispatchDetailPage() {
 
   if (!detail || detail.allocation.fromOrgId !== scope.orgId) {
     return (
-      <EmptyState
-        title="Dispatch not found"
-        body="It may have been removed."
-      />
+      <EmptyState title="Dispatch not found" />
     );
   }
 
@@ -52,7 +49,6 @@ export default function ManufacturerDispatchDetailPage() {
       <SectionHeading
         eyebrow={allocation.reference}
         title={`${fromName} → ${toName}`}
-        description={batch ? `${batch.name}` : `Batch ${allocation.batchId}`}
         action={
           batch ? (
             <Button as={Link} href={`/demo/manufacturer/batches/${batch._id}`} variant="secondary" size="sm">
@@ -61,6 +57,8 @@ export default function ManufacturerDispatchDetailPage() {
           ) : undefined
         }
       />
+
+      {error && <NoticeBanner tone="blocking" title="That step was refused">{error}</NoticeBanner>}
 
       <Panel className="p-6">
         <AllocationJourney allocation={allocation} />
@@ -121,7 +119,7 @@ export default function ManufacturerDispatchDetailPage() {
             <DataRow label="Consignment Ref" value={allocation.dispatchReference ?? "-"} />
             {batch && (
               <DataRow
-                label="Resource Lot"
+                label="Resource batch"
                 value={
                   <Link
                     href={`/demo/manufacturer/batches/${batch._id}`}
@@ -140,9 +138,6 @@ export default function ManufacturerDispatchDetailPage() {
       {/* Actionable Forms */}
       {allocation.status === "accepted" && (
         <Panel className="p-6">
-          <h2 className="mb-4 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Next Step: Prepare for Dispatch
-          </h2>
           <Button
             disabled={pending}
             onClick={() =>
@@ -162,7 +157,7 @@ export default function ManufacturerDispatchDetailPage() {
       {allocation.status === "awaiting_dispatch" && (
         <Panel className="p-6">
           <h2 className="mb-4 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Next Step: Record Dispatch
+            Record dispatch
           </h2>
           <div className="space-y-4 max-w-lg">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -200,7 +195,7 @@ export default function ManufacturerDispatchDetailPage() {
               }
               className="bg-[#FF5C00] hover:bg-[#e05200] text-white normal-case font-semibold tracking-normal flex items-center gap-2 px-5 py-2.5 rounded-full shadow-sm"
             >
-              Record Dispatch & Generate Manifest
+              Record dispatch
             </Button>
           </div>
         </Panel>

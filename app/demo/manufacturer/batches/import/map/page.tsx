@@ -170,8 +170,7 @@ export default function ImportMappingWizardPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        eyebrow="Intake · CSV mapping"
-        title="Bring in a spreadsheet"
+        title="Spreadsheet import"
         action={
           <Button as={Link} href="/demo/manufacturer/batches/import" variant="secondary" size="sm">
             <ArrowLeft size={15} />
@@ -187,11 +186,11 @@ export default function ImportMappingWizardPage() {
           <div className="flex flex-wrap items-center justify-end gap-3">
             <Button variant="secondary" size="sm" onClick={loadSample}>
               <UploadCloud size={15} />
-              Use the Nordväst ERP export
+              Load sample
             </Button>
           </div>
 
-          <Field label="External system" hint="Optional · detects updates">
+          <Field label="External system (optional)">
             <Input
               value={externalSystemName}
               onChange={(event) => setExternalSystemName(event.target.value)}
@@ -204,13 +203,13 @@ export default function ImportMappingWizardPage() {
               rows={10}
               value={rawText}
               onChange={(event) => setRawText(event.target.value)}
-              placeholder="Paste comma- or semicolon-separated rows here, header row first…"
+              placeholder="Paste CSV, header row first"
             />
           </Field>
 
           <div className="flex justify-end border-t border-[var(--line)] pt-4">
             <Button disabled={!rawText.trim()} onClick={goToMapping}>
-              Continue to column mapping
+              Map columns
               <ArrowRight size={15} />
             </Button>
           </div>
@@ -297,8 +296,8 @@ function StageMap({
   return (
     <Panel className="space-y-5 p-6">
       <p className="text-sm text-[var(--ink-muted)]">
-        {sheet.headers.length} column{sheet.headers.length === 1 ? "" : "s"} found across{" "}
-        {sheet.rows.length} row{sheet.rows.length === 1 ? "" : "s"}. Map each one to a CIRKA field:         unmapped columns are ignored.
+        {sheet.headers.length} column{sheet.headers.length === 1 ? "" : "s"} ·{" "}
+        {sheet.rows.length} row{sheet.rows.length === 1 ? "" : "s"}
       </p>
 
       {error && (
@@ -312,11 +311,11 @@ function StageMap({
         {/* Column Headers */}
         <div className="hidden sm:flex items-center gap-2 pb-2 border-b border-[var(--line)]/50">
           <div className="w-[42%] text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Incoming Spreadsheet
+            Column
           </div>
           <div className="flex-1" />
           <div className="w-[42%] text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Cirka System
+            Field
           </div>
         </div>
 
@@ -333,7 +332,7 @@ function StageMap({
                 </div>
                 {previewRow && (
                   <p className="truncate text-[11px] font-mono text-[var(--ink-muted)] mt-1.5 ml-4">
-                    "{previewRow[header] || "-"}"
+                    &ldquo;{previewRow[header] || "-"}&rdquo;
                   </p>
                 )}
               </div>

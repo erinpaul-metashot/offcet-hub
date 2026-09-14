@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { PlugZap, FileSpreadsheet, Database, Keyboard, RefreshCw, ArrowRight, Settings, PlusCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui";
+import { NoticeBanner } from "../../../_components/cirka-ui";
 import { useDemoStore } from "../../../_mock/store";
 import { useAction } from "../../../_components/use-action";
 import type { IntegrationConnection } from "../../../_mock/types";
@@ -35,14 +36,7 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
   };
 
   return (
-    <div className="space-[#FF5C00] space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
-          Select Import Channel
-        </h2>
-        <span className="text-xs text-[var(--ink-muted)] font-medium">4 Channels Ready</span>
-      </div>
-
+    <div className="space-y-3">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Retexcir Channel Card */}
         <div className="group flex flex-col justify-between rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 transition-all duration-200 hover:border-[#FF5C00]/50 hover:shadow-md">
@@ -56,17 +50,15 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
                   <CheckCircle2 size={12} /> Connected
                 </span>
               ) : (
-                <span className="inline-flex items-center rounded-full bg-stone-200/60 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">
-                  Not Connected
+                <span className="inline-flex items-center rounded-full bg-[var(--paper)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">
+                  Not connected
                 </span>
               )}
             </div>
 
-            <div>
-              <h3 className="font-semibold text-[var(--ink)] group-hover:text-[#FF5C00] transition-colors">
-                Retexcir Sorting
-              </h3>
-            </div>
+            <h3 className="font-semibold text-[var(--ink)] group-hover:text-[#FF5C00] transition-colors">
+              Retexcir
+            </h3>
           </div>
 
           <div className="mt-5 pt-3 border-t border-[var(--line)] flex items-center gap-2">
@@ -83,17 +75,17 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
               ) : connection ? (
                 <>
                   <RefreshCw size={14} className="mr-1.5" />
-                  Sync Retexcir
+                  Sync
                 </>
               ) : (
-                "Connect System"
+                "Connect"
               )}
             </Button>
             {connection && (
               <button
                 onClick={onOpenSettings}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--line)] text-[var(--ink-muted)] hover:bg-stone-100 hover:text-[var(--ink)] transition-colors"
-                title="Integration Settings"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--line)] text-[var(--ink-muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)] transition-colors"
+                title="Integration settings" aria-label="Integration settings"
               >
                 <Settings size={15} />
               </button>
@@ -108,16 +100,11 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#545454]/10 text-[#545454]">
                 <FileSpreadsheet size={22} />
               </div>
-              <span className="inline-flex items-center rounded-full bg-stone-200/60 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">
-                CSV / XLSX
-              </span>
             </div>
 
-            <div>
-              <h3 className="font-semibold text-[var(--ink)] group-hover:text-[#FF5C00] transition-colors">
-                Spreadsheet Upload
-              </h3>
-            </div>
+            <h3 className="font-semibold text-[var(--ink)] group-hover:text-[#FF5C00] transition-colors">
+              Spreadsheet
+            </h3>
           </div>
 
           <div className="mt-5 pt-3 border-t border-[var(--line)]">
@@ -127,7 +114,7 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
               variant="secondary"
               className="w-full text-xs h-9 justify-center font-medium"
             >
-              Upload File
+              Upload CSV
               <ArrowRight size={14} className="ml-1.5" />
             </Button>
           </div>
@@ -140,16 +127,11 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#8CC63F]/15 text-[#5a8720]">
                 <Database size={22} />
               </div>
-              <span className="inline-flex items-center rounded-full bg-[#8CC63F]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#5a8720]">
-                Nordväst ERP
-              </span>
             </div>
 
-            <div>
-              <h3 className="font-semibold text-[var(--ink)] group-hover:text-[#FF5C00] transition-colors">
-                ERP Connector
-              </h3>
-            </div>
+            <h3 className="font-semibold text-[var(--ink)] group-hover:text-[#FF5C00] transition-colors">
+              Nordväst ERP
+            </h3>
           </div>
 
           <div className="mt-5 pt-3 border-t border-[var(--line)]">
@@ -167,7 +149,7 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
               ) : (
                 <>
                   <RefreshCw size={14} className="mr-1.5" />
-                  Pull ERP Records
+                  Pull records
                 </>
               )}
             </Button>
@@ -178,19 +160,14 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
         <div className="group flex flex-col justify-between rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 transition-all duration-200 hover:border-[#FF5C00]/50 hover:shadow-md">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-stone-100 text-[var(--ink)]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--paper)] text-[var(--ink)]">
                 <Keyboard size={22} />
               </div>
-              <span className="inline-flex items-center rounded-full bg-stone-200/60 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">
-                Single Batch
-              </span>
             </div>
 
-            <div>
-              <h3 className="font-semibold text-[var(--ink)] group-hover:text-[#FF5C00] transition-colors">
-                Manual Batch Entry
-              </h3>
-            </div>
+            <h3 className="font-semibold text-[var(--ink)] group-hover:text-[#FF5C00] transition-colors">
+              Manual entry
+            </h3>
           </div>
 
           <div className="mt-5 pt-3 border-t border-[var(--line)]">
@@ -201,16 +178,16 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
               className="w-full text-xs h-9 justify-center font-medium"
             >
               <PlusCircle size={14} className="mr-1.5 text-[#FF5C00]" />
-              Create Batch
+              New batch
             </Button>
           </div>
         </div>
       </div>
 
       {(pullRetexcir.error || pullErp.error) && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">
+        <NoticeBanner tone="blocking" title="Nothing was received">
           {pullRetexcir.error || pullErp.error}
-        </div>
+        </NoticeBanner>
       )}
     </div>
   );

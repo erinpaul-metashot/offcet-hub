@@ -35,14 +35,9 @@ export default function ManufacturerBatchesPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--line)] pb-5">
-          <div>
-            <h1 className="text-2xl font-bold tracking-[-0.03em] text-[var(--ink)]">
-              Resource Batches
-            </h1>
-            <p className="text-sm font-medium text-[var(--ink-muted)] mt-1">
-              Recorded, imported, and pushed batches.
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold tracking-[-0.03em] text-[var(--ink)]">
+            Resource batches
+          </h1>
           <div className="flex items-center gap-3">
             <Button 
               as={Link} 

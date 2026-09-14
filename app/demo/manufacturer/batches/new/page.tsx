@@ -7,7 +7,6 @@ import { ArrowLeft } from "lucide-react";
 import { Button, Field, Input, Panel, Select, Textarea } from "@/components/ui";
 import {
   COMPOSITION_CONFIDENCES,
-  RETEXCIR,
   MATERIAL_CATEGORIES,
   MATERIAL_FORMATS,
   QUALITY_CLASSES,
@@ -116,7 +115,7 @@ export default function RecordBatchPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        title="New Resource Batch"
+        title="New resource batch"
         action={
           <Button as={Link} href="/demo/manufacturer/batches/import" variant="secondary" size="sm">
             <ArrowLeft size={15} />
@@ -125,18 +124,13 @@ export default function RecordBatchPage() {
         }
       />
 
-      <NoticeBanner tone="info" title={`For material ${RETEXCIR.systemName} never handled`}>
-        Sorted batches arrive on their own and carry their sorting data with them. Anything typed
-        here lands as self-reported until someone verifies it.
-      </NoticeBanner>
-
       {error && <NoticeBanner tone="blocking" title="The batch was not saved">{error}</NoticeBanner>}
 
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
       <form onSubmit={submit} className="space-y-6 lg:col-span-8">
         <Panel className="space-y-5 p-6">
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            What the material is
+            Material
           </h2>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Name">
@@ -168,7 +162,7 @@ export default function RecordBatchPage() {
               required
               value={form.description}
               onChange={(event) => update("description", event.target.value)}
-              placeholder="Where it came from, how it is packed, average piece size, storage conditions."
+              placeholder="Origin, packing, piece size"
             />
           </Field>
 
@@ -231,7 +225,7 @@ export default function RecordBatchPage() {
 
         <Panel className="space-y-5 p-6">
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Quantity, location and availability
+            Quantity & location
           </h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Quantity">
@@ -361,7 +355,7 @@ export default function RecordBatchPage() {
               onChange={(event) => update("releaseImmediately", event.target.checked)}
               className="mt-1"
             />
-            <span>Release for matching straight away</span>
+            <span>Release for matching</span>
           </label>
           <Button type="submit" disabled={pending}>
             {pending ? "Recording…" : "Record batch"}

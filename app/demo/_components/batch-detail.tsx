@@ -2,32 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  AlertTriangle,
-  Box,
-  Building2,
-  Calendar,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
-  Eye,
-  Image as ImageIcon,
-  Layers,
-  MapPin,
-  Scale,
-  ShieldCheck,
-  Sparkles,
-  Tag,
-  X,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { Button, Field, Input, Panel, Select, Textarea } from "@/components/ui";
 import {
   ASSURANCE_LABELS,
   ASSURANCE_LEVELS,
   BATCH_EXCEPTIONS,
-  FORMAT_LABELS,
-  QUALITY_CLASS_LABELS,
   statusLabel,
   type AssuranceLevel,
   type BatchException,
@@ -36,16 +16,14 @@ import {
 import { isListedLot } from "../_mock/operations/marketplace";
 import type { BatchDetail } from "../_mock/selectors-batches";
 import { enquiriesForBatch } from "../_mock/selectors-marketplace";
-import { categoryLabel, formatCurrency, formatQuantity } from "../_mock/selectors-shared";
+import { formatQuantity } from "../_mock/selectors-shared";
 import { useDemoStore } from "../_mock/store";
 import { BatchEditForm } from "./batch-edit-form";
+import { BatchOverview } from "./batch-overview";
 import {
   CirkaBadge,
-  DataRow,
   LinkRow,
   NoticeBanner,
-  ProvenanceChip,
-  QuantityPotsBar,
   SectionHeading,
   formatDate,
 } from "./cirka-ui";
@@ -85,15 +63,6 @@ export function BatchDetailView({
     status: batch.exceptionStatus ?? "",
     note: batch.exceptionNote ?? "",
   });
-  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
-
-  const availableQuantity = (batch.pots.available ?? 0) + (batch.pots.at_custodian ?? 0);
-  const unexplainedQuantity = batch.pots.unexplained ?? 0;
-  const availablePercent =
-    batch.quantityOriginal > 0
-      ? Math.round((availableQuantity / batch.quantityOriginal) * 100)
-      : 0;
-
   const actorName = (userId?: string) =>
     store.db.users.find((user) => user._id === userId)?.name ?? "System";
 
@@ -114,13 +83,28 @@ export function BatchDetailView({
           ← Back
         </Button>
         <CirkaBadge status={batch.status} />
-        {batch.exceptionStatus && <CirkaBadge status={batch.exceptionStatus} />}
+        {!batch.releasedAt && (
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]"
+            title={`Only ${detail.ownerName} can see it until it is released`}
+          >
+            <Lock size={12} /> Private
+          </span>
+        )}
+        {/* Listed is derived, never stored: released, reviewed, clean, and with
+            quantity left. Enquiries are demand: none of them holds anything. */}
+        {isListedLot(batch) && (
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--brand-secondary)]">
+            Listed · {formatQuantity(batch.pots.available, batch.unit)} open
+            {enquiries.length > 0 &&
+              ` · ${enquiries.length} enquir${enquiries.length === 1 ? "y" : "ies"}`}
+          </span>
+        )}
       </div>
 
       <SectionHeading
         eyebrow={batch.reference}
         title={batch.name}
-        description={batch.description}
         action={
           canManage ? (
             <div className="flex flex-wrap gap-3">
@@ -164,27 +148,6 @@ export function BatchDetailView({
           )}
           onDone={() => setEditing(false)}
         />
-      )}
-
-      {!batch.releasedAt && (
-        <NoticeBanner tone="info" title={`Not yet released · private to ${detail.ownerName}`} />
-      )}
-
-      {batch.releasedAt && !batch.reviewedAt && (
-        <NoticeBanner tone="info" title="Awaiting CIRKA review" />
-      )}
-
-      {/* Listed is derived, never stored: released, reviewed, clean, and with
-          quantity left. Enquiries are demand — none of them holds anything. */}
-      {isListedLot(batch) && (
-        <NoticeBanner
-          tone="info"
-          title={`Listed as available material · ${formatQuantity(batch.pots.available, batch.unit)} open to enquiry`}
-        >
-          {enquiries.length === 0
-            ? "No enquiries yet."
-            : `${enquiries.length} organisation${enquiries.length === 1 ? " has" : "s have"} enquired. CIRKA is weighing them and will propose a match — nothing is reserved until you see one.`}
-        </NoticeBanner>
       )}
 
       {/* Tab Bar Navigation */}
@@ -239,390 +202,12 @@ export function BatchDetailView({
                 : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
             }`}
           >
-            Management & Controls
+            Manage
           </button>
         )}
       </div>
 
-      {/* TAB 1: OVERVIEW */}
-      {activeTab === "overview" && (
-        <div className="space-y-6 animate-stagger-in">
-          {/* Top KPI Cards Grid */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* KPI 1: Total Volume */}
-            <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm transition-all hover:border-[var(--line-strong)]">
-              <div className="flex items-center justify-between text-[var(--ink-muted)] mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Total Recorded Volume</span>
-                <Scale className="size-4 text-[var(--brand-primary)]" />
-              </div>
-              <div className="text-2xl font-extrabold tracking-tight text-[var(--ink)]">
-                {formatQuantity(batch.quantityOriginal, batch.unit)}
-              </div>
-              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[var(--ink-muted)] font-medium">
-                <Layers className="size-3.5 text-[var(--brand-primary)]" />
-                <span>{detail.movements.length} movement{detail.movements.length === 1 ? "" : "s"} logged</span>
-              </div>
-            </div>
-
-            {/* KPI 2: Available Volume */}
-            <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm transition-all hover:border-[var(--line-strong)]">
-              <div className="flex items-center justify-between text-[var(--ink-muted)] mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Available Quantity</span>
-                <CheckCircle2 className="size-4 text-[#8CC63F]" />
-              </div>
-              <div className="text-2xl font-extrabold tracking-tight text-[var(--ink)]">
-                {formatQuantity(availableQuantity, batch.unit)}
-              </div>
-              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[#8CC63F] font-semibold">
-                <span className="inline-block size-2 rounded-full bg-[#8CC63F] animate-pulse" />
-                <span>{availablePercent}% ready for allocation</span>
-              </div>
-            </div>
-
-            {/* KPI 3: Exception & Hold */}
-            <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm transition-all hover:border-[var(--line-strong)]">
-              <div className="flex items-center justify-between text-[var(--ink-muted)] mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Hold & Unexplained</span>
-                <AlertTriangle className={`size-4 ${unexplainedQuantity > 0 ? "text-[#FF5C00]" : "text-[var(--ink-muted)]"}`} />
-              </div>
-              <div className="text-2xl font-extrabold tracking-tight text-[var(--ink)]">
-                {formatQuantity(unexplainedQuantity, batch.unit)}
-              </div>
-              <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold">
-                {unexplainedQuantity > 0 ? (
-                  <span className="text-[#FF5C00] flex items-center gap-1">
-                    <span className="inline-block size-2 rounded-full bg-[#FF5C00]" />
-                    Requires attention
-                  </span>
-                ) : (
-                  <span className="text-[var(--ink-muted)] font-normal">Zero discrepancy recorded</span>
-                )}
-              </div>
-            </div>
-
-            {/* KPI 4: Provenance Assurance */}
-            <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm transition-all hover:border-[var(--line-strong)]">
-              <div className="flex items-center justify-between text-[var(--ink-muted)] mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Verification Status</span>
-                <ShieldCheck className="size-4 text-[var(--brand-primary)]" />
-              </div>
-              <div className="mt-1 flex items-center gap-2">
-                <ProvenanceChip dataSource={batch.dataSource} assuranceLevel={batch.assuranceLevel} />
-              </div>
-              <div className="mt-2 text-[11px] text-[var(--ink-muted)] font-medium truncate">
-                {batch.reviewedAt ? `Audited ${formatDate(batch.reviewedAt)}` : "Pending CIRKA Audit"}
-              </div>
-            </div>
-          </div>
-
-          {/* Slim Visual Volume Breakdown Bar (No redundant text cards) */}
-          <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)] flex items-center gap-1.5">
-                <Layers className="size-3.5 text-[var(--brand-primary)]" />
-                Visual Pot Breakdown ({detail.slices.length} active pots)
-              </span>
-              <span className="text-xs font-bold text-[var(--ink)]">
-                {formatQuantity(batch.quantityOriginal, batch.unit)} Total
-              </span>
-            </div>
-            <QuantityPotsBar
-              slices={detail.slices}
-              total={batch.quantityOriginal}
-              unit={batch.unit}
-              compact
-            />
-          </div>
-
-          {/* Main Content 2-Column Grid */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Left Panel: Material Passport Specifications */}
-            <Panel className="flex flex-col justify-between space-y-6 p-6">
-              <div>
-                <div className="flex items-center justify-between border-b border-[var(--line)] pb-3 mb-5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-[#FF5C00]/10 text-[#FF5C00]">
-                      <Box className="size-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-[var(--ink)] tracking-tight">Material Passport</h3>
-                      <p className="text-xs text-[var(--ink-muted)]">Technical parameters & fabric attributes</p>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-[var(--surface-strong)] px-3 py-1 text-[11px] font-bold text-[var(--ink)] border border-[var(--line)]">
-                    {categoryLabel(batch.materialCategory)}
-                  </span>
-                </div>
-
-                {/* Primary Composition Highlight Card */}
-                <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 mb-5">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-1">
-                    Material Composition
-                  </div>
-                  <div className="text-lg font-bold text-[var(--ink)]">
-                    {batch.composition ?? "Not recorded"}
-                  </div>
-                  {batch.compositionConfidence && (
-                    <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-[#8CC63F]/15 px-2.5 py-1 text-xs font-bold text-[#8CC63F] border border-[#8CC63F]/30">
-                      <Sparkles className="size-3" />
-                      <span>{batch.compositionConfidence} Composition Confidence</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 2x2 Visual Spec Attribute Cards */}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {/* Format */}
-                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-1">
-                      Format
-                    </div>
-                    <div className="text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
-                      <Tag className="size-3.5 text-[var(--brand-primary)]" />
-                      {batch.format ? FORMAT_LABELS[batch.format] : "-"}
-                    </div>
-                  </div>
-
-                  {/* Quality Tier */}
-                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-1">
-                      Quality Grade
-                    </div>
-                    <div className="text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-[#8CC63F]" />
-                      {batch.qualityClass ? QUALITY_CLASS_LABELS[batch.qualityClass] : "-"}
-                    </div>
-                  </div>
-
-                  {/* Colour */}
-                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-1">
-                      Colour Profile
-                    </div>
-                    <div className="text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
-                      <span className="size-3 rounded-full border border-black/20 bg-[#FF5C00] inline-block" />
-                      {batch.colour ?? "-"}
-                    </div>
-                  </div>
-
-                  {/* Commercial Value */}
-                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-1">
-                      Estimated Value
-                    </div>
-                    <div className="text-sm font-semibold text-[var(--ink)] flex items-center justify-between">
-                      <span>
-                        {batch.estimatedValue !== undefined
-                          ? formatCurrency(batch.estimatedValue, batch.currency)
-                          : "-"}
-                      </span>
-                      {batch.estimatedValue !== undefined && (
-                        <span className="text-[10px] font-bold text-[var(--ink-muted)] uppercase tracking-wider bg-[var(--surface-strong)] px-1.5 py-0.5 rounded border border-[var(--line)]">
-                          Protected
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Reference Photos Gallery Component */}
-              {batch.imageUrls.length > 0 && (
-                <div className="border-t border-[var(--line)] pt-4 mt-2">
-                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)] mb-3">
-                    <ImageIcon className="size-3.5 text-[var(--brand-primary)]" />
-                    <span>Reference Photos ({batch.imageUrls.length})</span>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {batch.imageUrls.map((url, idx) => (
-                      <button
-                        key={url}
-                        type="button"
-                        onClick={() => setSelectedPhotoUrl(url)}
-                        className="group relative overflow-hidden rounded-xl border-2 border-white shadow-sm bg-black/5 transition-all hover:scale-[1.03] hover:shadow-md cursor-pointer text-left"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={url}
-                          alt={`Reference ${idx + 1}`}
-                          className="h-24 w-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
-                          <Eye className="size-3.5" />
-                          <span>View</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Panel>
-
-            {/* Right Panel: Chain of Custody & Assurance */}
-            <Panel className="flex flex-col justify-between space-y-6 p-6">
-              <div>
-                <div className="flex items-center justify-between border-b border-[var(--line)] pb-3 mb-5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-[#8CC63F]/10 text-[#8CC63F]">
-                      <ShieldCheck className="size-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-[var(--ink)] tracking-tight">Origin & Assurance</h3>
-                      <p className="text-xs text-[var(--ink-muted)]">Facility location, provenance & review audit</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Custody & Location */}
-                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 space-y-3">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                      Ownership & Facility
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="flex items-start gap-2.5">
-                        <Building2 className="size-4 text-[var(--brand-primary)] mt-0.5 shrink-0" />
-                        <div>
-                          <div className="text-[11px] text-[var(--ink-muted)] font-medium">Batch Owner</div>
-                          <div className="text-sm font-bold text-[var(--ink)]">{detail.ownerName}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-2.5">
-                        <MapPin className="size-4 text-[#FF5C00] mt-0.5 shrink-0" />
-                        <div>
-                          <div className="text-[11px] text-[var(--ink-muted)] font-medium">Source Facility</div>
-                          <div className="text-sm font-bold text-[var(--ink)]">
-                            {detail.facility?.name ?? "Not recorded"}
-                          </div>
-                          {batch.locationText && (
-                            <div className="text-xs text-[var(--ink-muted)] mt-0.5">{batch.locationText}</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* External Integration & Provenance Source */}
-                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 space-y-3">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                      Integrations & Provenance
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <div className="text-[11px] text-[var(--ink-muted)] font-medium mb-1">External Record</div>
-                        {batch.externalSystemName ? (
-                          batch.externalRecordUrl ? (
-                            <a
-                              href={batch.externalRecordUrl}
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--brand-primary)] hover:underline"
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <span>{batch.externalSystemName} · {batch.externalRecordId}</span>
-                              <ExternalLink className="size-3" />
-                            </a>
-                          ) : (
-                            <span className="text-xs font-bold text-[var(--ink)]">
-                              {batch.externalSystemName} · {batch.externalRecordId}
-                            </span>
-                          )
-                        ) : (
-                          <span className="text-xs text-[var(--ink-muted)]">-</span>
-                        )}
-                      </div>
-
-                      {detail.importJob && (
-                        <div>
-                          <div className="text-[11px] text-[var(--ink-muted)] font-medium mb-1">Import Source</div>
-                          <div className="text-xs font-bold text-[var(--ink)]">
-                            {detail.importJob.fileName ?? detail.importJob.source}
-                          </div>
-                          <div className="text-[10px] text-[var(--ink-muted)]">
-                            {formatDate(detail.importJob.createdAt)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Availability Window & CIRKA Audit */}
-                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 space-y-3">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                      Lifecycle Window & Review Log
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <div className="flex items-center gap-1 text-[11px] text-[var(--ink-muted)] font-medium mb-1">
-                          <Calendar className="size-3 text-[var(--brand-primary)]" />
-                          <span>Availability Window</span>
-                        </div>
-                        <div className="text-xs font-semibold text-[var(--ink)]">
-                          {formatDate(batch.availableFrom)} → {formatDate(batch.availableUntil)}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="text-[11px] text-[var(--ink-muted)] font-medium mb-1">CIRKA Review</div>
-                        {batch.reviewedAt ? (
-                          <div>
-                            <div className="text-xs font-bold text-[#8CC63F] flex items-center gap-1">
-                              <CheckCircle2 className="size-3.5" />
-                              <span>Reviewed {formatDate(batch.reviewedAt)}</span>
-                            </div>
-                            <div className="text-[10px] text-[var(--ink-muted)]">
-                              By {actorName(batch.reviewedByUserId)}
-                            </div>
-                            {batch.reviewNotes && (
-                              <div className="mt-1 text-xs text-[var(--ink-muted)] italic">
-                                &quot;{batch.reviewNotes}&quot;
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-xs font-semibold text-[var(--ink-muted)] italic">
-                            Not reviewed by CIRKA
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Panel>
-          </div>
-
-          {/* Reference Photo Lightbox Modal */}
-          {selectedPhotoUrl && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200"
-              onClick={() => setSelectedPhotoUrl(null)}
-            >
-              <div
-                className="relative max-w-3xl overflow-hidden rounded-2xl border-4 border-white bg-black shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  onClick={() => setSelectedPhotoUrl(null)}
-                  className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black transition-colors"
-                >
-                  <X className="size-5" />
-                </button>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={selectedPhotoUrl}
-                  alt="Reference preview"
-                  className="max-h-[80vh] w-full object-contain"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {activeTab === "overview" && <BatchOverview detail={detail} actorName={actorName} />}
 
       {/* TAB 2: ACTIVITY & LEDGER */}
       {activeTab === "activity" && (
@@ -633,12 +218,6 @@ export function BatchDetailView({
               className={`flex flex-wrap items-center justify-between gap-4 border-b border-[var(--line)] px-6 py-4 bg-[var(--surface)]/30 cursor-pointer select-none hover:bg-[var(--surface)] transition-colors`}
               onClick={() => setIsLedgerExpanded((prev) => !prev)}
             >
-              <div>
-                <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                  Event & Movement Ledger
-                </h2>
-              </div>
-
               <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                 {/* Sub-view switcher toggles */}
                 <div className="inline-flex rounded-lg border border-[var(--line)] bg-[var(--surface)] p-1 text-xs">
@@ -651,7 +230,7 @@ export function BatchDetailView({
                         : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
                     }`}
                   >
-                    Journey Timeline
+                    Timeline
                   </button>
                   <button
                     type="button"
@@ -662,7 +241,7 @@ export function BatchDetailView({
                         : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
                     }`}
                   >
-                    Quantity Movements ({detail.movements.length})
+                    Movements ({detail.movements.length})
                   </button>
                   <button
                     type="button"
@@ -731,7 +310,7 @@ export function BatchDetailView({
               >
                 <div>
                   <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                    Connected Operations & Systems
+                    Linked records
                   </h2>
                 </div>
 
@@ -878,7 +457,7 @@ export function BatchDetailView({
               >
                 <div>
                   <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                    Evidence & Verification ({detail.evidence.length})
+                    Evidence ({detail.evidence.length})
                   </h2>
                 </div>
 
@@ -955,7 +534,6 @@ export function BatchDetailView({
                     onChange={(event) =>
                       setReview((current) => ({ ...current, notes: event.target.value }))
                     }
-                    placeholder="What was checked, and against what evidence."
                   />
                 </Field>
                 <Button
@@ -983,17 +561,9 @@ export function BatchDetailView({
                 <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
                   Send to a custodian
                 </h2>
-                {batch.reviewedAt ? (
-                  <p className="text-sm text-[var(--ink-muted)]">
-                    {formatQuantity(batch.pots.available, batch.unit)} unallocated. The custodian
-                    accepts before {detail.ownerName} can dispatch.
-                  </p>
-                ) : (
-                  <NoticeBanner tone="warning" title="Review this batch first">
-                    A batch is placed with a custodian only after CIRKA has reviewed it and set an
-                    assurance level.
-                  </NoticeBanner>
-                )}
+                <p className="text-sm text-[var(--ink-muted)]">
+                  {formatQuantity(batch.pots.available, batch.unit)} unallocated
+                </p>
                 <Field label="Custodian">
                   <Select
                     value={placement.custodianOrgId}
@@ -1036,6 +606,7 @@ export function BatchDetailView({
                 </div>
                 <Button
                   size="sm"
+                  title={batch.reviewedAt ? undefined : "Review this batch first"}
                   disabled={
                     pending ||
                     !batch.reviewedAt ||
@@ -1061,7 +632,7 @@ export function BatchDetailView({
 
             <Panel className="space-y-4 p-6">
               <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                Write off available material
+                Write off
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={`Quantity (${batch.unit})`}>
@@ -1128,7 +699,6 @@ export function BatchDetailView({
                     onChange={(event) =>
                       setException((current) => ({ ...current, note: event.target.value }))
                     }
-                    placeholder="Reason for exception state"
                   />
                 </Field>
                 <Button

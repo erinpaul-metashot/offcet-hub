@@ -42,7 +42,7 @@ function addressOf(facility: Facility): string {
 
 export default function ManufacturerFacilitiesPage() {
   const store = useDemoStore();
-  const { scope, organisation } = useDemoPersona("manufacturer");
+  const { scope } = useDemoPersona("manufacturer");
   const rowAction = useAction();
   const form = useAction();
 
@@ -127,10 +127,7 @@ export default function ManufacturerFacilitiesPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading 
-        title="Manufacturing Facilities" 
-        eyebrow="Sites & Storage Capacity"
-      />
+      <SectionHeading title="Facilities" />
 
       {rowAction.error && (
         <NoticeBanner tone="blocking" title="That change was refused">
@@ -144,7 +141,7 @@ export default function ManufacturerFacilitiesPage() {
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2 text-xs">
             <div className="flex items-center gap-2">
               <HardDrive size={14} className="text-[var(--brand-primary)]" />
-              <span className="font-semibold text-[var(--ink)]">Total Storage Capacity Utilization</span>
+              <span className="font-semibold text-[var(--ink)]">Capacity used</span>
             </div>
             <span className="font-medium tabular-nums text-[var(--ink-muted)]">
               <span className="text-[var(--ink)] font-semibold">{formatQuantity(totalOccupiedKg, "kg")}</span> / {formatQuantity(totalCapacityKg, "kg")} ({overallUtilizationPct.toFixed(1)}%)
@@ -169,7 +166,7 @@ export default function ManufacturerFacilitiesPage() {
       {/* Subheader & View Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--line)] pb-3">
         <div className="flex flex-wrap items-baseline gap-3">
-          <h2 className="text-lg font-semibold text-[var(--ink)]">Sites ({facilities.length})</h2>
+          <h2 className="text-lg font-semibold text-[var(--ink)]">{facilities.length} site{facilities.length === 1 ? "" : "s"}</h2>
           {activeCount !== facilities.length && (
             <p className="text-xs tabular-nums text-[var(--ink-muted)]">
               {activeCount} active · {facilities.length - activeCount} deactivated
@@ -188,10 +185,7 @@ export default function ManufacturerFacilitiesPage() {
 
       {facilities.length === 0 ? (
         <Panel className="p-8 text-center">
-          <p className="text-sm font-semibold text-[var(--ink)]">No sites recorded</p>
-          <p className="mt-1 text-sm text-[var(--ink-muted)]">
-            A batch needs a source site.
-          </p>
+          <p className="text-sm font-semibold text-[var(--ink)]">No sites yet</p>
         </Panel>
       ) : viewMode === "grid" ? (
         /* GRID VIEW */
@@ -247,7 +241,7 @@ export default function ManufacturerFacilitiesPage() {
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5">
                           <HardDrive size={13} className="text-[var(--brand-primary)]" />
-                          <span className="font-semibold text-[var(--ink)]">Storage Capacity</span>
+                          <span className="font-semibold text-[var(--ink)]">Capacity</span>
                         </div>
                         {utilizationPct !== undefined ? (
                           <span
@@ -295,7 +289,7 @@ export default function ManufacturerFacilitiesPage() {
                           </span>
                         </span>
                         <span>
-                          {remainingKg !== undefined ? `${formatQuantity(remainingKg, "kg")} free` : "Flexible capacity"}
+                          {remainingKg !== undefined ? `${formatQuantity(remainingKg, "kg")} free` : null}
                         </span>
                       </div>
                     </div>
@@ -380,7 +374,7 @@ export default function ManufacturerFacilitiesPage() {
                         <MapPin size={13} className="shrink-0" />
                         <span className="truncate">{addressOf(facility)}</span>
                         {facility.contactName && (
-                          <span className="truncate">· Contact: {facility.contactName}</span>
+                          <span className="truncate">· {facility.contactName}</span>
                         )}
                       </p>
                     </div>
@@ -452,8 +446,8 @@ export default function ManufacturerFacilitiesPage() {
 
       {editing && (
         <Modal
-          eyebrow={editing.facility ? "Edit site" : "New site"}
-          title={editing.facility?.name ?? `Add a site to ${organisation?.name ?? "your organisation"}`}
+          eyebrow={editing.facility ? "Edit site" : undefined}
+          title={editing.facility?.name ?? "New site"}
           onClose={closeForm}
         >
           <FacilityForm

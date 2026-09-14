@@ -2,23 +2,77 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronRight, Inbox, Plus } from "lucide-react";
 import { Button, Panel } from "@/components/ui";
 import {
   DashboardHero,
-  DashboardMetricCard,
   DashboardSection,
   PieChart,
 } from "@/components/dashboard-widgets";
-import { CirkaBadge, LinkRow, NoticeBanner, formatDate } from "../../_components/cirka-ui";
+import { CirkaBadge, LinkRow, NoticeBanner, formatDate, tileHref } from "../../_components/cirka-ui";
 import { getManufacturerDashboard } from "../../_mock/selectors-manufacturer";
-import { formatQuantity, orgName } from "../../_mock/selectors-shared";
+import { categoryLabel, formatQuantity, orgName } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { RoleActivityFeed } from "../../_components/trace-timeline";
-import type { Unit } from "../../_mock/domain";
+import { statusLabel, type Unit } from "../../_mock/domain";
 import { classNames } from "@/lib/utils";
 import { DiscrepancyModal } from "../../_components/discrepancy-analysis";
 import type { Allocation, ResourceBatch } from "../../_mock/types";
+
+/**
+ * Every batch passes Draft → Awaiting review → Recorded before it can be
+ * matched. Each stage opens the batch list filtered to it; recorded batches
+ * span several statuses, so that stage opens the whole list.
+ */
+function BatchReviewTile({ view }: { view: ReturnType<typeof getManufacturerDashboard> }) {
+  const stages = [
+    {
+      label: statusLabel("draft"),
+      count: view.reviewTrack.draft,
+      href: "/demo/manufacturer/batches?status=draft",
+    },
+    {
+      label: statusLabel("awaiting_review"),
+      count: view.reviewTrack.awaitingReview,
+      href: "/demo/manufacturer/batches?status=awaiting_review",
+    },
+    { label: "Recorded", count: view.reviewTrack.recorded, href: "/demo/manufacturer/batches" },
+  ];
+
+  return (
+    <Panel className="p-3.5 flex flex-col justify-between gap-2.5 h-full">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
+          Total Batches
+        </p>
+        <span className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
+          {view.metrics.batchCount}
+        </span>
+      </div>
+      <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs" aria-label="Batch review stages">
+        {stages.map((stage, index) => (
+          <li key={stage.label} className="flex items-center gap-1">
+            {index > 0 && <ChevronRight size={12} aria-hidden className="shrink-0 text-[var(--line-strong)]" />}
+            <Link
+              href={stage.href}
+              className="group inline-flex items-baseline gap-1 rounded-md px-1.5 py-0.5 transition-colors duration-200 ease-[var(--ease-out)] hover:bg-[var(--surface)]"
+            >
+              <span
+                className={classNames(
+                  "font-semibold tabular-nums",
+                  stage.count > 0 ? "text-[var(--ink)]" : "text-[var(--ink-muted)]",
+                )}
+              >
+                {stage.count}
+              </span>
+              <span className="text-[var(--ink-muted)] group-hover:text-[var(--ink)]">{stage.label}</span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </Panel>
+  );
+}
 
 function CompactStatsOverview({
   view,
@@ -40,29 +94,13 @@ function CompactStatsOverview({
     <div className="grid gap-4 lg:grid-cols-12 items-stretch">
       {/* Inventory & Allocation Volume Breakdown */}
       <Panel className="lg:col-span-7 p-5 flex flex-col justify-between space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 border-b border-[var(--line)] pb-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-              Total Inventory Volume
-            </p>
-            <p className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums mt-0.5">
-              {formatQuantity(total, unit)}
-            </p>
-          </div>
-          <div className="flex items-center gap-3 text-[11px] font-semibold text-[var(--ink-muted)]">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#8CC63F]" />
-              {Math.round(transformedPct)}% Transformed
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#FF5C00]" />
-              {Math.round(committedPct)}% Committed
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#545454]" />
-              {Math.round(availablePct)}% Available
-            </span>
-          </div>
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
+            Recorded
+          </p>
+          <p className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums mt-0.5">
+            {formatQuantity(total, unit)}
+          </p>
         </div>
 
         {/* Multi-segment Progress Bar */}
@@ -101,6 +139,7 @@ function CompactStatsOverview({
             </div>
             <p className="text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums">
               {formatQuantity(transformed, unit)}
+              <span className="ml-1 text-xs font-medium text-[var(--ink-muted)]">{Math.round(transformedPct)}%</span>
             </p>
           </div>
 
@@ -111,6 +150,7 @@ function CompactStatsOverview({
             </div>
             <p className="text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums">
               {formatQuantity(committed, unit)}
+              <span className="ml-1 text-xs font-medium text-[var(--ink-muted)]">{Math.round(committedPct)}%</span>
             </p>
           </div>
 
@@ -121,6 +161,7 @@ function CompactStatsOverview({
             </div>
             <p className="text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums">
               {formatQuantity(available, unit)}
+              <span className="ml-1 text-xs font-medium text-[var(--ink-muted)]">{Math.round(availablePct)}%</span>
             </p>
           </div>
         </div>
@@ -128,33 +169,14 @@ function CompactStatsOverview({
 
       {/* Operational Key Metric Cards */}
       <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2.5">
-        <Link
-          href="/demo/manufacturer/batches"
-          className="group block focus-visible:outline-none h-full"
-        >
-          <Panel
-            interactive
-            className="p-3.5 flex items-center justify-between h-full hover:border-[var(--line-strong)] transition-all group-hover:shadow-sm"
-          >
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-                Total Lots
-              </p>
-              <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
-                  {view.metrics.batchCount}
-                </span>
-                <span className="text-xs text-[var(--ink-muted)] font-medium">
-                  · {view.metrics.awaitingRelease} awaiting release
-                </span>
-              </div>
-            </div>
-            <ArrowUpRight size={16} className="text-[var(--ink-muted)] group-hover:text-[var(--ink)] transition-colors shrink-0" />
-          </Panel>
-        </Link>
+        <BatchReviewTile view={view} />
 
         <Link
-          href="/demo/manufacturer/dispatch"
+          href={tileHref(
+            view.readyToDispatch,
+            "/demo/manufacturer/dispatch?tab=active",
+            (entry) => `/demo/manufacturer/dispatch/${entry.allocation._id}`,
+          )}
           className="group block focus-visible:outline-none h-full"
         >
           <Panel
@@ -179,11 +201,6 @@ function CompactStatsOverview({
                 >
                   {view.metrics.awaitingDispatch}
                 </span>
-                {view.metrics.awaitingDispatch > 0 && (
-                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[#FF5C00] text-white rounded-md shadow-xs">
-                    Action required
-                  </span>
-                )}
               </div>
             </div>
             <ArrowUpRight
@@ -197,7 +214,11 @@ function CompactStatsOverview({
         </Link>
 
         <Link
-          href="/demo/manufacturer/dispatch"
+          href={tileHref(
+            view.discrepancies,
+            "/demo/manufacturer/dispatch?tab=discrepancy",
+            (entry) => `/demo/manufacturer/dispatch/${entry.allocation._id}`,
+          )}
           className="group block focus-visible:outline-none h-full"
         >
           <Panel
@@ -222,11 +243,6 @@ function CompactStatsOverview({
                 >
                   {view.metrics.openDiscrepancies}
                 </span>
-                {view.metrics.openDiscrepancies > 0 && (
-                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[#FF5C00] text-white rounded-md shadow-xs">
-                    Needs review
-                  </span>
-                )}
               </div>
             </div>
             <ArrowUpRight
@@ -240,6 +256,66 @@ function CompactStatsOverview({
         </Link>
       </div>
     </div>
+  );
+}
+
+/**
+ * Logging what came in is the manufacturer's daily job, so it sits on the
+ * dashboard. The count links to the inbox unfiltered: the intake hub only lists
+ * the sorting channel, and ERP arrivals would look like nothing is waiting.
+ */
+function IntakeStrip({
+  arrivals,
+}: {
+  arrivals: ReturnType<typeof getManufacturerDashboard>["pendingArrivals"];
+}) {
+  const named = arrivals
+    .slice(0, 2)
+    .map((arrival) =>
+      arrival.name ??
+      (arrival.materialCategory ? categoryLabel(arrival.materialCategory) : arrival.externalSystemName),
+    );
+  const more = arrivals.length - named.length;
+
+  return (
+    <Panel className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-primary-muted)] text-[var(--brand-primary)]">
+          <Inbox size={16} />
+        </span>
+        <div className="min-w-0 space-y-0.5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+            Intake
+          </p>
+          {arrivals.length === 0 ? (
+            <p className="text-sm text-[var(--ink-muted)]">
+              No arrivals waiting
+            </p>
+          ) : (
+            <Link
+              href="/demo/manufacturer/batches/import/inbox"
+              className="group inline-flex max-w-full items-center gap-1.5 text-sm text-[var(--ink)]"
+            >
+              <span className="shrink-0 font-semibold tabular-nums">
+                {arrivals.length} arrival{arrivals.length === 1 ? "" : "s"} waiting for review
+              </span>
+              <span className="truncate text-[var(--ink-muted)]">
+                · {named.join(" · ")}
+                {more > 0 ? ` · +${more} more` : ""}
+              </span>
+              <ArrowRight
+                size={14}
+                className="shrink-0 text-[var(--line-strong)] transition-transform duration-200 ease-[var(--ease-out)] group-hover:translate-x-1 group-hover:text-[var(--brand-primary)]"
+              />
+            </Link>
+          )}
+        </div>
+      </div>
+      <Button as={Link} href="/demo/manufacturer/batches/new" size="sm" className="shrink-0 gap-1.5">
+        <Plus size={14} />
+        Record intake
+      </Button>
+    </Panel>
   );
 }
 
@@ -269,15 +345,15 @@ export default function ManufacturerDashboardPage() {
         />
       )}
 
-      <DashboardHero
-        eyebrow="Manufacturer"
-        title={`${organisation?.name ?? "Your organisation"}: inventory & allocations`}
-      />
+      <DashboardHero title={organisation?.name ?? "Dashboard"} />
 
       <CompactStatsOverview view={view} unit={unit} />
 
       {view.metrics.openDiscrepancies > 0 && (
-        <NoticeBanner tone="warning" title="Quantity Discrepancy Reported">
+        <NoticeBanner
+          tone="warning"
+          title={`${view.metrics.openDiscrepancies} open discrepanc${view.metrics.openDiscrepancies === 1 ? "y" : "ies"}`}
+        >
           <div className="space-y-3">
             {view.discrepancies.map((entry) => (
               <div key={entry.allocation._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#FF5C00]/20 pb-2.5 last:border-0 last:pb-0">
@@ -286,9 +362,9 @@ export default function ManufacturerDashboardPage() {
                     <span className="font-bold text-[#FF5C00]">{entry.allocation.reference}</span> · {entry.batch?.name ?? `Batch ${entry.allocation.batchId}`}
                   </p>
                   <p className="text-xs text-[#545454] mt-0.5">
-                    Custodian <strong>{entry.counterpartyName}</strong> received{" "}
-                    {formatQuantity(entry.allocation.quantityReceived ?? 0, entry.allocation.unit)} against{" "}
-                    {formatQuantity(entry.allocation.quantityDispatched ?? 0, entry.allocation.unit)} dispatched.
+                    <strong>{entry.counterpartyName}</strong> ·{" "}
+                    {formatQuantity(entry.allocation.quantityReceived ?? 0, entry.allocation.unit)} of{" "}
+                    {formatQuantity(entry.allocation.quantityDispatched ?? 0, entry.allocation.unit)} received
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -312,6 +388,8 @@ export default function ManufacturerDashboardPage() {
         </NoticeBanner>
       )}
 
+      <IntakeStrip arrivals={view.pendingArrivals} />
+
       <div className="grid gap-6 lg:grid-cols-2">
         <DashboardSection
           title="Dispatch queue"
@@ -330,7 +408,7 @@ export default function ManufacturerDashboardPage() {
               view.dispatchQueue.slice(0, 3).map((entry) => (
                 <LinkRow
                   key={entry.allocation._id}
-                  href="/demo/manufacturer/dispatch"
+                  href={`/demo/manufacturer/dispatch/${entry.allocation._id}`}
                   title={`${entry.allocation.reference} · ${entry.batch?.name ?? "Resource batch"}`}
                   tags={[
                     { label: "To", value: entry.toName },

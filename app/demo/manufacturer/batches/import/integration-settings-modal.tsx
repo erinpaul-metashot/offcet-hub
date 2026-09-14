@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ExternalLink, Loader2, Plug, PlugZap, X, Plus, HardDrive, Webhook, Database } from "lucide-react";
+import { Check, ExternalLink, Loader2, Plug, PlugZap, X, HardDrive, Webhook, Database } from "lucide-react";
 import { Button } from "@/components/ui";
 import { RETEXCIR } from "../../../_mock/domain";
 import { useDemoStore } from "../../../_mock/store";
@@ -91,7 +91,6 @@ export function IntegrationSettingsModal({
                           {RETEXCIR.webhookUrl(connection.accountRef)}
                         </code>
                       }
-                      hint={`Retexcir POSTs ${RETEXCIR.events.join(" and ")} here.`}
                     />
                   </dl>
                   
@@ -120,9 +119,6 @@ export function IntegrationSettingsModal({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm text-[var(--ink-muted)]">
-                    Connect your {RETEXCIR.systemName} account to receive sorted batches automatically.
-                  </p>
                   {error && (
                     <NoticeBanner tone="blocking" title={`${RETEXCIR.systemName} refused the handshake`}>
                       {error}
@@ -169,7 +165,7 @@ export function IntegrationSettingsModal({
             <section className="space-y-4">
               <div className="flex items-center gap-3 border-b border-[var(--line)] pb-2">
                 <Plug size={20} className="text-[#FF5C00]" />
-                <h3 className="text-base font-semibold text-[var(--ink)]">Nordväst ERP (Legacy)</h3>
+                <h3 className="text-base font-semibold text-[var(--ink)]">Nordväst ERP</h3>
               </div>
               
               {erpConnected ? (
@@ -200,9 +196,6 @@ export function IntegrationSettingsModal({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm text-[var(--ink-muted)]">
-                    Connect your legacy ERP system to synchronize material records automatically.
-                  </p>
                   <div className="flex gap-3">
                     <Button disabled={erpStep >= 0} onClick={async () => {
                       const steps = ["Authenticating with Nordväst", "Mapping material schema", "Establishing secure tunnel"];
@@ -249,13 +242,6 @@ export function IntegrationSettingsModal({
             </section>
           </div>
 
-          {/* Add Integration */}
-          <section className="pt-4 border-t border-dashed border-[var(--line-strong)]">
-            <Button variant="secondary" className="w-full justify-center">
-              <Plus size={16} className="mr-2" />
-              Add Integration
-            </Button>
-          </section>
         </div>
       </div>
     </div>

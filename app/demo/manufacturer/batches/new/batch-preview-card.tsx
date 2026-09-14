@@ -151,7 +151,7 @@ function AvailablePot({ quantity, unit }: { quantity: number; unit: Unit }) {
     return (
       <div className="flex items-center gap-2 text-xs text-[var(--ink-muted)]">
         <Lock size={13} className="shrink-0" />
-        Ledger opens at first quantity
+        No quantity yet
       </div>
     );
   }
@@ -164,7 +164,7 @@ function AvailablePot({ quantity, unit }: { quantity: number; unit: Unit }) {
     <div className="space-y-2">
       <div className="flex items-baseline justify-between">
         <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-          Available pot
+          Available
         </span>
         <span className="inline-flex items-baseline gap-1">
           <motion.span className="text-sm font-semibold text-[var(--ink)]">
@@ -210,10 +210,6 @@ function PopulatedPreview(props: BatchPreviewCardProps) {
       <PunchedHole />
 
       <div className="space-y-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-          Ledger preview
-        </p>
-
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center rounded-full border border-[var(--line)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
             {categoryLabel(props.materialCategory)}
@@ -263,11 +259,6 @@ function PopulatedPreview(props: BatchPreviewCardProps) {
             ))}
           </dl>
         )}
-
-        <div className="flex items-center gap-2 border-t border-[var(--line)] pt-3 text-xs text-[var(--ink-muted)]">
-          <Lock size={13} className="shrink-0" />
-          Estimated value withheld
-        </div>
 
         <ProvenanceChip dataSource="manual_entry" assuranceLevel="self_reported" />
       </div>

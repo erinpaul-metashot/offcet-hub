@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowUpRight, Truck, PackageCheck, AlertTriangle, Eye, CheckCircle2, ShieldAlert } from "lucide-react";
 import { Button, EmptyState, Input, Select } from "@/components/ui";
 import { DEMO_NOW } from "../../_mock/data";
@@ -17,6 +18,9 @@ import {
 import { useAction } from "../../_components/use-action";
 import { DiscrepancyModal } from "../../_components/discrepancy-analysis";
 import type { Allocation, ResourceBatch } from "../../_mock/types";
+
+const DISPATCH_TABS = ["active", "discrepancy", "completed", "all"] as const;
+type DispatchTab = (typeof DISPATCH_TABS)[number];
 
 function getDispatchButtonConfig(status: AllocationStatus) {
   switch (status) {
@@ -67,7 +71,11 @@ export default function ManufacturerDispatchPage() {
 
   const view = getManufacturerDashboard(store.db, scope);
 
-  const [activeTab, setActiveTab] = useState<"active" | "discrepancy" | "completed" | "all">("active");
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<DispatchTab>(() => {
+    const requested = searchParams.get("tab") ?? "";
+    return (DISPATCH_TABS as readonly string[]).includes(requested) ? (requested as DispatchTab) : "active";
+  });
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [activeModalAllocation, setActiveModalAllocation] = useState<{
@@ -144,7 +152,7 @@ export default function ManufacturerDispatchPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--line)] pb-5">
           <div>
             <h1 className="text-2xl font-bold tracking-[-0.03em] text-[var(--ink)]">
-              Material Dispatch Log
+              Dispatch
             </h1>
           </div>
         </div>
@@ -159,7 +167,7 @@ export default function ManufacturerDispatchPage() {
                 : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
             }`}
           >
-            Active Queue
+            Active
           </button>
           <button
             onClick={() => setActiveTab("discrepancy")}
@@ -170,7 +178,7 @@ export default function ManufacturerDispatchPage() {
             }`}
           >
             <AlertTriangle size={13} className="text-[#FF5C00]" />
-            <span>Discrepancy Audits</span>
+            <span>Discrepancies</span>
             {discrepancyCount > 0 && (
               <span className="ml-1 rounded-full bg-[#FF5C00] px-2 py-0.5 text-[10px] font-extrabold text-white">
                 {discrepancyCount}
@@ -185,7 +193,7 @@ export default function ManufacturerDispatchPage() {
                 : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
             }`}
           >
-            Completed & Received
+            Completed
           </button>
           <button
             onClick={() => setActiveTab("all")}
@@ -195,7 +203,7 @@ export default function ManufacturerDispatchPage() {
                 : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
             }`}
           >
-            All Logs
+            All
           </button>
         </div>
 
@@ -225,59 +233,8 @@ export default function ManufacturerDispatchPage() {
 
       {error && <NoticeBanner tone="blocking" title="That step was refused">{error}</NoticeBanner>}
 
-      {activeTab === "active" && view.discrepancies.length > 0 && (
-        <NoticeBanner tone="warning" title="Discrepancy Action Required">
-          <div className="space-y-3">
-            {view.discrepancies.map((entry) => {
-              const dispatchedQty = entry.allocation.quantityDispatched ?? entry.allocation.quantityAllocated;
-              const receivedQty = entry.allocation.quantityReceived ?? 0;
-              const shortfallQty = entry.allocation.quantityDiscrepancy ?? (dispatchedQty - receivedQty);
-
-              return (
-                <div key={entry.allocation._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#FF5C00]/20 pb-2.5 last:border-0 last:pb-0">
-                  <div>
-                    <p className="text-xs font-semibold text-[#2A2A2A]">
-                      <span className="font-bold text-[#FF5C00]">{entry.allocation.reference}</span> · Destination: {entry.counterpartyName}
-                    </p>
-                    <p className="text-xs text-[var(--ink-muted)] mt-0.5">
-                      Received {formatQuantity(receivedQty, entry.allocation.unit)} of {formatQuantity(dispatchedQty, entry.allocation.unit)} dispatched. Shortfall: <strong className="text-[#FF5C00] font-bold">-{formatQuantity(shortfallQty, entry.allocation.unit)}</strong>
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() =>
-                        setActiveModalAllocation({
-                          allocation: entry.allocation,
-                          batch: entry.batch,
-                          toName: entry.counterpartyName,
-                        })
-                      }
-                      className="inline-flex items-center gap-1 rounded-full bg-[#FF5C00] px-3 py-1 text-xs font-bold text-white hover:bg-[#e05200] transition-colors shadow-xs"
-                    >
-                      <ShieldAlert size={13} />
-                      <span>Inspect Audit</span>
-                    </button>
-                    <Link
-                      href={`/demo/manufacturer/dispatch/${entry.allocation._id}`}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand-primary)] hover:underline shrink-0"
-                    >
-                      <span>Full Page</span>
-                      <ArrowUpRight size={13} />
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </NoticeBanner>
-      )}
-
       {filteredQueue.length === 0 ? (
-        <EmptyState
-          title="Nothing to dispatch"
-          body="Allocations to custodians appear here."
-        />
+        <EmptyState title="None" />
       ) : (
         <div className="flex flex-col gap-3">
           {filteredQueue.map(({ allocation, batch, toName }) => {
@@ -322,16 +279,23 @@ export default function ManufacturerDispatchPage() {
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-2 mt-1 text-xs text-[var(--ink-muted)]">
-                      <span className="font-medium text-[var(--ink)]">{allocation.reference}</span>
-                      <span className="text-[var(--line-strong)]">•</span>
-                      <span>To: <strong className="font-medium text-[var(--ink)]">{toName}</strong></span>
-                      {allocation.status === "in_transit" && (
+                    {/* Only what a dispatch decision needs: where it goes and by when.
+                        The reference and history live on the detail page. */}
+                    <div className="flex flex-wrap items-center gap-x-2 mt-1 text-xs text-[var(--ink-muted)] tabular-nums">
+                      <span>To <strong className="font-medium text-[var(--ink)]">{toName}</strong></span>
+                      {allocation.status === "in_transit" ? (
                         <>
-                          <span className="text-[var(--line-strong)] hidden sm:inline">•</span>
-                          <span className="hidden sm:inline">Sent {formatDate(allocation.dispatchedAt)}</span>
+                          <span className="text-[var(--line-strong)]">•</span>
+                          <span>Sent {formatDate(allocation.dispatchedAt)}</span>
                         </>
-                      )}
+                      ) : allocation.expectedDispatchDate ? (
+                        <>
+                          <span className="text-[var(--line-strong)]">•</span>
+                          <span className={isOverdue ? "font-medium text-[#8A3D11]" : undefined}>
+                            Due {formatDate(allocation.expectedDispatchDate)}
+                          </span>
+                        </>
+                      ) : null}
                     </div>
                   </div>
                 </div>

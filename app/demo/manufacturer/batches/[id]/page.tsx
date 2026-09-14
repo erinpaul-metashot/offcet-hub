@@ -17,7 +17,6 @@ export default function ManufacturerBatchDetailPage() {
     return (
       <EmptyState
         title="Batch not found"
-        body="It may have been removed."
       />
     );
   }
