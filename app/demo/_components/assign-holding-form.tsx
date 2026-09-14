@@ -48,10 +48,6 @@ export function AssignHoldingForm({
         </NoticeBanner>
       )}
 
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-        Assign from {custodian.name} to a maker
-      </p>
-
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Maker">
           <Select value={makerOrgId} onChange={(event) => setMakerOrgId(event.target.value)}>
@@ -89,7 +85,7 @@ export function AssignHoldingForm({
 
       {isOverLimit && (
         <NoticeBanner tone="warning" title="More than is unassigned">
-          Only {formatQuantity(uncommitted, batch.unit)} of this lot is still unassigned.
+          Only {formatQuantity(uncommitted, batch.unit)} of this batch is still unassigned.
         </NoticeBanner>
       )}
 

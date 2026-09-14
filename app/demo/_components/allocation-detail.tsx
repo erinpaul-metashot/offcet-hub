@@ -21,7 +21,7 @@ export function AllocationDetailView({
 }) {
   const store = useDemoStore();
   const { run, error, pending } = useAction();
-  const { allocation, batch, project, fromName, toName, fromFacility, toFacility } = detail;
+  const { allocation, batch, fromName, toName, fromFacility, toFacility } = detail;
 
   const [resolution, setResolution] = useState<DiscrepancyResolution>("loss_confirmed");
   const [note, setNote] = useState("");
@@ -33,17 +33,11 @@ export function AllocationDetailView({
           ← Back
         </Button>
         <CirkaBadge status={allocation.status} />
-        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-          {allocation.hop.replace(/_/g, " ")}
-        </span>
       </div>
 
       <SectionHeading
         eyebrow={allocation.reference}
         title={`${fromName} → ${toName}`}
-        description={
-          batch ? `${batch.name}${project ? ` · ${project.title}` : ""}` : project?.title
-        }
         action={
           batch ? (
             <Button as={Link} href={`/demo/admin/batches/${batch._id}`} variant="secondary" size="sm">
@@ -129,14 +123,11 @@ export function AllocationDetailView({
         <section className="space-y-4 rounded-2xl border border-[#B4531A] bg-[#FBE9DC] p-6">
           <div>
             <p className="text-sm font-semibold text-[#8A3D11]">
-              {formatQuantity(allocation.quantityDiscrepancy ?? 0, allocation.unit)} is sitting in the
-              Unexplained pot
+              {formatQuantity(allocation.quantityDiscrepancy ?? 0, allocation.unit)} unexplained
             </p>
-            <p className="text-sm text-[#8A3D11]">
-              {allocation.discrepancyReason} Closing it as a loss writes the quantity off; closing it
-              as a counting correction returns it to available stock. Either way the batch total stays
-              the same.
-            </p>
+            {allocation.discrepancyReason && (
+              <p className="text-sm text-[#8A3D11]">{allocation.discrepancyReason}</p>
+            )}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Resolution">
@@ -146,7 +137,13 @@ export function AllocationDetailView({
               >
                 {DISCREPANCY_RESOLUTIONS.map((value) => (
                   <option key={value} value={value}>
-                    {value.replace(/_/g, " ")}
+                    {`${value.replace(/_/g, " ")}${
+                      value === "loss_confirmed"
+                        ? " → written off"
+                        : value === "count_corrected"
+                          ? " → back to available"
+                          : ""
+                    }`}
                   </option>
                 ))}
               </Select>

@@ -57,14 +57,13 @@ export function MarketplaceLotDetail({
   const { run, error, pending } = useAction();
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitted, setSubmitted] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const lot = getMarketplaceLot(store.db, scope, batchId);
 
   if (!lot) {
     return (
-      <NoticeBanner tone="blocking" title="That lot does not exist">
-        It may have been withdrawn by its owner.
-      </NoticeBanner>
+      <NoticeBanner tone="blocking" title="That lot does not exist" />
     );
   }
 
@@ -92,7 +91,6 @@ export function MarketplaceLotDetail({
     });
   };
 
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const currentImage = selectedImage || batch?.imageUrls?.[0];
 
   return (
@@ -173,9 +171,6 @@ export function MarketplaceLotDetail({
           </Panel>
 
           <Panel className="space-y-4 p-6">
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            The material
-          </h3>
           <p className="text-sm leading-relaxed text-[var(--ink)]">{batch.description}</p>
           <dl>
             <DataRow label="Reference" value={batch.reference} />
@@ -218,17 +213,11 @@ export function MarketplaceLotDetail({
 
         {/* The buy box. It follows you down the page, because it is the only action here. */}
         <div className="space-y-6 lg:sticky lg:top-6">
+          {lot.enquiryCount > 0 && (
           <Panel className="space-y-3 p-5">
-            <div className="flex items-center gap-2.5">
+            <p className="flex items-center gap-2.5 text-sm font-medium text-[var(--ink)]">
               <Users size={15} className="text-[var(--ink-muted)]" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                Interest
-              </span>
-            </div>
-            <p className="text-sm leading-relaxed text-[var(--ink)]">
-              {lot.enquiryCount === 0
-                ? "No one has enquired about this lot yet."
-                : `${lot.enquiryCount} organisation${lot.enquiryCount === 1 ? " has" : "s have"} an open enquiry. Enquiring does not reserve anything — CIRKA weighs them against each other and decides.`}
+              {lot.enquiryCount} open enquir{lot.enquiryCount === 1 ? "y" : "ies"}
             </p>
 
             {lot.allEnquiries && lot.allEnquiries.length > 0 && (
@@ -249,13 +238,10 @@ export function MarketplaceLotDetail({
               </ul>
             )}
           </Panel>
+          )}
 
-          {canEnquire && (
+          {canEnquire && !(lot.blocker && !openEnquiry && !submitted) && (
             <Panel className="space-y-4 p-5">
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                Request this lot
-              </h3>
-
               {error && (
                 <NoticeBanner tone="blocking" title="The enquiry was not sent">
                   {error}
@@ -270,21 +256,16 @@ export function MarketplaceLotDetail({
                     </span>
                     <CirkaBadge status={openEnquiry.status} />
                   </div>
-                  <p className="text-sm leading-relaxed text-[var(--ink-muted)]">
-                    You asked for {formatQuantity(openEnquiry.quantityNeeded, openEnquiry.unit)} on{" "}
-                    {formatDate(openEnquiry.createdAt)}. CIRKA is reviewing it against the other
-                    demand on this lot and will propose or decline.
+                  <p className="text-sm tabular-nums text-[var(--ink-muted)]">
+                    {formatQuantity(openEnquiry.quantityNeeded, openEnquiry.unit)} ·{" "}
+                    {formatDate(openEnquiry.createdAt)}
                   </p>
                 </div>
               ) : submitted ? (
                 <p className="text-sm leading-relaxed text-[var(--ink-muted)]">
-                  Sent. It is now on CIRKA&rsquo;s queue.
+                  Sent
                 </p>
-              ) : lot.blocker ? (
-                <p className="text-sm leading-relaxed text-[var(--ink-muted)]">
-                  Nothing to ask for while the lot is unavailable.
-                </p>
-              ) : (
+              ) : lot.blocker ? null : (
                 <form onSubmit={submit} className="space-y-4">
                   <Field
                     label="Quantity"
@@ -303,7 +284,6 @@ export function MarketplaceLotDetail({
                   <Field
                     label="What you will make"
                     required
-                    hint="This is what CIRKA weighs one enquiry against another on"
                   >
                     <Textarea
                       value={form.intendedUse}
@@ -335,7 +315,7 @@ export function MarketplaceLotDetail({
                     />
                   </Field>
 
-                  <Field label="Anything else CIRKA should know">
+                  <Field label="Note">
                     <Textarea
                       value={form.note}
                       onChange={(event) => setForm({ ...form, note: event.target.value })}
@@ -343,7 +323,7 @@ export function MarketplaceLotDetail({
                   </Field>
 
                   <Button type="submit" disabled={pending} className="w-full">
-                    {pending ? "Sending…" : "Request this lot from CIRKA"}
+                    {pending ? "Sending…" : "Request lot"}
                   </Button>
                 </form>
               )}

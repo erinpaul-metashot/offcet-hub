@@ -68,17 +68,10 @@ export function NewRequestDrawer({
         onClick={(event: React.MouseEvent) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Submit a request"
+        aria-label="New request"
       >
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--line)] px-6 py-5">
-          <div className="space-y-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              New request
-            </p>
-            <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Submit a request
-            </h2>
-          </div>
+          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">New request</h2>
           <button
             type="button"
             onClick={onClose}

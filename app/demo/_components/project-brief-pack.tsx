@@ -81,10 +81,7 @@ export function BriefResourcePicker({
 
   return (
     <div className="space-y-3">
-      <Field
-        label="What should the makers take from it?"
-        hint="This note travels with the file — it is the instruction, not a filename."
-      >
+      <Field label="Note for makers">
         <Input
           value={caption}
           onChange={(event) => setCaption(event.target.value)}
@@ -169,9 +166,9 @@ export function BriefResourceDraftList({
               </span>
               <KindTag kind={draft.kind} />
             </div>
-            <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
-              {draft.caption ?? "No note for the makers yet."}
-            </p>
+            {draft.caption && (
+              <p className="text-xs leading-relaxed text-[var(--ink-muted)]">{draft.caption}</p>
+            )}
           </div>
           <button
             type="button"
@@ -186,15 +183,9 @@ export function BriefResourceDraftList({
   );
 }
 
-export function ProjectBriefPack({
-  items,
-  emptyBody,
-}: {
-  items: EvidenceItem[];
-  emptyBody: string;
-}) {
+export function ProjectBriefPack({ items }: { items: EvidenceItem[] }) {
   if (items.length === 0) {
-    return <EmptyState title="Nothing to work from yet" body={emptyBody} />;
+    return <EmptyState title="No files yet" />;
   }
 
   const visuals = items.filter((item) => item.mimeType.startsWith("image/"));

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AlertTriangle, Clock, Zap } from "lucide-react";
 import { EmptyState } from "@/components/ui";
 import { getCustodianDashboard } from "../../_mock/selectors-custodian";
@@ -27,30 +28,27 @@ function groupOf(entry: ExpectedArrival): GroupKey {
 
 const GROUP_META: Record<
   GroupKey,
-  { label: string; Icon: typeof Zap; iconBg: string; emptyNote: string }
+  { label: string; Icon: typeof Zap; iconBg: string }
 > = {
   action: {
     label: "Needs your action",
     Icon: Zap,
     iconBg: "bg-[var(--brand-primary)]",
-    emptyNote: "Nothing needs your attention right now.",
   },
   waiting: {
     label: "Waiting on others",
     Icon: Clock,
     iconBg: "bg-[var(--charcoal,#545454)]",
-    emptyNote: "Nothing is pending with a manufacturer right now.",
   },
   issue: {
     label: "Open with CIRKA",
     Icon: AlertTriangle,
     iconBg: "bg-[#C8A96B]",
-    emptyNote: "No open discrepancies or reported issues.",
   },
 };
 
 /* ─────────────────────────────────────────────────────────────────────
-   Compact arrival row: no inline expand, just an arrow hint
+   Compact arrival row: the whole card opens the drawer
    ───────────────────────────────────────────────────────────────────── */
 function ArrivalRow({
   entry,
@@ -101,19 +99,6 @@ function ArrivalRow({
           </div>
         </div>
       </div>
-
-      {/* Arrow hint */}
-      <div
-        className={[
-          "mt-3 flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.14em]",
-          "transition-colors duration-150",
-          selected
-            ? "text-[var(--brand-primary)]"
-            : "text-[var(--ink-muted)] group-hover:text-[var(--brand-primary)]",
-        ].join(" ")}
-      >
-        Open details →
-      </div>
     </button>
   );
 }
@@ -128,10 +113,23 @@ export default function CustodianArrivalsPage() {
 
   const view = getCustodianDashboard(store.db, scope);
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  /* A dashboard tile with exactly one arrival links here with ?id=, opening it straight away. */
+  const searchParams = useSearchParams();
+  const linked = view.arrivals.find((a) => a.allocation._id === searchParams.get("id"));
+
+  const [selectedId, setSelectedId] = useState<string | null>(() => linked?.allocation._id ?? null);
   const [drafts, setDrafts] = useState<
     Record<string, { received: string; note: string }>
-  >({});
+  >(() =>
+    linked
+      ? {
+          [linked.allocation._id]: {
+            received: String(linked.allocation.quantityDispatched ?? linked.allocation.quantityAllocated),
+            note: "",
+          },
+        }
+      : {},
+  );
 
   const selectedEntry = view.arrivals.find(
     (a) => a.allocation._id === selectedId,
@@ -157,10 +155,6 @@ export default function CustodianArrivalsPage() {
 
   const groups: GroupKey[] = ["action", "waiting", "issue"];
 
-  /* Metric counts */
-  const actionCount = view.arrivals.filter(
-    (a) => groupOf(a) === "action",
-  ).length;
   const totalKg = view.arrivals.reduce(
     (sum, a) => sum + a.allocation.quantityAllocated,
     0,
@@ -168,7 +162,7 @@ export default function CustodianArrivalsPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading title="Incoming Shipments" />
+      <SectionHeading title="Expected arrivals" />
 
       {error && (
         <NoticeBanner tone="blocking" title="That step was refused">
@@ -177,50 +171,13 @@ export default function CustodianArrivalsPage() {
       )}
 
       {view.arrivals.length === 0 ? (
-        <EmptyState
-          title="Nothing expected"
-          body="Proposed allocations appear here."
-        />
+        <EmptyState title="Nothing expected" />
       ) : (
         <>
-          {/* ── Metric strip ── */}
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--line)] sm:grid-cols-4">
-            {[
-              {
-                num: view.arrivals.length,
-                label: "Total expected",
-                accent: false,
-              },
-              { num: actionCount, label: "Needs action", accent: true },
-              {
-                num: view.arrivals.filter((a) => groupOf(a) === "issue").length,
-                label: "Open issues",
-                accent: false,
-              },
-              {
-                num: `${totalKg} kg`,
-                label: "Expected volume",
-                accent: false,
-              },
-            ].map(({ num, label, accent }) => (
-              <div
-                key={label}
-                className="bg-[var(--paper)] px-5 py-4 text-center"
-              >
-                <p
-                  className={[
-                    "text-2xl font-extrabold tabular-nums tracking-[-0.03em]",
-                    accent ? "text-[var(--brand-primary)]" : "text-[var(--ink)]",
-                  ].join(" ")}
-                >
-                  {num}
-                </p>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.10em] text-[var(--ink-muted)]">
-                  {label}
-                </p>
-              </div>
-            ))}
-          </div>
+          <p className="text-sm tabular-nums text-[var(--ink-muted)]">
+            <strong className="text-[var(--ink)]">{view.arrivals.length}</strong> expected ·{" "}
+            <strong className="text-[var(--ink)]">{totalKg} kg</strong>
+          </p>
 
           {/* ── Action groups ── */}
           <div className="space-y-8">
@@ -257,7 +214,7 @@ export default function CustodianArrivalsPage() {
                   {/* Cards */}
                   {items.length === 0 ? (
                     <p className="rounded-2xl border border-dashed border-[var(--line)] px-5 py-5 text-sm text-[var(--ink-muted)]">
-                      {meta.emptyNote}
+                      None
                     </p>
                   ) : (
                     <div className="space-y-3">

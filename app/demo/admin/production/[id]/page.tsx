@@ -40,7 +40,7 @@ export default function AdminProductionDetailPage() {
   const [reviewNotes, setReviewNotes] = useState("");
 
   if (!detail) {
-    return <EmptyState title="Production batch not found" body="The demo data may have been reset." />;
+    return <EmptyState title="Production batch not found" />;
   }
 
   const { production, balance, costs } = detail;
@@ -60,7 +60,6 @@ export default function AdminProductionDetailPage() {
       <SectionHeading
         eyebrow={`${production.reference} · ${detail.makerName}`}
         title={production.productName}
-        description={production.productDescription}
       />
 
       {error && <NoticeBanner tone="blocking" title="That review step was refused">{error}</NoticeBanner>}
@@ -112,7 +111,7 @@ export default function AdminProductionDetailPage() {
 
           {balance.balanced ? (
             <p className="mt-4 text-sm text-[var(--brand-secondary)]">
-              The numbers balance: {balance.received} received = {balance.accountedFor} accounted for.
+              Balanced · {balance.received} received, {balance.accountedFor} accounted for
             </p>
           ) : (
             <NoticeBanner tone="warning" title="The maker's figures do not balance">
@@ -125,7 +124,7 @@ export default function AdminProductionDetailPage() {
 
         <Panel className="p-6">
           <h2 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            The run
+            Run
           </h2>
           <dl>
             <DataRow label="Maker" value={detail.makerName} />
@@ -198,7 +197,7 @@ export default function AdminProductionDetailPage() {
 
         <Panel className="p-6">
           <h2 className="mb-3 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Costs: CIRKA and maker only
+            Costs
           </h2>
           {costs ? (
             <dl>
@@ -211,12 +210,12 @@ export default function AdminProductionDetailPage() {
               <DataRow label="Base cost per unit" value={formatCurrency(costs.baseCostPerUnit, costs.currency)} />
               <DataRow label="Revenue" value={formatCurrency(costs.revenueGenerated, costs.currency)} />
               <DataRow
-                label="Shared with the brand"
-                value={costs.shareCostPerUnitWithBrand ? "Cost per unit only" : "Nothing"}
+                label="Shared with brand"
+                value={costs.shareCostPerUnitWithBrand ? "Cost per unit" : "-"}
               />
             </dl>
           ) : (
-            <p className="text-sm text-[var(--ink-muted)]">No costs recorded for this batch.</p>
+            <p className="text-sm text-[var(--ink-muted)]">No costs recorded</p>
           )}
         </Panel>
       </div>
@@ -224,7 +223,7 @@ export default function AdminProductionDetailPage() {
       {detail.suitability && (
         <Panel className="p-6">
           <h2 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Material suitability feedback
+            Suitability
           </h2>
           <dl>
             <DataRow
@@ -274,7 +273,7 @@ export default function AdminProductionDetailPage() {
                   )
                 }
               >
-                Mark CIRKA reviewed
+                Approve
               </Button>
               <Button
                 size="sm"
@@ -290,7 +289,7 @@ export default function AdminProductionDetailPage() {
                   )
                 }
               >
-                Send back for more detail
+                Send back
               </Button>
             </div>
           </div>

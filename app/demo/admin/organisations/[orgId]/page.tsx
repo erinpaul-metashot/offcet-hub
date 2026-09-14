@@ -21,7 +21,7 @@ export default function OrganisationDetailPage() {
         <Button variant="secondary" onClick={() => router.back()}>
           &larr; Back
         </Button>
-        <EmptyState title="Organisation not found" body="It may have been removed." />
+        <EmptyState title="Organisation not found" />
       </div>
     );
   }
@@ -32,10 +32,9 @@ export default function OrganisationDetailPage() {
     <div className="space-y-10">
       <div>
         <Button variant="secondary" size="sm" onClick={() => router.back()} className="mb-6">
-          &larr; Back to Organisations
+          &larr; Organisations
         </Button>
         <SectionHeading
-          eyebrow="Organisation Details"
           title={organisation.name}
         />
         <div className="mt-4 flex flex-wrap gap-2 items-center">
@@ -49,45 +48,28 @@ export default function OrganisationDetailPage() {
           <span className="text-sm text-[var(--ink-muted)]">
             Joined {formatDate(organisation.createdAt)}
           </span>
+          <span className="text-sm tabular-nums text-[var(--ink-muted)]">
+            · {facilities.length} site{facilities.length === 1 ? "" : "s"} · {batches.length} batch{batches.length === 1 ? "" : "es"} ·{" "}
+            {projects.length} project{projects.length === 1 ? "" : "s"} · {allocations.length + requests.length} transactions
+          </span>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Panel className="p-6 flex flex-col items-center justify-center text-center">
-          <p className="text-3xl font-bold text-[var(--ink)]">{facilities.length}</p>
-          <p className="text-xs uppercase tracking-widest text-[var(--ink-muted)] mt-1">Facilities</p>
-        </Panel>
-        <Panel className="p-6 flex flex-col items-center justify-center text-center">
-          <p className="text-3xl font-bold text-[var(--ink)]">{batches.length}</p>
-          <p className="text-xs uppercase tracking-widest text-[var(--ink-muted)] mt-1">Batches</p>
-        </Panel>
-        <Panel className="p-6 flex flex-col items-center justify-center text-center">
-          <p className="text-3xl font-bold text-[var(--ink)]">{projects.length}</p>
-          <p className="text-xs uppercase tracking-widest text-[var(--ink-muted)] mt-1">Projects</p>
-        </Panel>
-        <Panel className="p-6 flex flex-col items-center justify-center text-center">
-          <p className="text-3xl font-bold text-[var(--ink)]">{allocations.length + requests.length}</p>
-          <p className="text-xs uppercase tracking-widest text-[var(--ink-muted)] mt-1">Transactions</p>
-        </Panel>
       </div>
 
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-[var(--ink)] border-b border-[var(--line)] pb-2">
-          Organisation record
+          Record
         </h3>
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel className="p-6">
             <dl>
-              <DataRow label="Legal / trading name" value={organisation.name} />
-              <DataRow label="Type" value={ORGANISATION_TYPE_LABELS[organisation.type]} />
               <DataRow
                 label="Company number"
-                value={organisation.registrationNumber ?? "Not recorded"}
+                value={organisation.registrationNumber ?? "-"}
                 hint="Protected"
               />
               <DataRow
                 label="Tax / VAT reference"
-                value={organisation.taxId ?? "Not recorded"}
+                value={organisation.taxId ?? "-"}
                 hint="Protected"
               />
               <DataRow
@@ -103,28 +85,28 @@ export default function OrganisationDetailPage() {
                       {organisation.websiteUrl.replace(/^https?:\/\//, "")}
                     </a>
                   ) : (
-                    "Not recorded"
+                    "-"
                   )
                 }
               />
               <DataRow
                 label="Last updated"
-                value={organisation.updatedAt ? formatDate(organisation.updatedAt) : "Never edited"}
+                value={organisation.updatedAt ? formatDate(organisation.updatedAt) : "-"}
               />
             </dl>
           </Panel>
           <Panel className="p-6">
             <dl>
-              <DataRow label="Address" value={organisation.addressLine ?? "Not recorded"} />
-              <DataRow label="City" value={organisation.city ?? "Not recorded"} />
-              <DataRow label="Postcode" value={organisation.postcode ?? "Not recorded"} />
+              <DataRow label="Address" value={organisation.addressLine ?? "-"} />
+              <DataRow label="City" value={organisation.city ?? "-"} />
+              <DataRow label="Postcode" value={organisation.postcode ?? "-"} />
               <DataRow label="Country" value={organisation.country} />
               <DataRow
                 label="Coordinates"
                 value={
                   organisation.latitude !== undefined && organisation.longitude !== undefined
                     ? `${organisation.latitude.toFixed(4)}, ${organisation.longitude.toFixed(4)}`
-                    : "Not recorded"
+                    : "-"
                 }
               />
               <DataRow
@@ -142,7 +124,7 @@ export default function OrganisationDetailPage() {
                       ))}
                     </span>
                   ) : (
-                    "None recorded"
+                    "-"
                   )
                 }
               />

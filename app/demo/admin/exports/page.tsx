@@ -13,7 +13,7 @@ export default function AdminExportsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Data Exports" />
+      <SectionHeading title="Exports" />
 
       {error && <NoticeBanner tone="blocking" title="Export failed">{error}</NoticeBanner>}
 

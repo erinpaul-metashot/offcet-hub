@@ -14,7 +14,7 @@ export default function AdminBatchDetailPage() {
   const detail = getBatchDetail(db, scope, params.id);
 
   if (!detail) {
-    return <EmptyState title="Batch not found" body="The demo data may have been reset." />;
+    return <EmptyState title="Batch not found" />;
   }
 
   return <BatchDetailView detail={detail} role="admin" backHref="/demo/admin/batches" />;

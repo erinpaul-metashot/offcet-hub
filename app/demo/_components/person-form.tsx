@@ -5,9 +5,7 @@ import { Button, Field, Input, Select } from "@/components/ui";
 import {
   CIRKA_ROLES,
   ORG_ROLES,
-  ORG_ROLE_DESCRIPTIONS,
   ORG_ROLE_LABELS,
-  ROLE_DESCRIPTIONS,
   ROLE_LABELS,
   type CirkaRole,
   type OrgRole,
@@ -102,8 +100,7 @@ export function PersonForm({
         </NoticeBanner>
       )}
 
-      <FormSection title="Person">
-        <Field label="Name" required>
+      <Field label="Name" required>
           <Input
             value={form.name}
             onChange={(event) => update("name", event.target.value)}
@@ -111,17 +108,15 @@ export function PersonForm({
             autoFocus
           />
         </Field>
-      </FormSection>
 
       <FormSection
         title="Contact"
         hint="Protected"
       >
         <Field
-          label="Email"
+          label="Login email"
           required
           error={emailLooksWrong ? "That is not a valid email address" : undefined}
-          hint={emailLooksWrong ? undefined : "Doubles as the login."}
         >
           <Input
             type="email"
@@ -130,7 +125,7 @@ export function PersonForm({
             placeholder="name@company.com"
           />
         </Field>
-        <Field label="Phone" hint="Optional: recorded only where it is needed.">
+        <Field label="Phone">
           <Input
             type="tel"
             value={form.phone}
@@ -141,7 +136,7 @@ export function PersonForm({
       </FormSection>
 
       <FormSection title="Access">
-        <Field label="CIRKA role" hint={ROLE_DESCRIPTIONS[form.role]}>
+        <Field label="CIRKA role">
           <Select
             value={form.role}
             onChange={(event) => update("role", event.target.value as CirkaRole)}
@@ -153,7 +148,7 @@ export function PersonForm({
             ))}
           </Select>
         </Field>
-        <Field label="Organisation role" hint={ORG_ROLE_DESCRIPTIONS[form.orgRole]}>
+        <Field label="Organisation role">
           <Select
             value={form.orgRole}
             onChange={(event) => update("orgRole", event.target.value as OrgRole)}

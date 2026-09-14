@@ -116,11 +116,11 @@ export function OrganisationFacilities({
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--line)] pb-2">
         <div className="space-y-1">
           <h3 className="text-lg font-semibold text-[var(--ink)]">Sites ({facilities.length})</h3>
-          <p className="text-xs text-[var(--ink-muted)]">
-            {activeCount === facilities.length
-              ? "Sites where material is collected, kept, or worked on."
-              : `${activeCount} taking material · ${facilities.length - activeCount} deactivated.`}
-          </p>
+          {activeCount !== facilities.length && (
+            <p className="text-xs tabular-nums text-[var(--ink-muted)]">
+              {activeCount} active · {facilities.length - activeCount} deactivated
+            </p>
+          )}
         </div>
         <Button size="sm" onClick={() => setEditing({})}>
           Add site
@@ -135,10 +135,7 @@ export function OrganisationFacilities({
 
       {facilities.length === 0 ? (
         <Panel className="p-8 text-center">
-          <p className="text-sm font-semibold text-[var(--ink)]">No sites recorded</p>
-          <p className="mt-1 text-sm text-[var(--ink-muted)]">
-            {organisation.name} needs one before it can log material.
-          </p>
+          <p className="text-sm font-semibold text-[var(--ink)]">No sites yet</p>
         </Panel>
       ) : (
         <Panel className="overflow-hidden p-0">
@@ -181,16 +178,11 @@ export function OrganisationFacilities({
                       </p>
                     )}
 
-                    {canRemove ? (
-                      <p className="text-xs text-[var(--ink-muted)]">
-                        Nothing has been recorded here yet.
-                      </p>
-                    ) : (
+                    {!canRemove && (
                       <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 pt-0.5">
                         <Reference label="Batches" value={batchCount} />
                         <Reference label="Allocations" value={allocationCount} />
                         <Reference label="Production" value={productionCount} />
-                        <span className="text-xs text-[#8A3D11]">Deactivate only</span>
                       </div>
                     )}
                   </div>
@@ -245,8 +237,8 @@ export function OrganisationFacilities({
 
       {editing && (
         <Modal
-          eyebrow={editing.facility ? "Edit site" : "New site"}
-          title={editing.facility?.name ?? `Add a site to ${organisation.name}`}
+          eyebrow={editing.facility ? "Edit site" : undefined}
+          title={editing.facility?.name ?? "New site"}
           onClose={closeForm}
         >
           <FacilityForm
@@ -263,14 +255,13 @@ export function OrganisationFacilities({
 
       {removing && (
         <ConfirmDialog
-          eyebrow="Remove site"
           title={`Remove ${removing.name}?`}
           confirmLabel="Remove it"
           error={removal.error}
           pending={removal.pending}
           onCancel={closeRemoval}
           onConfirm={() => handleRemove(removing)}
-          body="Nothing has been recorded at this site, so it can go."
+          body="This can't be undone."
         />
       )}
     </section>

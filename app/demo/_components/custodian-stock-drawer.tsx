@@ -138,10 +138,7 @@ export function CustodianStockDrawer({
           </div>
 
           {/* Pots Bar */}
-          <div className="space-y-2 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Pot Allocation Breakdown
-            </p>
+          <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-4">
             <QuantityPotsBar
               slices={potSlices(batch)}
               total={batch.quantityOriginal}
@@ -166,9 +163,7 @@ export function CustodianStockDrawer({
               Sent to makers
             </p>
             {outgoing.length === 0 ? (
-              <p className="text-sm text-[var(--ink-muted)]">
-                CIRKA has not assigned any of this lot to a maker yet. You hold it until they do.
-              </p>
+              <p className="text-sm text-[var(--ink-muted)]">None yet</p>
             ) : (
               <ul className="space-y-2">
                 {outgoing.map(({ allocation, makerName }) => (
@@ -193,7 +188,7 @@ export function CustodianStockDrawer({
           {/* Damage report */}
           <div className="space-y-4 rounded-2xl bg-[var(--surface)] p-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Report damage in storage
+              Report damage
             </p>
 
             <Field

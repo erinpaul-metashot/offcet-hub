@@ -85,10 +85,10 @@ function ScaleComparison({
           ].join(" ")}
         >
           {delta > 0
-            ? `${delta} ${unit} short of dispatch note: held as unexplained`
+            ? `${delta} ${unit} short · held as unexplained`
             : delta < 0
-              ? `${Math.abs(delta)} ${unit} over the dispatch note: also flagged`
-              : "Matches the dispatch note exactly"}
+              ? `${Math.abs(delta)} ${unit} over · flagged`
+              : "Matches"}
         </p>
       )}
     </div>
@@ -120,10 +120,14 @@ export function CustodianArrivalDrawer({
     !openIssue && ["in_transit", "received", "discrepancy"].includes(allocation.status);
   const [issueForm, setIssueForm] = useState<{ issue: ArrivalIssue; note: string } | null>(null);
   const receivedNum = draft.received !== "" ? Number(draft.received) : null;
-  const shortfall =
-    receivedNum !== null && !isNaN(receivedNum)
-      ? Math.round((dispatched - receivedNum) * 1000) / 1000
-      : 0;
+  const respond = (accept: boolean) =>
+    run(() =>
+      store.respondToAllocation("custodian", {
+        allocationId: allocation._id,
+        accept,
+        note: accept ? "Space confirmed." : "No capacity for this quantity.",
+      }),
+    );
 
   // Escape key + scroll lock
   useEffect(() => {
@@ -270,60 +274,11 @@ export function CustodianArrivalDrawer({
             )}
           </dl>
 
-          {/* Status-specific content */}
-
-          {/* Proposed: accept / decline */}
-          {allocation.status === "proposed" && (
-            <div className="flex flex-wrap gap-3 border-t border-[var(--line)] pt-4">
-              <Button
-                disabled={pending}
-                onClick={() =>
-                  run(() =>
-                    store.respondToAllocation("custodian", {
-                      allocationId: allocation._id,
-                      accept: true,
-                      note: "Space confirmed.",
-                    }),
-                  )
-                }
-              >
-                Accept allocation
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={pending}
-                onClick={() =>
-                  run(() =>
-                    store.respondToAllocation("custodian", {
-                      allocationId: allocation._id,
-                      accept: false,
-                      note: "No capacity for this quantity.",
-                    }),
-                  )
-                }
-              >
-                Decline
-              </Button>
-            </div>
-          )}
-
-          {/* Accepted / awaiting dispatch */}
-          {(allocation.status === "accepted" ||
-            allocation.status === "awaiting_dispatch") && (
-            <NoticeBanner tone="info" title={`Waiting on ${fromName}`} />
-          )}
-
           {/* In transit: receipt form */}
           {allocation.status === "in_transit" && (
-            <div className="space-y-4 rounded-2xl bg-[var(--surface)] p-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                Confirm receipt
-              </p>
+            <div className="rounded-2xl bg-[var(--surface)] p-5">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                  label={`Quantity received (${allocation.unit})`}
-                  hint={`Dispatch note says ${formatQuantity(dispatched, allocation.unit)}.`}
-                >
+                <Field label={`Quantity received (${allocation.unit})`}>
                   <Input
                     type="number"
                     min="0"
@@ -344,33 +299,11 @@ export function CustodianArrivalDrawer({
                   />
                 </Field>
               </div>
-              {shortfall > 0 && (
-                <NoticeBanner
-                  tone="warning"
-                  title={`${shortfall} ${allocation.unit} short`}
-                >
-                  Confirming will move {draft.received} {allocation.unit} into
-                  your holding and hold {shortfall} {allocation.unit} as
-                  unexplained. CIRKA raises this with the manufacturer before
-                  deciding whether it is a loss or a counting error.
-                </NoticeBanner>
-              )}
             </div>
           )}
 
-          {/* Discrepancy */}
           {allocation.status === "discrepancy" && (
-            <NoticeBanner tone="blocking" title="Discrepancy open with CIRKA">
-              You received{" "}
-              {formatQuantity(
-                allocation.quantityReceived ?? 0,
-                allocation.unit,
-              )}{" "}
-              against{" "}
-              {formatQuantity(dispatched, allocation.unit)} dispatched.{" "}
-              {allocation.quantityDiscrepancy} {allocation.unit} is held as
-              unexplained until an admin closes it.
-            </NoticeBanner>
+            <NoticeBanner tone="blocking" title="Open with CIRKA" />
           )}
 
           {/* Reported issue: open with CIRKA, no quantity moved */}
@@ -392,17 +325,16 @@ export function CustodianArrivalDrawer({
               <button
                 type="button"
                 onClick={() => setIssueForm({ issue: "damaged", note: "" })}
-                className="w-full rounded-2xl border border-dashed border-[var(--line-strong)] px-5 py-4 text-left text-sm text-[var(--ink-muted)] transition-colors duration-150 ease-[var(--ease-out)] hover:border-[var(--brand-primary)] hover:text-[var(--ink)]"
+                className="w-full rounded-2xl border border-dashed border-[var(--line-strong)] px-5 py-3 text-left text-sm font-semibold text-[var(--ink-muted)] transition-colors duration-150 ease-[var(--ease-out)] hover:border-[var(--brand-primary)] hover:text-[var(--ink)]"
               >
-                <span className="font-semibold">Something else wrong with it?</span> Report
-                damage, contamination or the wrong material →
+                Report an issue
               </button>
             ) : (
               <div className="space-y-4 rounded-2xl border border-[var(--line-strong)] bg-[var(--surface)] p-5">
                 <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                   Report an issue
                 </p>
-                <Field label="What is wrong">
+                <Field label="Issue">
                   <Select
                     value={issueForm.issue}
                     onChange={(e) =>
@@ -416,10 +348,7 @@ export function CustodianArrivalDrawer({
                     ))}
                   </Select>
                 </Field>
-                <Field
-                  label="What did you find"
-                  hint="CIRKA takes this up with the sender. Quantities do not move."
-                >
+                <Field label="Details">
                   <Input
                     value={issueForm.note}
                     onChange={(e) => setIssueForm({ ...issueForm, note: e.target.value })}
@@ -457,8 +386,8 @@ export function CustodianArrivalDrawer({
         </div>
 
         {/* ── Sticky footer ── */}
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--line)] px-6 py-5">
-          {allocation.status === "in_transit" ? (
+        <div className="flex shrink-0 items-center gap-3 border-t border-[var(--line)] px-6 py-5">
+          {allocation.status === "in_transit" && (
             <Button
               disabled={pending || draft.received === ""}
               onClick={() =>
@@ -473,16 +402,18 @@ export function CustodianArrivalDrawer({
             >
               Confirm receipt
             </Button>
-          ) : (
-            <span className="text-sm text-[var(--ink-muted)]">
-              {allocation.status === "proposed"
-                ? "Respond above to accept or decline."
-                : allocation.status === "discrepancy"
-                  ? "Pending CIRKA admin resolution."
-                  : "No action required right now."}
-            </span>
           )}
-          <Button variant="secondary" onClick={onClose}>
+          {allocation.status === "proposed" && (
+            <>
+              <Button disabled={pending} onClick={() => respond(true)}>
+                Accept
+              </Button>
+              <Button variant="secondary" disabled={pending} onClick={() => respond(false)}>
+                Decline
+              </Button>
+            </>
+          )}
+          <Button variant="ghost" className="ml-auto" onClick={onClose}>
             Close
           </Button>
         </div>

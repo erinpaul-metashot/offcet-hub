@@ -101,7 +101,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                 {formatQuantity(request.quantityNeeded, request.unit)}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                Matched so far
+                Matched
               </p>
             </div>
             <button
@@ -149,7 +149,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                     {briefAction.error}
                   </NoticeBanner>
                 )}
-                <Field label="Nothing suitable available?">
+                <Field label="Unfulfillable reason">
                   <Input
                     value={unfulfillableNote}
                     onChange={(event) => setUnfulfillableNote(event.target.value)}
@@ -204,11 +204,6 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
 
       {activeTab === "shortlist" && (
         <Panel className="overflow-hidden animate-stagger-in">
-          <div className="border-b border-[var(--line)] px-6 py-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Ranked by category, quantity & distance
-            </p>
-          </div>
           <div className="divide-y divide-[var(--line)]">
             {candidates.slice(0, 6).map((candidate) => {
               const { batch } = candidate.row;
@@ -248,28 +243,18 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                         Asked for this lot
                       </span>
                     )}
-                    <span
-                      className={
-                        candidate.categoryFit
-                          ? "rounded-full border border-[var(--brand-secondary)] bg-[var(--brand-secondary-muted)] px-2.5 py-1 text-[var(--brand-secondary)]"
-                          : "rounded-full border border-dashed border-[var(--line-strong)] px-2.5 py-1 text-[var(--ink-muted)]"
-                      }
-                    >
-                      {candidate.categoryFit ? "Category fit" : "Category differs"}
-                    </span>
-                    <span
-                      className={
-                        candidate.quantityFit
-                          ? "rounded-full border border-[var(--brand-secondary)] bg-[var(--brand-secondary-muted)] px-2.5 py-1 text-[var(--brand-secondary)]"
-                          : "rounded-full border border-dashed border-[var(--line-strong)] px-2.5 py-1 text-[var(--ink-muted)]"
-                      }
-                    >
-                      {candidate.quantityFit ? "Covers the request" : "Partial quantity"}
-                    </span>
-                    {candidate.distanceKm !== undefined && (
-                      <span className="rounded-full border border-[var(--line)] px-2.5 py-1 text-[var(--ink-muted)]">
-                        {candidate.distanceKm} km away
+                    {!candidate.categoryFit && (
+                      <span className="rounded-full border border-dashed border-[var(--line-strong)] px-2.5 py-1 text-[var(--ink-muted)]">
+                        Category differs
                       </span>
+                    )}
+                    {!candidate.quantityFit && (
+                      <span className="rounded-full border border-dashed border-[var(--line-strong)] px-2.5 py-1 text-[var(--ink-muted)]">
+                        Partial
+                      </span>
+                    )}
+                    {candidate.distanceKm !== undefined && (
+                      <span className="tabular-nums text-[var(--ink-muted)]">{candidate.distanceKm} km</span>
                     )}
                     <ProvenanceChip
                       dataSource={batch.dataSource}
@@ -281,7 +266,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
             })}
             {candidates.length === 0 && (
               <p className="px-6 py-8 text-sm text-[var(--ink-muted)]">
-                No uncommitted quantity right now.
+                No candidates
               </p>
             )}
           </div>
@@ -301,7 +286,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
 
           {matches.length === 0 ? (
             <p className="px-6 py-8 text-sm text-[var(--ink-muted)]">
-              No match proposed yet.
+              No matches yet
             </p>
           ) : (
             <div className="divide-y divide-[var(--line)]">
@@ -330,7 +315,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                       {[
                         match.categoryFitNote,
                         match.availabilityFitNote,
-                        match.distanceKm ? `${match.distanceKm} km between the parties` : undefined,
+                        match.distanceKm ? `${match.distanceKm} km` : undefined,
                       ]
                         .filter(Boolean)
                         .join(" · ")}
@@ -343,7 +328,6 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                         <Input
                           value={decisionNote}
                           onChange={(event) => setDecisionNote(event.target.value)}
-                          placeholder="Approved on the brand's behalf: standalone maker request."
                         />
                       </Field>
                       <div className="flex flex-wrap gap-3">
@@ -361,7 +345,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                             )
                           }
                         >
-                          Approve and create allocation
+                          Approve
                         </Button>
                         <Button
                           size="sm"
@@ -377,7 +361,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                             )
                           }
                         >
-                          Reject and release
+                          Reject
                         </Button>
                         <Button
                           size="sm"

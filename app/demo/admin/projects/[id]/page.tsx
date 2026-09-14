@@ -13,7 +13,7 @@ export default function AdminProjectDetailPage() {
   const proof = getProjectProofView(db, scope, params.id);
 
   if (!proof) {
-    return <EmptyState title="Project not found" body="The demo data may have been reset." />;
+    return <EmptyState title="Project not found" />;
   }
 
   return <ProjectDetailView proof={proof} backHref="/demo/admin/projects" />;

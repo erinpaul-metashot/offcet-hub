@@ -99,10 +99,6 @@ export function ProposeDrawer({
             </NoticeBanner>
           )}
 
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Available → Reserved
-          </p>
-
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={`Quantity (${batchUnit})`}>
               <Input
@@ -147,14 +143,11 @@ export function ProposeDrawer({
             </Field>
           </div>
 
-          <Field
-            label="Rationale"
-            hint="Required · the brand reads this"
-          >
+          <Field label="Rationale" required hint="Visible to the brand">
             <Textarea
               value={values.rationale}
               onChange={(event) => onChange({ ...values, rationale: event.target.value })}
-              placeholder="Closest composition match in the system, 190 km from the maker, and the custodian has handled this material before."
+              placeholder="Why this match"
             />
           </Field>
         </div>

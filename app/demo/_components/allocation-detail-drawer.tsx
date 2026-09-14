@@ -87,7 +87,7 @@ export function AllocationDetailDrawer({
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--line)] px-6 py-5">
           <div className="space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Allocation · {allocation.reference}
+              {allocation.reference}
             </p>
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
@@ -218,7 +218,7 @@ export function AllocationDetailDrawer({
                     setFeedback(emptyFeedback);
                   }}
                 >
-                  {feedbackOpen ? "Close" : "Assess the material"}
+                  {feedbackOpen ? "Close" : "Record suitability"}
                 </Button>
               )}
               {!entry.production && (

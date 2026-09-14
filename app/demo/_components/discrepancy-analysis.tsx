@@ -71,12 +71,12 @@ export function DiscrepancyAnalysisPanel({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#545454]">
-                {isResolved ? "Resolved" : "Discrepancy Alert"}
+                {isResolved ? "Resolved" : "Open"}
               </span>
               <CirkaBadge status={allocation.status} />
             </div>
             <p className="text-base font-extrabold tracking-[-0.02em] text-[#2A2A2A]">
-              -{formatQuantity(shortfall, unit)} shortfall ({variancePercent}% loss)
+              -{formatQuantity(shortfall, unit)} short ({variancePercent}%)
             </p>
           </div>
         </div>
@@ -121,26 +121,23 @@ export function DiscrepancyAnalysisPanel({
 
         <div className="rounded-xl border border-[#FF5C00]/30 bg-[#FFF5F0] p-3.5 space-y-1">
           <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.12em] text-[#FF5C00]">
-            <span>Net Gap</span>
+            <span>Shortfall</span>
             <ShieldAlert size={13} />
           </div>
           <p className="text-xl font-black text-[#FF5C00] tracking-tight">
             -{formatQuantity(shortfall, unit)}
           </p>
           <p className="text-[10px] font-semibold text-[#FF5C00] truncate">
-            {variancePercent}% Transport Loss
+            {variancePercent}% of dispatched
           </p>
         </div>
       </div>
 
       {/* Sleek Visual Reconciliation Bar */}
       <Panel className="p-3.5 space-y-2">
-        <div className="flex items-center justify-between text-xs font-bold">
-          <span className="text-[var(--ink)]">Material Flow Audit</span>
-          <span className="text-[var(--ink-muted)] font-mono">
-            {receivedPercent}% Received / {variancePercent}% Loss
-          </span>
-        </div>
+        <p className="text-right text-xs font-bold font-mono text-[var(--ink-muted)]">
+          {receivedPercent}% received · {variancePercent}% short
+        </p>
         <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--surface)] p-0.5">
           <div
             style={{ width: `${receivedPercent}%` }}
@@ -160,9 +157,13 @@ export function DiscrepancyAnalysisPanel({
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
             Receiver Observation
           </p>
-          <p className="text-xs font-semibold text-[var(--ink)] leading-relaxed italic">
-            "{allocation.discrepancyReason || allocation.notes || "Shortfall recorded upon intake scale weighing."}"
-          </p>
+          {allocation.discrepancyReason || allocation.notes ? (
+            <p className="text-xs font-semibold text-[var(--ink)] leading-relaxed italic">
+              &ldquo;{allocation.discrepancyReason || allocation.notes}&rdquo;
+            </p>
+          ) : (
+            <p className="text-xs text-[var(--ink-muted)]">No reason given</p>
+          )}
           {batch && (
             <div className="pt-1">
               <Link
@@ -179,7 +180,7 @@ export function DiscrepancyAnalysisPanel({
         {/* Audit Status */}
         <Panel className="p-4 space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-            CIRKA Ledger Status
+            Status
           </p>
           {isResolved ? (
             <div className="space-y-1">
@@ -191,14 +192,9 @@ export function DiscrepancyAnalysisPanel({
               </p>
             </div>
           ) : (
-            <div className="space-y-1">
-              <span className="inline-flex rounded-full bg-[#FF5C00]/15 px-2.5 py-0.5 text-xs font-bold text-[#FF5C00]">
-                Isolated in Unexplained Pot
-              </span>
-              <p className="text-[11px] text-[var(--ink-muted)]">
-                CIRKA Admin scale telemetry audit active
-              </p>
-            </div>
+            <span className="inline-flex rounded-full bg-[#FF5C00]/15 px-2.5 py-0.5 text-xs font-bold text-[#FF5C00]">
+              Held as unexplained
+            </span>
           )}
         </Panel>
       </div>
@@ -253,10 +249,7 @@ export function DiscrepancyModal({
         </div>
 
         {/* Sticky Footer */}
-        <div className="flex items-center justify-between border-t border-[var(--line)] px-5 py-3 bg-[var(--surface)] shrink-0">
-          <span className="text-[11px] font-mono text-[var(--ink-muted)] truncate">
-            Ref: {allocation._id}
-          </span>
+        <div className="flex items-center justify-end border-t border-[var(--line)] px-5 py-3 bg-[var(--surface)] shrink-0">
           <Button onClick={onClose} variant="secondary" size="sm" className="font-semibold rounded-full px-5">
             Done
           </Button>

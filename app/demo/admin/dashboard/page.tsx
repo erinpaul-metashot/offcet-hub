@@ -8,10 +8,7 @@ import {
   ArrowUpRight,
   CheckCircle2,
   Clock,
-  Layers,
-  Package,
   Search,
-  ShieldAlert,
   SlidersHorizontal,
 } from "lucide-react";
 import { Button, Field, Input, Panel } from "@/components/ui";
@@ -19,12 +16,7 @@ import { DashboardHero, HorizontalBarChart } from "@/components/dashboard-widget
 import { getAdminDashboard } from "../../_mock/selectors-admin";
 import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoStore } from "../../_mock/store";
-import {
-  CirkaBadge,
-  NoticeBanner,
-  SectionHeading,
-  formatDate,
-} from "../../_components/cirka-ui";
+import { NoticeBanner, SectionHeading, formatDate } from "../../_components/cirka-ui";
 import { NetworkLedgerNodes } from "../../_components/network-ledger-nodes";
 import { RoleActivityFeed } from "../../_components/trace-timeline";
 import { useAction } from "../../_components/use-action";
@@ -63,7 +55,7 @@ export default function AdminDashboardPage() {
       row.id.startsWith("dispatch_") ||
       row.id.startsWith("receipt_")
     ) {
-      return { key: "allocation" as const, label: "Allocation", badgeClass: "bg-blue-500/10 text-blue-400 border-blue-500/30" };
+      return { key: "allocation" as const, label: "Allocation", badgeClass: "bg-[var(--surface)] text-[var(--charcoal)] border-[var(--charcoal)]/30" };
     }
     if (
       row.kind.includes("production") ||
@@ -74,7 +66,7 @@ export default function AdminDashboardPage() {
     ) {
       return { key: "production" as const, label: "Production", badgeClass: "bg-[#8CC63F]/10 text-[#8CC63F] border-[#8CC63F]/30" };
     }
-    return { key: "system" as const, label: "System", badgeClass: "bg-purple-500/10 text-purple-300 border-purple-500/30" };
+    return { key: "system" as const, label: "System", badgeClass: "bg-[var(--surface)] text-[var(--ink-muted)] border-[var(--line-strong)]" };
   };
 
   /* Filtered Queue */
@@ -118,146 +110,80 @@ export default function AdminDashboardPage() {
     return { total, blocking, warning, info, matching, allocation, production, system };
   }, [view.queue]);
 
+  const isFiltered = Boolean(searchQuery) || severityFilter !== "all" || domainFilter !== "all";
+
   return (
     <div className="space-y-8">
       {/* Top Banner / Hero Header */}
-      <DashboardHero
-        eyebrow="CIRKA ADMIN CONTROL TOWER"
-        title="Operational Overview & Decision Center"
-      />
+      <DashboardHero title="Action queue" />
 
       {error && <NoticeBanner tone="blocking" title="That action was refused">{error}</NoticeBanner>}
 
-      {/* Control Tower Stat Cards Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Open Decisions */}
-        <Panel className="relative overflow-hidden p-5 transition-all hover:border-[var(--line-strong)]">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Panel className="p-5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-              Action Queue
+              Pending review
             </span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FF5C00]/10 text-[#FF5C00]">
-              <ShieldAlert size={16} />
-            </span>
+            <Clock size={16} className="text-[var(--brand-secondary)]" />
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
-              {view.metrics.openActions}
-            </span>
-            <span className="text-xs font-semibold text-[var(--ink-muted)]">open decisions</span>
-          </div>
-          <div className="mt-4 flex items-center gap-2 border-t border-[var(--line)] pt-3 text-xs">
-            <span className="inline-flex items-center gap-1 font-semibold text-[#D14343]">
-              <span className="h-2 w-2 rounded-full bg-[#D14343]" />
-              {view.metrics.blocking} Blocking
-            </span>
-            <span className="text-[var(--line-strong)]">•</span>
-            <span className="inline-flex items-center gap-1 font-medium text-[#FF5C00]">
-              <span className="h-2 w-2 rounded-full bg-[#FF5C00]" />
-              {view.metrics.warning} Warning
-            </span>
-            <span className="text-[var(--line-strong)]">•</span>
-            <span className="font-medium text-[var(--ink-muted)]">
-              {view.metrics.info} Info
-            </span>
-          </div>
-        </Panel>
-
-        {/* Card 2: Pending Verification */}
-        <Panel className="relative overflow-hidden p-5 transition-all hover:border-[var(--line-strong)]">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-              Pending Review
-            </span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#8CC63F]/10 text-[#8CC63F]">
-              <Clock size={16} />
-            </span>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
-              {view.metrics.pendingUsers + view.metrics.pendingOrganisations + view.metrics.productionAwaitingReview}
-            </span>
-            <span className="text-xs font-semibold text-[var(--ink-muted)]">awaiting action</span>
-          </div>
+          <p className="mt-3 text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
+            {view.metrics.pendingUsers + view.metrics.pendingOrganisations + view.metrics.productionAwaitingReview}
+          </p>
           <div className="mt-4 flex items-center gap-2 border-t border-[var(--line)] pt-3 text-xs text-[var(--ink-muted)]">
-            <span>Users: <strong className="text-[var(--ink)]">{view.metrics.pendingUsers}</strong></span>
+            <span>Users <strong className="text-[var(--ink)]">{view.metrics.pendingUsers}</strong></span>
             <span className="text-[var(--line-strong)]">•</span>
-            <span>Orgs: <strong className="text-[var(--ink)]">{view.metrics.pendingOrganisations}</strong></span>
+            <span>Orgs <strong className="text-[var(--ink)]">{view.metrics.pendingOrganisations}</strong></span>
             <span className="text-[var(--line-strong)]">•</span>
-            <span>Evidence: <strong className="text-[var(--ink)]">{view.metrics.productionAwaitingReview}</strong></span>
+            <span>Evidence <strong className="text-[var(--ink)]">{view.metrics.productionAwaitingReview}</strong></span>
           </div>
         </Panel>
 
-        {/* Card 3: Material Volume & Ledger */}
-        <Panel className="relative overflow-hidden p-5 transition-all hover:border-[var(--line-strong)]">
+        <Panel className="p-5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-              Material Volume
+              Active projects
             </span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
-              <Package size={16} />
-            </span>
+            <Activity size={16} className="text-[var(--brand-primary)]" />
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
-              {formatQuantity(view.metrics.recorded, "kg")}
-            </span>
-            <span className="text-xs font-semibold text-[var(--ink-muted)]">recorded</span>
-          </div>
-          <div className="mt-4 flex items-center justify-between border-t border-[var(--line)] pt-3 text-xs">
-            <span className="text-[var(--ink-muted)]">
-              In motion: <strong className="font-semibold text-[var(--ink)]">{formatQuantity(view.metrics.inMotion, "kg")}</strong>
-            </span>
-            {view.metrics.unexplained > 0 ? (
-              <span className="inline-flex items-center gap-1 font-bold text-[#D14343]">
-                <AlertTriangle size={12} /> {formatQuantity(view.metrics.unexplained, "kg")} gap
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 font-medium text-[#8CC63F]">
-                <CheckCircle2 size={12} /> Balanced
-              </span>
-            )}
-          </div>
-        </Panel>
-
-        {/* Card 4: System Operational Load */}
-        <Panel className="relative overflow-hidden p-5 transition-all hover:border-[var(--line-strong)]">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-              Active System Load
-            </span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/10 text-purple-400">
-              <Activity size={16} />
-            </span>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
-              {view.metrics.activeProjects}
-            </span>
-            <span className="text-xs font-semibold text-[var(--ink-muted)]">active projects</span>
-          </div>
-          <div className="mt-4 flex items-center justify-between border-t border-[var(--line)] pt-3 text-xs text-[var(--ink-muted)]">
-            <span>Requests: <strong className="text-[var(--ink)]">{view.metrics.openRequests}</strong></span>
-            <span className="text-[var(--line-strong)]">•</span>
-            <span>Batches: <strong className="text-[var(--ink)]">{view.metrics.batchCount}</strong></span>
+          <p className="mt-3 text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
+            {view.metrics.activeProjects}
+          </p>
+          <div className="mt-4 flex items-center gap-2 border-t border-[var(--line)] pt-3 text-xs text-[var(--ink-muted)]">
+            <span>Open requests <strong className="text-[var(--ink)]">{view.metrics.openRequests}</strong></span>
             {view.metrics.failedTransfers > 0 && (
-              <span className="font-bold text-[#D14343]">{view.metrics.failedTransfers} err</span>
+              <>
+                <span className="text-[var(--line-strong)]">•</span>
+                <span className="font-bold text-[#D14343]">
+                  {view.metrics.failedTransfers} failed transfer{view.metrics.failedTransfers === 1 ? "" : "s"}
+                </span>
+              </>
             )}
           </div>
         </Panel>
       </div>
 
-      {/* Network Ledger Visual Nodes */}
       <section className="space-y-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Layers size={16} className="text-[#FF5C00]" />
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink)]">
-              Network Ledger Slices · {view.metrics.batchCount} recorded batches
-            </p>
-          </div>
-          <p className="text-sm font-semibold text-[var(--ink)]">
-            Total {formatQuantity(view.metrics.recorded, "kg")}
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink)]">
+            Ledger · {view.metrics.batchCount} batches
+          </p>
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm tabular-nums text-[var(--ink-muted)]">
+            <span>
+              Total <strong className="text-[var(--ink)]">{formatQuantity(view.metrics.recorded, "kg")}</strong>
+            </span>
+            <span>
+              In motion <strong className="text-[var(--ink)]">{formatQuantity(view.metrics.inMotion, "kg")}</strong>
+            </span>
+            {view.metrics.unexplained > 0 ? (
+              <span className="inline-flex items-center gap-1 font-bold text-[#D14343]">
+                <AlertTriangle size={12} /> {formatQuantity(view.metrics.unexplained, "kg")} unexplained
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 font-semibold text-[var(--brand-secondary)]">
+                <CheckCircle2 size={12} /> Balanced
+              </span>
+            )}
           </p>
         </div>
         <NetworkLedgerNodes slices={view.potSlices} unit="kg" />
@@ -268,12 +194,13 @@ export default function AdminDashboardPage() {
         {/* Left Column: Action Queue */}
         <div className="space-y-5">
           <SectionHeading
-            eyebrow="ACTION REQUIRED"
-            title="Decision Queue"
+            title="Open actions"
             action={
-              <span className="text-xs font-medium text-[var(--ink-muted)]">
-                Showing {filteredQueue.length} of {view.queue.length} items
-              </span>
+              filteredQueue.length !== view.queue.length ? (
+                <span className="text-xs font-medium tabular-nums text-[var(--ink-muted)]">
+                  {filteredQueue.length} of {view.queue.length}
+                </span>
+              ) : undefined
             }
           />
 
@@ -288,7 +215,7 @@ export default function AdminDashboardPage() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search action items by title, detail, or entity reference..."
+                placeholder="Search queue"
                 className="pl-9 text-sm"
               />
               {searchQuery && (
@@ -306,9 +233,7 @@ export default function AdminDashboardPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-3 text-xs">
               {/* Severity Pills */}
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="mr-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                  <SlidersHorizontal size={12} /> Severity:
-                </span>
+                <SlidersHorizontal size={12} className="mr-1 text-[var(--ink-muted)]" aria-label="Filter" />
                 <button
                   type="button"
                   onClick={() => setSeverityFilter("all")}
@@ -357,9 +282,6 @@ export default function AdminDashboardPage() {
 
               {/* Domain Category Filter */}
               <div className="flex flex-wrap items-center gap-1">
-                <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                  Domain:
-                </span>
                 {(["all", "matching", "allocation", "production", "system"] as const).map((domain) => {
                   const active = domainFilter === domain;
                   const labelMap = {
@@ -411,10 +333,6 @@ export default function AdminDashboardPage() {
                           >
                             {domain.label}
                           </span>
-                          <CirkaBadge
-                            status={row.severity === "blocking" ? "failed" : "open"}
-                            label={row.severity}
-                          />
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ink-muted)]">
                             <Clock size={12} /> Open since {formatDate(row.since)}
                             {row.dueDate ? ` · due ${formatDate(row.dueDate)}` : ""}
@@ -462,7 +380,7 @@ export default function AdminDashboardPage() {
                     {isExpanded && row.stored && row.actionItemId && (
                       <div className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 animate-stagger-in">
                         <div className="min-w-[16rem] flex-1">
-                          <Field label="Resolution Note / Decision Action">
+                          <Field label="Note">
                             <Input
                               value={resolution[row.actionItemId] ?? ""}
                               onChange={(event) =>
@@ -471,7 +389,7 @@ export default function AdminDashboardPage() {
                                   [row.actionItemId as string]: event.target.value,
                                 }))
                               }
-                              placeholder="Record what was done and key notes for audit ledger..."
+                              placeholder="What was done"
                               autoFocus
                             />
                           </Field>
@@ -489,7 +407,7 @@ export default function AdminDashboardPage() {
                             )
                           }
                         >
-                          Resolve Item
+                          Resolve
                         </Button>
                         <Button
                           size="sm"
@@ -517,14 +435,9 @@ export default function AdminDashboardPage() {
             <Panel className="p-8 text-center">
               <CheckCircle2 size={32} className="mx-auto text-[#8CC63F]" />
               <p className="mt-3 text-base font-semibold text-[var(--ink)]">
-                No matching decisions found
+                {isFiltered ? "No matches" : "Queue clear"}
               </p>
-              <p className="mt-1 text-xs text-[var(--ink-muted)]">
-                {searchQuery || severityFilter !== "all" || domainFilter !== "all"
-                  ? "Try clearing the filters."
-                  : "All operational queues are currently clear."}
-              </p>
-              {(searchQuery || severityFilter !== "all" || domainFilter !== "all") && (
+              {isFiltered && (
                 <Button
                   size="sm"
                   variant="secondary"
@@ -535,7 +448,7 @@ export default function AdminDashboardPage() {
                     setDomainFilter("all");
                   }}
                 >
-                  Reset All Filters
+                  Reset filters
                 </Button>
               )}
             </Panel>
@@ -544,49 +457,6 @@ export default function AdminDashboardPage() {
 
         {/* Right Sidebar Widgets */}
         <div className="space-y-5 xl:sticky xl:top-6">
-          {/* Decision Summary Widget */}
-          <Panel className="space-y-5 p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--ink-muted)]">
-                Open Decisions
-              </p>
-              <span className="text-xs font-semibold text-[var(--ink-muted)]">
-                {view.metrics.openActions} total
-              </span>
-            </div>
-
-            <p className="text-4xl font-extrabold leading-none tracking-tight text-[var(--ink)] tabular-nums">
-              {view.metrics.openActions}
-            </p>
-
-            <div className="space-y-2.5 border-t border-[var(--line)] pt-4">
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 font-medium text-[#D14343]">
-                  <span className="h-2 w-2 rounded-full bg-[#D14343]" /> Blocking
-                </span>
-                <span className="font-semibold tabular-nums text-[#D14343]">
-                  {view.metrics.blocking}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 font-medium text-[#FF5C00]">
-                  <span className="h-2 w-2 rounded-full bg-[#FF5C00]" /> Warning
-                </span>
-                <span className="font-semibold tabular-nums text-[var(--ink)]">
-                  {view.metrics.warning}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 font-medium text-[var(--ink-muted)]">
-                  <span className="h-2 w-2 rounded-full bg-[var(--line-strong)]" /> Info
-                </span>
-                <span className="font-semibold tabular-nums text-[var(--ink)]">
-                  {view.metrics.info}
-                </span>
-              </div>
-            </div>
-          </Panel>
-
           {/* Material Categories Chart */}
           <Panel className="space-y-4 p-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--ink-muted)]">

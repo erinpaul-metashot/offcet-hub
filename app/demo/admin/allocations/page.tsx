@@ -29,8 +29,7 @@ export default function AdminAllocationsPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        eyebrow="Allocations"
-        title="Every hand-off in the network"
+        title="Allocations"
         action={
           <Select value={status} onChange={(event) => setStatus(event.target.value)} className="w-56">
             <option value="">All statuses</option>
@@ -45,11 +44,10 @@ export default function AdminAllocationsPage() {
 
       {/* The second hop is CIRKA's decision: custodians store, they do not choose. */}
       <section className="space-y-3">
-        <SectionHeading eyebrow="Second hop" title="Stock sitting in warehouses" />
+        <SectionHeading title="Custodian stock" />
         {stock.length === 0 ? (
           <EmptyState
             title="No stock at a custodian"
-            body="Once a custodian confirms receipt, their holdings appear here."
           />
         ) : (
           <Panel className="overflow-hidden">
@@ -113,7 +111,7 @@ export default function AdminAllocationsPage() {
       </section>
 
       {rows.length === 0 ? (
-        <EmptyState title="No allocations" body="Approved matches create the first one." />
+        <EmptyState title="No allocations" />
       ) : (
         <Panel className="overflow-hidden">
           {rows.map(({ allocation, batch, fromName, toName, project }) => (

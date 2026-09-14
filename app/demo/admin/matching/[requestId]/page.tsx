@@ -13,7 +13,7 @@ export default function MatchingWorkspacePage() {
   const workspace = getMatchingWorkspace(db, scope, params.requestId);
 
   if (!workspace) {
-    return <EmptyState title="Request not found" body="The demo data may have been reset." />;
+    return <EmptyState title="Request not found" />;
   }
 
   return <MatchingWorkspaceView workspace={workspace} />;

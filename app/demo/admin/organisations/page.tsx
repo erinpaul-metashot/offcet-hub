@@ -238,7 +238,7 @@ export default function AdminOrganisationsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Network Organisations" />
+      <SectionHeading title="Organisations" />
 
       {error && <NoticeBanner tone="blocking" title="That change was refused">{error}</NoticeBanner>}
 
@@ -293,25 +293,18 @@ export default function AdminOrganisationsPage() {
                 <MetricCell icon={ArrowLeftRight} value={allocationCount} label="Allocations" />
               </div>
 
-              <div>
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  Capabilities
-                </p>
-                {organisation.capabilityTags.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {organisation.capabilityTags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-[11px] font-medium text-[var(--ink)]"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[13px] text-[var(--ink-muted)]">None recorded</p>
-                )}
-              </div>
+              {organisation.capabilityTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {organisation.capabilityTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-[11px] font-medium text-[var(--ink)]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               <div className="flex flex-wrap justify-between gap-x-6 gap-y-1 border-t border-[var(--line)] pt-3 text-xs text-[var(--ink-muted)]">
                 <span>
@@ -386,8 +379,8 @@ export default function AdminOrganisationsPage() {
 
       {editing && (
         <Modal
-          eyebrow={editing.organisation ? "Edit organisation" : "New organisation"}
-          title={editing.organisation?.name ?? "Register a company in the network"}
+          eyebrow={editing.organisation ? "Edit organisation" : undefined}
+          title={editing.organisation?.name ?? "New organisation"}
           onClose={closeForm}
         >
           <OrganisationForm
@@ -403,7 +396,6 @@ export default function AdminOrganisationsPage() {
 
       {removing && (
         <ConfirmDialog
-          eyebrow="Remove organisation"
           title={`Remove ${removing.name}?`}
           confirmLabel="Remove it"
           error={removal.error}

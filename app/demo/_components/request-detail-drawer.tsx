@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { X } from "lucide-react";
-import { Button, EmptyState } from "@/components/ui";
+import { Button } from "@/components/ui";
 import type { Match, ResourceRequest } from "../_mock/types";
 import { categoryLabel, formatQuantity, isOverdue } from "../_mock/selectors-shared";
 import { CirkaBadge, DataRow, FlowBar, formatDate } from "./cirka-ui";
@@ -52,7 +52,7 @@ export function RequestDetailDrawer({
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--line)] px-6 py-5">
           <div className="space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Request · {request.reference}
+              {request.reference}
             </p>
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
@@ -89,8 +89,7 @@ export function RequestDetailDrawer({
               unit={request.unit}
             />
             <p className="text-sm text-[var(--ink-muted)]">
-              {formatQuantity(request.quantityMatched, request.unit)} matched of{" "}
-              {formatQuantity(request.quantityNeeded, request.unit)} needed
+              of {formatQuantity(request.quantityNeeded, request.unit)} needed
             </p>
           </div>
 
@@ -126,10 +125,7 @@ export function RequestDetailDrawer({
               Matching
             </p>
             {activeMatches.length === 0 ? (
-              <EmptyState
-                title="No matches proposed yet"
-                body="Proposed once the request enters review."
-              />
+              <p className="text-sm text-[var(--ink-muted)]">No matches yet</p>
             ) : (
               <div className="space-y-3">
                 {activeMatches.map((match) => (

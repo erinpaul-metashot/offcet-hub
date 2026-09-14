@@ -93,7 +93,7 @@ function EnquiryNote({ lot }: { lot: MarketplaceLot }) {
   if (lot.viewerHasEnquired) {
     return (
       <span className="text-[11px] font-semibold text-[var(--brand-primary)]">
-        Your enquiry is with CIRKA
+        Enquired
       </span>
     );
   }
@@ -299,18 +299,15 @@ export function MarketplaceView({
   if (allLots.length === 0) {
     return (
       <div className="space-y-6">
-        <SectionHeading eyebrow="Marketplace" title="Browse listed lots" />
-        <EmptyState
-          title="Nothing is listed yet"
-          body="Lots appear once released for matching and reviewed."
-        />
+        <SectionHeading title="Marketplace" />
+        <EmptyState title="Nothing listed yet" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Marketplace" title="Browse listed lots" />
+      <SectionHeading title="Marketplace" />
 
       {/* The pool in one line: what is open to enquiry, and how fresh it is. */}
       <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 rounded-2xl border border-[var(--line)] bg-[var(--paper)] px-5 py-4">
@@ -318,11 +315,7 @@ export function MarketplaceView({
           <span className="text-lg font-semibold tabular-nums tracking-[-0.03em]">
             {formatQuantity(pool.available, pool.unit)}
           </span>{" "}
-          open to enquiry
-          <span className="text-[var(--ink-muted)]">
-            {" "}
-            across {allLots.length} lot{allLots.length === 1 ? "" : "s"}
-          </span>
+          available
         </p>
         {pool.newest > 0 && (
           <p className="text-[11px] text-[var(--ink-muted)]">
@@ -345,7 +338,7 @@ export function MarketplaceView({
             className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]"
           />
           <Input
-            placeholder="Search name, reference, composition or colour"
+            placeholder="Search lots"
             value={filters.search ?? ""}
             onChange={(event) => set({ search: event.target.value })}
             className="h-10 border-transparent bg-[var(--surface)] pl-10 focus:border-[var(--brand-primary)] focus:bg-[var(--paper)]"
@@ -408,25 +401,20 @@ export function MarketplaceView({
         <ViewModeToggle value={mode} onChange={setMode} />
       </Panel>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-[var(--ink-muted)]">
-          {narrowed
-            ? `${lots.length} of ${allLots.length} listed lots`
-            : `${lots.length} listed lots`}
-        </p>
-        {narrowed && (
+      {narrowed && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs tabular-nums text-[var(--ink-muted)]">
+            {lots.length} of {allLots.length}
+          </p>
           <Button variant="ghost" size="sm" onClick={() => setFilters(EMPTY_FILTERS)}>
             <RotateCcw size={13} className="mr-2" />
             Clear filters
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {lots.length === 0 ? (
-        <EmptyState
-          title="No listed lot matches those filters"
-          body={`${allLots.length} lots are listed. Widen the search to see them.`}
-        />
+        <EmptyState title="No matches" />
       ) : mode === "grid" ? (
         <div className="grid animate-stagger-in gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {lots.map((lot) => (

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, Zap } from "lucide-react";
 import { EmptyState } from "@/components/ui";
 import { getCustodianDashboard } from "../../_mock/selectors-custodian";
@@ -26,25 +27,22 @@ function groupOf(entry: OutgoingEntry): GroupKey {
 
 const GROUP_META: Record<
   GroupKey,
-  { label: string; Icon: typeof Zap; iconBg: string; emptyNote: string }
+  { label: string; Icon: typeof Zap; iconBg: string }
 > = {
   action: {
     label: "Needs your action",
     Icon: Zap,
     iconBg: "bg-[var(--brand-primary)]",
-    emptyNote: "No dispatches currently require your action.",
   },
   waiting: {
     label: "Waiting on maker",
     Icon: Clock,
     iconBg: "bg-[var(--charcoal,#545454)]",
-    emptyNote: "No dispatches are currently pending with a maker.",
   },
   completed: {
     label: "Completed hand-overs",
     Icon: CheckCircle2,
     iconBg: "bg-[var(--brand-secondary)]",
-    emptyNote: "No completed hand-overs yet.",
   },
 };
 
@@ -80,7 +78,7 @@ function DispatchRow({
           <p className="truncate text-sm font-semibold text-[var(--ink)]">
             {batch?.name ?? allocation.reference}
           </p>
-          <p className="text-xs text-[var(--ink-muted)]">→ Destined for {makerName}</p>
+          <p className="text-xs text-[var(--ink-muted)]">→ {makerName}</p>
         </div>
 
         {/* Right status */}
@@ -90,18 +88,6 @@ function DispatchRow({
           </p>
           <CirkaBadge status={allocation.status} />
         </div>
-      </div>
-
-      <div
-        className={[
-          "mt-3 flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.14em]",
-          "transition-colors duration-150",
-          selected
-            ? "text-[var(--brand-primary)]"
-            : "text-[var(--ink-muted)] group-hover:text-[var(--brand-primary)]",
-        ].join(" ")}
-      >
-        Open hand-over details →
       </div>
     </button>
   );
@@ -114,10 +100,39 @@ export default function CustodianDispatchesPage() {
 
   const view = getCustodianDashboard(store.db, scope);
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const linkedId = searchParams.get("id");
+  const linkedEntry = view.outgoing.find((a) => a.allocation._id === linkedId);
+
+  const [selectedId, setSelectedId] = useState<string | null>(() => linkedEntry?.allocation._id ?? null);
   const [drafts, setDrafts] = useState<
     Record<string, { quantity: string; reference: string }>
-  >({});
+  >(() =>
+    linkedEntry
+      ? {
+          [linkedEntry.allocation._id]: {
+            quantity: String(linkedEntry.allocation.quantityAllocated),
+            reference: "",
+          },
+        }
+      : {},
+  );
+
+  useEffect(() => {
+    if (linkedId && view.outgoing.some((a) => a.allocation._id === linkedId)) {
+      setSelectedId(linkedId);
+      const entry = view.outgoing.find((a) => a.allocation._id === linkedId);
+      if (entry) {
+        setDrafts((current) => ({
+          ...current,
+          [linkedId]: current[linkedId] ?? {
+            quantity: String(entry.allocation.quantityAllocated),
+            reference: "",
+          },
+        }));
+      }
+    }
+  }, [linkedId, view.outgoing]);
 
   const selectedEntry =
     view.outgoing.find((a) => a.allocation._id === selectedId) ?? null;
@@ -142,14 +157,13 @@ export default function CustodianDispatchesPage() {
   }
 
   const groups: GroupKey[] = ["action", "waiting", "completed"];
-  const actionCount = view.outgoing.filter((a) => groupOf(a) === "action").length;
   const inTransitCount = view.outgoing.filter(
     (a) => a.allocation.status === "in_transit",
   ).length;
 
   return (
     <div className="space-y-8">
-      <SectionHeading title="Maker Dispatches" />
+      <SectionHeading title="Out to makers" />
 
       {error && (
         <NoticeBanner tone="blocking" title="That step was refused">
@@ -158,39 +172,13 @@ export default function CustodianDispatchesPage() {
       )}
 
       {view.outgoing.length === 0 ? (
-        <EmptyState
-          title="Nothing assigned to makers"
-          body="Hand-overs to makers appear here."
-        />
+        <EmptyState title="Nothing assigned to makers" />
       ) : (
         <>
-          {/* Metrics summary bar */}
-          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-[var(--line)] sm:grid-cols-3">
-            <div className="bg-[var(--paper)] px-5 py-4 text-center">
-              <p className="text-2xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--ink)]">
-                {view.outgoing.length}
-              </p>
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.10em] text-[var(--ink-muted)]">
-                Total outgoing
-              </p>
-            </div>
-            <div className="bg-[var(--paper)] px-5 py-4 text-center">
-              <p className="text-2xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--brand-primary)]">
-                {actionCount}
-              </p>
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.10em] text-[var(--ink-muted)]">
-                Needs your action
-              </p>
-            </div>
-            <div className="bg-[var(--paper)] px-5 py-4 text-center">
-              <p className="text-2xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--ink)]">
-                {inTransitCount}
-              </p>
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.10em] text-[var(--ink-muted)]">
-                In transit to maker
-              </p>
-            </div>
-          </div>
+          <p className="text-sm tabular-nums text-[var(--ink-muted)]">
+            <strong className="text-[var(--ink)]">{view.outgoing.length}</strong> out ·{" "}
+            <strong className="text-[var(--ink)]">{inTransitCount}</strong> in transit
+          </p>
 
           {/* Group sections */}
           <div className="space-y-8">
@@ -225,7 +213,7 @@ export default function CustodianDispatchesPage() {
                   {/* Cards */}
                   {items.length === 0 ? (
                     <p className="rounded-2xl border border-dashed border-[var(--line)] px-5 py-5 text-sm text-[var(--ink-muted)]">
-                      {meta.emptyNote}
+                      None
                     </p>
                   ) : (
                     <div className="space-y-3">

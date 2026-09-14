@@ -12,10 +12,10 @@ export default function AdminProductionPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Network Production Runs" />
+      <SectionHeading title="Production" />
 
       {rows.length === 0 ? (
-        <EmptyState title="No production yet" body="Makers create a batch against an allocation." />
+        <EmptyState title="No production yet" />
       ) : (
         <Panel className="overflow-hidden">
           {rows.map(({ production, makerName, batch, project, outputs, evidenceCount }) => (

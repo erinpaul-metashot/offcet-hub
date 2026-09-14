@@ -12,7 +12,7 @@ export default function AdminAllocationDetailPage() {
   const detail = getAllocationDetail(db, params.id);
 
   if (!detail) {
-    return <EmptyState title="Allocation not found" body="The demo data may have been reset." />;
+    return <EmptyState title="Allocation not found" />;
   }
 
   return <AllocationDetailView detail={detail} backHref="/demo/admin/allocations" />;

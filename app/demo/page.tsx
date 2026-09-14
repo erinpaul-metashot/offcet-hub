@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowRight,
+  CheckCircle2,
   Factory,
   FolderOpen,
   PlayCircle,
@@ -13,7 +15,7 @@ import {
 import { Button } from "@/components/ui";
 import { type CirkaRole } from "./_mock/domain";
 import { checkLedgerIntegrity } from "./_mock/ledger";
-import { PERSONA_IDS, useDemoStore } from "./_mock/store";
+import { useDemoStore } from "./_mock/store";
 import { formatQuantity } from "./_mock/selectors-shared";
 import { getAdminDashboard } from "./_mock/selectors-admin";
 
@@ -53,7 +55,7 @@ export default function DemoRoleSelectorPage() {
             className="h-10 w-auto object-contain object-left"
           />
           <h1 className="max-w-2xl text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">
-            Select Workspace Persona
+            Choose a role
           </h1>
         </header>
 
@@ -93,10 +95,7 @@ export default function DemoRoleSelectorPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-[var(--line)] pt-4">
-                    <span className="text-[11px] font-medium text-[var(--brand-primary)] group-hover:underline">
-                      Enter workspace →
-                    </span>
+                  <div className="flex items-center justify-end border-t border-[var(--line)] pt-4">
                     <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--ink)] transition-all duration-300 ease-[var(--ease-out)] group-hover:bg-[var(--brand-primary)] group-hover:text-white">
                       <ArrowRight size={14} />
                     </span>
@@ -121,22 +120,20 @@ export default function DemoRoleSelectorPage() {
           <span
             className={
               integrity.length === 0
-                ? "text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--brand-secondary)] shrink-0"
-                : "text-[11px] font-bold uppercase tracking-[0.14em] text-[#F0A0A0] shrink-0"
+                ? "inline-flex shrink-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--brand-secondary)]"
+                : "inline-flex shrink-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#F0A0A0]"
             }
           >
+            {integrity.length === 0 ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
             {integrity.length === 0
-              ? "✓ Ledger balanced"
-              : `⚠ ${integrity.length} discrepancy`}
+              ? "Ledger balanced"
+              : `${integrity.length} discrepanc${integrity.length === 1 ? "y" : "ies"}`}
           </span>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="mx-auto max-w-6xl w-full flex flex-col items-start gap-4 border-t border-[var(--sidebar-border)] pt-6 mt-8 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs leading-relaxed text-[var(--sidebar-text-muted)]">
-          Mock dataset: {db.organisations.length} orgs · {Object.keys(PERSONA_IDS).length} personas · {db.resourceBatches.length} batches · {db.quantityMovements.length} movements. Safe browser sandbox.
-        </p>
+      <footer className="mx-auto max-w-6xl w-full flex flex-col items-start gap-4 border-t border-[var(--sidebar-border)] pt-6 mt-8 sm:flex-row sm:items-center sm:justify-end">
         <div className="flex flex-wrap gap-3">
           <Button
             as={Link}

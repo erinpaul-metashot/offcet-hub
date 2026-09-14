@@ -13,18 +13,16 @@ export function BatchTable({
   hrefPrefix,
   showOwner = false,
   emptyTitle = "No resource batches",
-  emptyBody = "Recorded and imported batches appear here.",
 }: {
   rows: BatchRow[];
   hrefPrefix: string;
   showOwner?: boolean;
   emptyTitle?: string;
-  emptyBody?: string;
 }) {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   if (rows.length === 0) {
-    return <EmptyState title={emptyTitle} body={emptyBody} />;
+    return <EmptyState title={emptyTitle} />;
   }
 
   return (
@@ -91,15 +89,9 @@ export function BatchTable({
                     )}
                   >
                     <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                      <span>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] mr-1">Ref:</span>
-                        <span className="font-semibold text-[var(--ink)]">{row.batch.reference}</span>
-                      </span>
+                      <span className="font-semibold text-[var(--ink)]">{row.batch.reference}</span>
                       <span className="text-[var(--line-strong)]">•</span>
-                      <span>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] mr-1">Material:</span>
-                        <span className="font-semibold text-[var(--ink)]">{categoryLabel(row.batch.materialCategory)}</span>
-                      </span>
+                      <span className="font-semibold text-[var(--ink)]">{categoryLabel(row.batch.materialCategory)}</span>
                       {showOwner && (
                         <>
                           <span className="text-[var(--line-strong)]">•</span>

@@ -33,7 +33,6 @@ export function MovementTable({
             <th className="py-3 pr-4">When</th>
             <th className="py-3 pr-4">Move</th>
             <th className="py-3 pr-4 text-right">Quantity</th>
-            <th className="py-3 pr-4">Reason</th>
             <th className="py-3">By</th>
           </tr>
         </thead>
@@ -44,7 +43,15 @@ export function MovementTable({
                 {formatDateTime(movement.occurredAt)}
               </td>
               <td className="py-3 pr-4">
-                <p className="font-medium text-[var(--ink)]">{movementLabel(movement)}</p>
+                <p className="font-medium text-[var(--ink)]">
+                  {movementLabel(movement)}
+                  {MOVEMENT_REASON_LABELS[movement.reason] !== movementLabel(movement) && (
+                    <span className="font-normal text-[var(--ink-muted)]">
+                      {" · "}
+                      {MOVEMENT_REASON_LABELS[movement.reason]}
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-[var(--ink-muted)]">
                   {(movement.fromBucket ?? "-").replace(/_/g, " ")} →{" "}
                   {(movement.toBucket ?? "-").replace(/_/g, " ")}
@@ -55,9 +62,6 @@ export function MovementTable({
               </td>
               <td className="py-3 pr-4 text-right font-medium tabular-nums text-[var(--ink)]">
                 {formatQuantity(movement.quantity, unit)}
-              </td>
-              <td className="py-3 pr-4 text-xs uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                {MOVEMENT_REASON_LABELS[movement.reason]}
               </td>
               <td className="py-3 text-[var(--ink-muted)]">{actorName(movement.performedByUserId)}</td>
             </tr>
@@ -91,7 +95,12 @@ export function AuditTrail({
           <div className="min-w-0 space-y-1">
             <p className="text-sm text-[var(--ink)]">
               <span className="font-medium capitalize">{entry.action.replace(/_/g, " ")}</span>
-              <span className="text-[var(--ink-muted)]"> · {entry.entityTable}</span>
+              {entry.entityTable !== "resourceBatches" && (
+                <span className="text-[var(--ink-muted)]">
+                  {" · "}
+                  {entry.entityTable.replace(/([A-Z])/g, " $1").toLowerCase()}
+                </span>
+              )}
             </p>
             {entry.fieldChanges && entry.fieldChanges.length > 0 && (
               <p className="text-xs text-[var(--ink-muted)]">

@@ -86,13 +86,9 @@ export function OrganisationPeople({
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--line)] pb-2">
-        <div className="space-y-1">
+        <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold text-[var(--ink)]">People ({people.length})</h3>
-          <p className="text-xs text-[var(--ink-muted)]">
-            {ownerCount === 0
-              ? "Nobody here can manage the organisation's own settings."
-              : `${ownerCount} of them can manage the organisation's own settings.`}
-          </p>
+          {people.length > 0 && ownerCount === 0 && <CirkaBadge status="overdue" label="No owner" />}
         </div>
         <Button size="sm" onClick={() => setEditing({})}>
           Add person
@@ -107,10 +103,7 @@ export function OrganisationPeople({
 
       {people.length === 0 ? (
         <Panel className="p-8 text-center">
-          <p className="text-sm font-semibold text-[var(--ink)]">Nobody on the roster yet</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-[var(--ink-muted)]">
-            {organisation.name} cannot record anything until someone here has an account.
-          </p>
+          <p className="text-sm font-semibold text-[var(--ink)]">No people yet</p>
         </Panel>
       ) : (
         <Panel className="overflow-hidden p-0">
@@ -135,6 +128,7 @@ export function OrganisationPeople({
                         </Chip>
                       )}
                       {isSelf && <Chip>You</Chip>}
+                      {isOnlyOwner && <CirkaBadge status="overdue" label="Only owner" />}
                     </div>
 
                     <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
@@ -159,13 +153,6 @@ export function OrganisationPeople({
                       {user.lastActiveAt ? ` · last active ${formatDate(user.lastActiveAt)}` : ""}
                       {reviewerName ? ` · reviewed by ${reviewerName}` : ""}
                     </p>
-
-                    {isOnlyOwner && (
-                      <p className="text-xs text-[#8A3D11]">
-                        The only owner. Make someone else an owner before disabling or removing
-                        them.
-                      </p>
-                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 sm:justify-end">
@@ -230,8 +217,8 @@ export function OrganisationPeople({
 
       {editing && (
         <Modal
-          eyebrow={editing.person ? "Edit person" : "New person"}
-          title={editing.person?.name ?? `Add someone to ${organisation.name}`}
+          eyebrow={editing.person ? "Edit person" : undefined}
+          title={editing.person?.name ?? "New person"}
           onClose={closeForm}
         >
           <PersonForm
@@ -248,7 +235,6 @@ export function OrganisationPeople({
 
       {removing && (
         <ConfirmDialog
-          eyebrow="Remove person"
           title={`Remove ${removing.name}?`}
           confirmLabel="Remove them"
           error={removal.error}
@@ -257,7 +243,7 @@ export function OrganisationPeople({
           onConfirm={() => handleRemove(removing)}
           body={
             <>
-              Their account closes. Everything they recorded stays attributed to them.
+              Their account closes. Their records stay.
             </>
           }
         />

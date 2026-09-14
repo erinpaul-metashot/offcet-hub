@@ -157,7 +157,7 @@ export function FacilityForm({
       </FormSection>
 
       <FormSection title="Address">
-        <Field label="Address" required>
+        <Field label="Street" required>
           <Input
             value={form.addressLine}
             onChange={(event) => update("addressLine", event.target.value)}
@@ -195,7 +195,7 @@ export function FacilityForm({
         </div>
       </FormSection>
 
-      <FormSection title="Capacity" hint="Blank if no declared limit">
+      <FormSection title="Capacity">
         <Field
           label="Storage capacity (kg)"
           error={capacityLooksWrong ? "Capacity must be greater than zero." : undefined}
@@ -206,12 +206,12 @@ export function FacilityForm({
             step="1"
             value={form.storageCapacityKg}
             onChange={(event) => update("storageCapacityKg", event.target.value)}
-            placeholder="50000"
+            placeholder="No limit"
           />
         </Field>
       </FormSection>
 
-      <FormSection title="Coordinates" hint="Optional · ranks distance in matching">
+      <FormSection title="Coordinates" hint="Optional">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Latitude">
             <Input

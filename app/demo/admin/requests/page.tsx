@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, EmptyState, Field, Panel, Select } from "@/components/ui";
+import { Button, EmptyState, Panel, Select } from "@/components/ui";
 import { REQUEST_STATUSES, statusLabel } from "../../_mock/domain";
 import { getRequestsOverview, listRequests } from "../../_mock/selectors-admin";
 import { categoryLabel, formatQuantity } from "../../_mock/selectors-shared";
@@ -87,26 +87,14 @@ export default function AdminRequestsPage() {
     return allRows.filter((row) => row.request.status === status);
   }, [allRows, status]);
 
-  const activeFilterLabel =
-    status === "awaiting_match"
-      ? "awaiting match"
-      : status === "matched_group"
-        ? "matched"
-        : status === "has_matches"
-          ? "with matches recorded"
-          : status
-            ? statusLabel(status).toLowerCase()
-            : "";
-
   return (
     <div className="space-y-6">
       <SectionHeading
-        eyebrow="Demand"
-        title="Requests and matching"
+        title="Requests & matching"
         action={
-          <div className="flex flex-col gap-1.5">
-            <Field label="Filter requests">
-              <Select
+          <div className="flex items-center gap-2">
+            <Select
+                aria-label="Filter requests"
                 value={status}
                 onChange={(event) => setStatus(event.target.value)}
                 className="w-60"
@@ -123,17 +111,11 @@ export default function AdminRequestsPage() {
                   ))}
                 </optgroup>
               </Select>
-            </Field>
-            <div className="flex items-center justify-between gap-3 pl-0.5">
-              <span className="text-xs text-[var(--ink-muted)]">
-                {status ? `${rows.length} of ${allRows.length} requests` : `${allRows.length} requests`}
-              </span>
-              {status && (
-                <Button variant="ghost" size="sm" className="min-h-0! px-2! py-1!" onClick={() => setStatus("")}>
-                  Clear filter
-                </Button>
-              )}
-            </div>
+            {status && (
+              <Button variant="ghost" size="sm" onClick={() => setStatus("")}>
+                Clear
+              </Button>
+            )}
           </div>
         }
       />
@@ -170,11 +152,10 @@ export default function AdminRequestsPage() {
       {rows.length === 0 ? (
         status ? (
           <EmptyState
-            title="No matches for this filter"
-            body={`No request is currently ${activeFilterLabel}. Clear the filter to see every request.`}
+            title="No matches"
           />
         ) : (
-          <EmptyState title="No requests" body="Demand submitted by brands and makers appears here." />
+          <EmptyState title="No requests" />
         )
       ) : (
         <Panel className="overflow-hidden">
@@ -191,8 +172,8 @@ export default function AdminRequestsPage() {
                   {project ? ` · ${project.title}` : ""}
                   {request.neededBy ? ` · needed by ${formatDate(request.neededBy)}` : ""}
                   {matches.length > 0
-                    ? ` · ${matches.length} match${matches.length === 1 ? "" : "es"} recorded`
-                    : " · no match yet"}
+                    ? ` · ${matches.length} match${matches.length === 1 ? "" : "es"}`
+                    : ""}
                 </>
               }
               right={<CirkaBadge status={request.status} />}

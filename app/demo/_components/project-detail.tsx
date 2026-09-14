@@ -72,18 +72,14 @@ export function ProjectDetailView({
       )}
 
       <section className="space-y-4">
-        <SectionHeading title="Project Journey" />
-        {proof.journey.length === 0 ? (
-          <NoticeBanner tone="info" title="The journey hasn't started" />
-        ) : (
-          <Panel className="p-6">
-            <ProjectJourneyStepper journey={proof.journey} />
-          </Panel>
-        )}
+        <SectionHeading title="Journey" />
+        <Panel className="p-6">
+          <ProjectJourneyStepper journey={proof.journey} />
+        </Panel>
       </section>
 
       <section className="space-y-4">
-        <SectionHeading title="Material Ledger" />
+        <SectionHeading title="Material" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MaterialTile label="Activated" value={formatQuantity(material.activated, material.unit)} />
           <MaterialTile label="Received" value={formatQuantity(material.received, material.unit)} />
@@ -98,7 +94,6 @@ export function ProjectDetailView({
             <DataRow
               label="Yield"
               value={material.yield !== undefined ? formatPercent(material.yield) : "-"}
-              hint="Incorporated as a share of material used"
             />
             <DataRow
               label="Offcuts and prototypes"
@@ -114,13 +109,13 @@ export function ProjectDetailView({
       </section>
 
       <section className="space-y-4">
-        <SectionHeading title="Allocations & Matches" />
+        <SectionHeading title="Matches & allocations" />
         <Panel className="p-5">
           <dl>
             <DataRow label="Requests" value={proof.requests.length} />
             <DataRow
               label="Matches"
-              value={`${proof.matches.length} recorded`}
+              value={proof.matches.length}
               hint={
                 proof.operational.matchSuccess !== undefined
                   ? `${formatPercent(proof.operational.matchSuccess)} approved`
@@ -138,7 +133,7 @@ export function ProjectDetailView({
 
       {proof.production.length > 0 && (
         <section className="space-y-4">
-          <SectionHeading title="Production Runs" />
+          <SectionHeading title="Production" />
           <Panel className="divide-y divide-[var(--line)] p-0">
             {proof.production.map((entry) => (
               <div key={entry.production._id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
@@ -166,12 +161,12 @@ export function ProjectDetailView({
       <ThreadTimelinePanel
         role={role}
         anchor={{ table: "projects", id: project._id }}
-        title="Everything that happened"
+        title="Activity"
       />
 
       {proof.commercial.sharedCosts.length > 0 && (
         <section className="space-y-4">
-          <SectionHeading title="Shared Commercial Data" />
+          <SectionHeading title="Cost per unit" />
           <Panel className="p-5">
             <dl>
               {proof.commercial.sharedCosts.map((entry) => (
@@ -179,7 +174,7 @@ export function ProjectDetailView({
                   key={entry.productionReference}
                   label={entry.makerName}
                   value={formatCurrency(entry.baseCostPerUnit, entry.currency)}
-                  hint={`${entry.productionReference} · cost per unit`}
+                  hint={entry.productionReference}
                 />
               ))}
             </dl>

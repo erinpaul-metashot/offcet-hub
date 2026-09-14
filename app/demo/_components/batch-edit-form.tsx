@@ -87,14 +87,9 @@ export function BatchEditForm({
 
   return (
     <Panel className="space-y-5 p-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-          Edit batch details
-        </h2>
-        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-          Quantity moves through the ledger only
-        </span>
-      </div>
+      <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
+        Edit batch details
+      </h2>
 
       {error && <NoticeBanner tone="blocking" title="The change was refused">{error}</NoticeBanner>}
 
@@ -221,10 +216,7 @@ export function BatchEditForm({
       </div>
 
       <div className="space-y-3">
-        <div className="space-y-1">
-          <label className="text-sm font-semibold text-[var(--ink)]">Reference photos</label>
-          <p className="text-xs text-[var(--ink-muted)]">Select photos that match this batch.</p>
-        </div>
+        <p className="text-sm font-semibold text-[var(--ink)]">Reference photos</p>
         <div className="grid gap-4 sm:grid-cols-4">
           {PHOTO_CHOICES.map((photo) => {
             const selected = images.includes(photo.url);

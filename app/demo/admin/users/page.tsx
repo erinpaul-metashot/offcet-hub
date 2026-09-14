@@ -122,7 +122,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="User Accounts & Access" />
+      <SectionHeading title="People" />
 
       {error && <NoticeBanner tone="blocking" title="That change was refused">{error}</NoticeBanner>}
 
@@ -167,7 +167,7 @@ export default function AdminUsersPage() {
       {groups.filter(g => g.title === activeTab).map((group) => (
         <div key={group.title} className="space-y-4 pt-2">
           {group.rows.length === 0 ? (
-            <EmptyState title="Nobody here" body={searchQuery ? "No accounts match your search." : `No accounts are ${group.title.toLowerCase()}.`} />
+            <EmptyState title={searchQuery ? "No matches" : "Nobody here"} />
           ) : (
             <div className={classNames("grid gap-4", viewMode === "grid" ? "lg:grid-cols-2" : "grid-cols-1")}>
               {group.rows.map(({ user, organisation, reviewerName }) => {

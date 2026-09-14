@@ -11,15 +11,13 @@ export function ProjectTable({
   rows,
   hrefPrefix,
   emptyTitle = "No projects",
-  emptyBody = "Brands create a project brief to start.",
 }: {
   rows: ProjectRow[];
   hrefPrefix: string;
   emptyTitle?: string;
-  emptyBody?: string;
 }) {
   if (rows.length === 0) {
-    return <EmptyState title={emptyTitle} body={emptyBody} />;
+    return <EmptyState title={emptyTitle} />;
   }
 
   return (

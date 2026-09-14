@@ -212,11 +212,9 @@ export function OrganisationForm({
             autoFocus
           />
         </Field>
-        <Field
-          label="Type"
-          hint={isEdit ? "Fixed at registration: register a new organisation to change it." : undefined}
-        >
+        <Field label="Type">
           <Select
+            title={isEdit ? "Fixed at registration" : undefined}
             value={form.type}
             onChange={(event) => update("type", event.target.value as OrganisationType)}
             disabled={isEdit}
@@ -232,7 +230,6 @@ export function OrganisationForm({
           <Textarea
             value={form.description}
             onChange={(event) => update("description", event.target.value)}
-            placeholder="What they do, in a sentence or two."
           />
         </Field>
       </FormSection>
@@ -300,7 +297,7 @@ export function OrganisationForm({
 
       <FormSection
         title="Coordinates"
-        hint="Optional · ranks distance in matching"
+        hint="Optional"
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Latitude">
@@ -338,7 +335,7 @@ export function OrganisationForm({
         </Field>
         <Field
           label="Capability tags"
-          hint="Enter or comma to add"
+          hint="Enter to add"
         >
           <TagInput tags={form.capabilityTags} onChange={(next) => update("capabilityTags", next)} />
         </Field>
