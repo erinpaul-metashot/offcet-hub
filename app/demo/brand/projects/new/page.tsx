@@ -1,43 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Eye, Layers, ShieldCheck, Sparkles } from "lucide-react";
-import { Button, Field, Input, Panel, Select, Textarea } from "@/components/ui";
-import {
-  MATERIAL_CATEGORIES,
-  UNITS,
-  UNIT_LABELS,
-  type MaterialCategory,
-  type Unit,
-} from "../../../_mock/domain";
-import { categoryLabel } from "../../../_mock/selectors-shared";
-import { type JourneyRow } from "../../../_mock/selectors-brand";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { Button, Panel } from "@/components/ui";
 import { useDemoStore } from "../../../_mock/store";
-import { CirkaBadge, NoticeBanner, SectionHeading, formatDate } from "../../../_components/cirka-ui";
-import { ProjectJourneyStepper } from "../../../_components/project-journey-stepper";
-import {
-  BriefResourceDraftList,
-  BriefResourcePicker,
-  type BriefResourceDraft,
-} from "../../../_components/project-brief-pack";
+import { NoticeBanner, SectionHeading } from "../../../_components/cirka-ui";
+import { FormStepper, type FormStep } from "../../../_components/form-stepper";
+import { type BriefResourceDraft } from "../../../_components/project-brief-pack";
 import { useAction } from "../../../_components/use-action";
+import {
+  MaterialStep,
+  TimelineStep,
+  VisionStep,
+  toTimestamp,
+  type BriefErrorField,
+  type BriefErrors,
+  type DemandDraft,
+  type ProjectDraft,
+} from "./brief-steps";
+import { BriefPreview, BriefReview } from "./brief-preview";
 
-function toTimestamp(value: string): number | undefined {
-  if (!value) {
-    return undefined;
+const BRIEF_STEPS: FormStep[] = [
+  { id: "material", label: "Material" },
+  { id: "timeline", label: "Timeline & location" },
+  { id: "vision", label: "Project vision" },
+  { id: "review", label: "Review" },
+];
+
+const REVIEW_STEP = BRIEF_STEPS.length - 1;
+
+/** What stops a step from advancing. Empty object means the step is complete. */
+function validateStep(index: number, project: ProjectDraft, demand: DemandDraft): BriefErrors {
+  if (index === 0 && demand.include && !(Number(demand.quantityNeeded) > 0)) {
+    return { quantityNeeded: "Enter a quantity greater than zero." };
   }
 
-  const parsed = Date.parse(`${value}T12:00:00Z`);
-  return Number.isNaN(parsed) ? undefined : parsed;
+  if (index === 2) {
+    return {
+      ...(project.title.trim() ? {} : { title: "Give the brief a title." }),
+      ...(project.objective.trim() ? {} : { objective: "Say what this project has to prove." }),
+    };
+  }
+
+  return {};
+}
+
+/** The first step in [from, to) that is incomplete, with its messages. */
+function firstBlockedStep(from: number, to: number, project: ProjectDraft, demand: DemandDraft) {
+  for (let index = from; index < to; index += 1) {
+    const errors = validateStep(index, project, demand);
+    if (Object.keys(errors).length > 0) {
+      return { index, errors };
+    }
+  }
+  return null;
 }
 
 export default function NewBriefPage() {
   const router = useRouter();
   const store = useDemoStore();
   const { run, error, pending } = useAction();
+  const topRef = useRef<HTMLDivElement>(null);
 
-  const [project, setProject] = useState({
+  const [project, setProject] = useState<ProjectDraft>({
     title: "",
     objective: "",
     intendedProduct: "",
@@ -50,22 +76,85 @@ export default function NewBriefPage() {
   /* Held until the project exists — references attach to a project id. */
   const [references, setReferences] = useState<BriefResourceDraft[]>([]);
 
-  const [demand, setDemand] = useState({
+  const [demand, setDemand] = useState<DemandDraft>({
     include: true,
     title: "",
-    materialCategory: "cotton_offcuts" as MaterialCategory,
+    materialCategory: "cotton_offcuts",
     materialDescription: "",
     compositionRequirements: "",
     qualityRequirements: "",
     quantityNeeded: "",
-    unit: "kg" as Unit,
+    unit: "kg",
     neededBy: "",
     productionLocationPreference: "",
     maxDistanceKm: "",
   });
 
+  const [step, setStep] = useState(0);
+  const [visited, setVisited] = useState<number[]>([0]);
+  const [errors, setErrors] = useState<BriefErrors>({});
+
+  const clearErrors = (fields: string[]) =>
+    setErrors((current) =>
+      Object.fromEntries(Object.entries(current).filter(([field]) => !fields.includes(field))),
+    );
+
+  const updateProject = (patch: Partial<ProjectDraft>) => {
+    setProject((current) => ({ ...current, ...patch }));
+    clearErrors(Object.keys(patch));
+  };
+
+  const updateDemand = (patch: Partial<DemandDraft>) => {
+    setDemand((current) => ({ ...current, ...patch }));
+    /* Toggling the request off (or back on) makes a stale quantity message meaningless. */
+    clearErrors("include" in patch ? [...Object.keys(patch), "quantityNeeded"] : Object.keys(patch));
+  };
+
+  const goTo = (index: number) => {
+    setStep(index);
+    setVisited((current) => (current.includes(index) ? current : [...current, index]));
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    topRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  };
+
+  const showBlocked = (blocked: { index: number; errors: BriefErrors }) => {
+    setErrors(blocked.errors);
+    if (blocked.index === step) {
+      const [field] = Object.keys(blocked.errors) as BriefErrorField[];
+      document.getElementById(`brief-${field}`)?.focus();
+    } else {
+      goTo(blocked.index);
+    }
+  };
+
+  /** Backwards is always allowed; forwards only past steps that are complete. */
+  const moveTo = (target: number) => {
+    if (target > step) {
+      const blocked = firstBlockedStep(step, target, project, demand);
+      if (blocked) {
+        showBlocked(blocked);
+        return;
+      }
+      setErrors({});
+    }
+    goTo(target);
+  };
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    /* Enter inside a field on steps 1-3 advances; only the review step creates anything. */
+    if (step !== REVIEW_STEP) {
+      moveTo(step + 1);
+      return;
+    }
+
+    const blocked = firstBlockedStep(0, REVIEW_STEP, project, demand);
+    if (blocked) {
+      showBlocked(blocked);
+      return;
+    }
 
     await run(async () => {
       const projectId = await store.createProject("brand", {
@@ -106,449 +195,76 @@ export default function NewBriefPage() {
     });
   };
 
-  /* Mock preview journey for live canvas rendering */
-  const previewJourney: JourneyRow[] = [
-    { stage: "demand_created", label: "Demand Created", responsible: "Brand", status: "completed", note: "Brief created" },
-    { stage: "resource_matched", label: "Resource Matched", responsible: "CIRKA", status: "pending" },
-    { stage: "maker_allocated", label: "Maker Allocated", responsible: "Maker", status: "pending" },
-    { stage: "production_started", label: "Production", responsible: "Maker", status: "pending" },
-    { stage: "evidence_reviewed", label: "Evidence Reviewed", responsible: "CIRKA", status: "pending" },
-  ];
+  const isReview = step === REVIEW_STEP;
+  const brief = { project, demand, references };
+
+  const stepBody = [
+    <MaterialStep key="material" demand={demand} errors={errors} onDemandChange={updateDemand} />,
+    <TimelineStep
+      key="timeline"
+      project={project}
+      demand={demand}
+      onProjectChange={updateProject}
+      onDemandChange={updateDemand}
+    />,
+    <VisionStep
+      key="vision"
+      project={project}
+      errors={errors}
+      onProjectChange={updateProject}
+      references={references}
+      setReferences={setReferences}
+      pending={pending}
+    />,
+    <BriefReview key="review" {...brief} onEdit={goTo} />,
+  ][step];
 
   return (
-    <div className="space-y-6">
+    <div ref={topRef} className="scroll-mt-6 space-y-6">
       <SectionHeading title="Create New Brief" />
+
+      <Panel className="p-5 sm:p-6">
+        <FormStepper steps={BRIEF_STEPS} current={step} visited={visited} onJump={moveTo} />
+      </Panel>
 
       {error && <NoticeBanner tone="blocking" title="The brief was not created">{error}</NoticeBanner>}
 
-      <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Form Controls (7 Columns) */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* Project Details Panel */}
-          <Panel className="space-y-5 p-6">
-            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
-              <h2 className="text-lg font-bold tracking-[-0.03em] text-[var(--ink)] flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-[var(--brand-primary)]" />
-                1. The Project Brief
-              </h2>
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                Core Identity
-              </span>
-            </div>
+      <form noValidate onSubmit={submit} className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+        <div className={isReview ? "lg:col-span-12" : "lg:col-span-7"}>
+          <div key={step} className="animate-stagger-in">
+            {stepBody}
+          </div>
 
-            <Field label="Title" required>
-              <Input
-                required
-                value={project.title}
-                onChange={(event) => setProject((current) => ({ ...current, title: event.target.value }))}
-                placeholder="e.g. Reclaimed Jersey Capsule SS26"
-              />
-            </Field>
-
-            <Field label="Objective" required>
-              <Textarea
-                required
-                value={project.objective}
-                onChange={(event) =>
-                  setProject((current) => ({ ...current, objective: event.target.value }))
-                }
-                placeholder="Prove that a 150-unit accessory capsule can be produced entirely from Swedish post-production offcuts, with evidence we can put in front of our board."
-              />
-            </Field>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Intended product">
-                <Input
-                  value={project.intendedProduct}
-                  onChange={(event) =>
-                    setProject((current) => ({ ...current, intendedProduct: event.target.value }))
-                  }
-                  placeholder="Everyday tote and pouch set"
-                />
-              </Field>
-              <Field label="Target completion">
-                <Input
-                  type="date"
-                  value={project.targetCompletionDate}
-                  onChange={(event) =>
-                    setProject((current) => ({
-                      ...current,
-                      targetCompletionDate: event.target.value,
-                    }))
-                  }
-                />
-              </Field>
-            </div>
-
-            <Field label="Design intent">
-              <Textarea
-                value={project.designIntent}
-                onChange={(event) =>
-                  setProject((current) => ({ ...current, designIntent: event.target.value }))
-                }
-                placeholder="Undyed, panelled construction that accepts shade variation rather than hiding it."
-              />
-            </Field>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Commercial objectives">
-                <Input
-                  value={project.commercialObjectives}
-                  onChange={(event) =>
-                    setProject((current) => ({
-                      ...current,
-                      commercialObjectives: event.target.value,
-                    }))
-                  }
-                  placeholder="Retail at 690 SEK with a repeatable cost base"
-                />
-              </Field>
-              <Field label="Impact objectives">
-                <Input
-                  value={project.impactObjectives}
-                  onChange={(event) =>
-                    setProject((current) => ({ ...current, impactObjectives: event.target.value }))
-                  }
-                  placeholder="Activate 250 kg and keep production within 300 km"
-                />
-              </Field>
-            </div>
-
-            <div className="space-y-4 border-t border-[var(--line)] pt-5">
-              <div className="space-y-1">
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  What the makers build from
-                </p>
-                <p className="text-xs leading-relaxed text-[var(--ink-muted)]">
-                  References, drawings and specifications. They attach when the brief is created,
-                  and every maker on the project works from them.
-                </p>
-              </div>
-
-              <BriefResourceDraftList
-                drafts={references}
-                onRemove={(index) =>
-                  setReferences((current) => current.filter((_, position) => position !== index))
-                }
-              />
-
-              <BriefResourcePicker
-                pending={pending}
-                onAdd={async (draft) => {
-                  setReferences((current) => [...current, draft]);
-                  return true;
-                }}
-              />
-            </div>
-          </Panel>
-
-          {/* Resource Demand Panel */}
-          <Panel className="space-y-5 p-6">
-            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={demand.include}
-                  onChange={(event) =>
-                    setDemand((current) => ({ ...current, include: event.target.checked }))
-                  }
-                  className="h-4 w-4 rounded border-[var(--line-strong)] text-[var(--brand-primary)] focus:ring-[var(--brand-primary)]"
-                />
-                <span className="text-lg font-bold tracking-[-0.03em] text-[var(--ink)] flex items-center gap-2">
-                  <Layers className="h-5 w-5 text-[var(--brand-primary)]" />
-                  2. Submit Resource Demand With Brief
-                </span>
-              </label>
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--brand-secondary)]">
-                Instant Matching
-              </span>
-            </div>
-
-            {demand.include && (
-              <div className="space-y-5 pt-1">
-                <Field label="Request title">
-                  <Input
-                    value={demand.title}
-                    onChange={(event) =>
-                      setDemand((current) => ({ ...current, title: event.target.value }))
-                    }
-                    placeholder="Cotton jersey offcuts for the capsule tote"
-                  />
-                </Field>
-
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                  <Field label="Material category">
-                    <Select
-                      value={demand.materialCategory}
-                      onChange={(event) =>
-                        setDemand((current) => ({
-                          ...current,
-                          materialCategory: event.target.value as MaterialCategory,
-                        }))
-                      }
-                    >
-                      {MATERIAL_CATEGORIES.map((value) => (
-                        <option key={value} value={value}>
-                          {categoryLabel(value)}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                  <Field label="Quantity needed">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.001"
-                      value={demand.quantityNeeded}
-                      onChange={(event) =>
-                        setDemand((current) => ({ ...current, quantityNeeded: event.target.value }))
-                      }
-                      placeholder="300"
-                    />
-                  </Field>
-                  <Field label="Unit">
-                    <Select
-                      value={demand.unit}
-                      onChange={(event) =>
-                        setDemand((current) => ({ ...current, unit: event.target.value as Unit }))
-                      }
-                    >
-                      {UNITS.map((value) => (
-                        <option key={value} value={value}>
-                          {UNIT_LABELS[value]}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                  <Field label="Needed by">
-                    <Input
-                      type="date"
-                      value={demand.neededBy}
-                      onChange={(event) =>
-                        setDemand((current) => ({ ...current, neededBy: event.target.value }))
-                      }
-                    />
-                  </Field>
-                </div>
-
-                <Field label="Material requirements">
-                  <Textarea
-                    value={demand.materialDescription}
-                    onChange={(event) =>
-                      setDemand((current) => ({
-                        ...current,
-                        materialDescription: event.target.value,
-                      }))
-                    }
-                    placeholder="Light to mid-weight jersey, undyed or pale, minimum piece size 30 x 30 cm."
-                  />
-                </Field>
-
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <Field label="Composition requirements">
-                    <Input
-                      value={demand.compositionRequirements}
-                      onChange={(event) =>
-                        setDemand((current) => ({
-                          ...current,
-                          compositionRequirements: event.target.value,
-                        }))
-                      }
-                      placeholder="Cotton-dominant, no elastane above 3%"
-                    />
-                  </Field>
-                  <Field label="Quality requirements">
-                    <Input
-                      value={demand.qualityRequirements}
-                      onChange={(event) =>
-                        setDemand((current) => ({
-                          ...current,
-                          qualityRequirements: event.target.value,
-                        }))
-                      }
-                      placeholder="No staining or contamination"
-                    />
-                  </Field>
-                  <Field label="Production location preference">
-                    <Input
-                      value={demand.productionLocationPreference}
-                      onChange={(event) =>
-                        setDemand((current) => ({
-                          ...current,
-                          productionLocationPreference: event.target.value,
-                        }))
-                      }
-                      placeholder="Within 300 km of Malmö"
-                    />
-                  </Field>
-                  <Field label="Maximum distance (km)">
-                    <Input
-                      type="number"
-                      min="0"
-                      value={demand.maxDistanceKm}
-                      onChange={(event) =>
-                        setDemand((current) => ({ ...current, maxDistanceKm: event.target.value }))
-                      }
-                      placeholder="300"
-                    />
-                  </Field>
-                </div>
-              </div>
+          <div className="sticky bottom-0 z-10 mt-6 flex items-center gap-3 border-t border-[var(--line)] bg-[var(--surface)] py-4">
+            {step > 0 && (
+              <Button key="back" type="button" variant="secondary" onClick={() => goTo(step - 1)}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
             )}
-          </Panel>
 
-          <div className="flex justify-end pt-2">
-            <Button type="submit" disabled={pending} size="md">
-              {pending ? "Creating brief…" : "Create brief & activate matching"}
-            </Button>
+            <div className="ml-auto flex items-center gap-4">
+              {/* Distinct keys: React must not morph the Next button into the submit
+                  button mid-click, or the browser submits the form on the same click. */}
+              {isReview ? (
+                <Button key="submit" type="submit" disabled={pending}>
+                  {pending ? "Creating brief…" : "Create brief"}
+                </Button>
+              ) : (
+                <Button key="next" type="button" onClick={() => moveTo(step + 1)}>
+                  Next
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Right Column: Live Proof Canvas Preview (5 Columns, Sticky) */}
-        <div className="lg:col-span-5 sticky top-6 space-y-4">
-          <Panel className="p-6 border-2 border-[var(--brand-primary)] shadow-[0_8px_32px_-8px_rgba(255,92,0,0.15)] space-y-5">
-            {/* Live Indicator Header */}
-            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
-              <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4 text-[var(--brand-primary)] animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand-primary)]">
-                  Live Dashboard Card Preview
-                </span>
-              </div>
-              <CirkaBadge status="draft" label="DRAFT BRIEF" />
-            </div>
-
-            {/* Authentic Cirka SOT White-Bordered Craft Photography Frame */}
-            <div className="relative flex flex-col justify-end p-4 rounded-xl bg-[#545454] text-white border-4 border-white shadow-md min-h-[160px] overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/50 to-black/90 z-0" />
-              <div className="relative z-10 space-y-1">
-                <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--brand-primary)]">
-                  📷 Verified Craft Atelier
-                </span>
-                <p className="text-xs font-bold text-white leading-snug">
-                  European Craft Partner · Atelier Match Pending
-                </p>
-                <div className="pt-1">
-                  <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--brand-secondary)]">
-                    <ShieldCheck className="h-3.5 w-3.5" /> Chain of Custody Audit Pending
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Dynamic Live Text Preview */}
-            <div className="space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-bold tracking-[-0.03em] text-[var(--ink)] leading-tight">
-                    {project.title.trim() || "Untitled Brief"}
-                  </h3>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)] mt-1">
-                    PRJ-NEW · Target: {project.targetCompletionDate ? formatDate(toTimestamp(project.targetCompletionDate)) : "Target Date Pending"}
-                  </p>
-                </div>
-                {demand.include && demand.quantityNeeded && (
-                  <div className="text-right shrink-0">
-                    <span className="text-lg font-bold tracking-[-0.04em] text-[var(--brand-primary)] leading-tight block">
-                      {Number(demand.quantityNeeded).toLocaleString()} {demand.unit}
-                    </span>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                      requested
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-3 bg-[var(--surface-muted)] rounded-lg text-xs leading-relaxed text-[var(--ink)] border-l-2 border-[var(--brand-primary)]">
-                <span className="font-bold text-[10px] uppercase tracking-[0.16em] text-[var(--brand-primary)] block mb-1">Objective</span>
-                {project.objective.trim() || "Fill out the project objective on the left to see how your brief summary will appear to CIRKA coordinators and craft partners."}
-              </div>
-
-              {/* Additional Project Metadata */}
-              <div className="grid grid-cols-2 gap-4 text-xs text-[var(--ink-muted)] bg-[var(--surface)] p-3 rounded-lg border border-[var(--line)]">
-                <div>
-                  <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink)] mb-0.5">Intended Product</span>
-                  <span className="text-[var(--ink-muted)]">{project.intendedProduct || "-"}</span>
-                </div>
-                <div>
-                  <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink)] mb-0.5">Design Intent</span>
-                  <span className="text-[var(--ink-muted)]">{project.designIntent || "-"}</span>
-                </div>
-                <div>
-                  <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink)] mb-0.5">Commercial Objectives</span>
-                  <span className="text-[var(--ink-muted)]">{project.commercialObjectives || "-"}</span>
-                </div>
-                <div>
-                  <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink)] mb-0.5">Impact Objectives</span>
-                  <span className="text-[var(--ink-muted)]">{project.impactObjectives || "-"}</span>
-                </div>
-              </div>
-
-              {/* Resource Demand Live Box */}
-              {demand.include && (
-                <div className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--line-strong)] space-y-3 relative overflow-hidden">
-                  {/* Decorative background logo or pattern could go here */}
-                  <div className="absolute -right-4 -top-4 opacity-5">
-                    <Layers className="h-24 w-24" />
-                  </div>
-                  
-                  <div className="relative z-10">
-                    <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--brand-secondary)] mb-1">
-                      Resource Demand Spec
-                    </span>
-                    <div className="flex justify-between items-start">
-                      <span className="font-bold text-sm text-[var(--ink)] leading-tight pr-4">
-                        {demand.title || categoryLabel(demand.materialCategory)}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="relative z-10 grid grid-cols-2 gap-y-3 text-[11px]">
-                    <div>
-                      <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-0.5">Category</span>
-                      <span className="text-[var(--ink)] font-medium">{categoryLabel(demand.materialCategory)}</span>
-                    </div>
-                    <div>
-                      <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-0.5">Needed By</span>
-                      <span className="text-[var(--ink)] font-medium">{demand.neededBy ? formatDate(toTimestamp(demand.neededBy)) : "-"}</span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-0.5">Requirements (Desc · Comp · Quality)</span>
-                      <span className="text-[var(--ink)] leading-snug block">
-                        {[demand.materialDescription, demand.compositionRequirements, demand.qualityRequirements].filter(Boolean).length > 0 
-                          ? [demand.materialDescription, demand.compositionRequirements, demand.qualityRequirements].filter(Boolean).join(" · ") 
-                          : "-"}
-                      </span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="block font-bold text-[9px] uppercase tracking-[0.14em] text-[var(--ink-muted)] mb-0.5">Location Preference</span>
-                      <span className="text-[var(--ink)]">
-                        {demand.productionLocationPreference || "-"}
-                        {demand.maxDistanceKm ? ` (Max ${demand.maxDistanceKm}km)` : ""}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Journey Stepper Preview */}
-              <div className="pt-2 border-t border-[var(--line)]">
-                <ProjectJourneyStepper journey={previewJourney} compact />
-              </div>
-
-              {/* Preview Footer */}
-              <div className="pt-3 border-t border-[var(--line)] flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                <span>
-                  {demand.include ? "1 request" : "No request"} ·{" "}
-                  {references.length === 1 ? "1 resource" : `${references.length} resources`}
-                </span>
-                <span className="text-[var(--brand-primary)] flex items-center gap-1">
-                  Open proof view <ArrowRight className="h-3 w-3" />
-                </span>
-              </div>
-            </div>
-          </Panel>
-        </div>
+        {!isReview && (
+          <div className="sticky top-6 space-y-4 lg:col-span-5">
+            <BriefPreview {...brief} />
+          </div>
+        )}
       </form>
     </div>
   );

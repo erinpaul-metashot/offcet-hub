@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Factory, Layers, Search, ShieldCheck, Users } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Search, ShieldCheck } from "lucide-react";
 import { Button, EmptyState, Input, Panel, Select } from "@/components/ui";
 import { PROJECT_STATUSES, statusLabel } from "../../_mock/domain";
 import { getBrandDashboard } from "../../_mock/selectors-brand";
@@ -16,14 +17,42 @@ import {
 import { ProjectJourneyStepper } from "../../_components/project-journey-stepper";
 import { useAction } from "../../_components/use-action";
 
+/** What the evidence actually says. Nothing is claimed until a production run exists. */
+function ReviewState({ reviewed, selfReported }: { reviewed: number; selfReported: number }) {
+  const runs = reviewed + selfReported;
+  if (runs === 0) {
+    return null;
+  }
+
+  const allReviewed = selfReported === 0;
+
+  return (
+    <div className="relative z-10 pt-3 border-t border-white/20">
+      <span
+        className={`inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.14em] ${
+          allReviewed ? "text-[var(--brand-secondary)]" : "text-white/80"
+        }`}
+      >
+        {allReviewed && <ShieldCheck className="h-3.5 w-3.5" />}
+        {allReviewed ? statusLabel("cirka_reviewed") : `${reviewed} of ${runs} runs reviewed`}
+      </span>
+    </div>
+  );
+}
+
 export default function BrandProjectsPage() {
   const store = useDemoStore();
   const { scope } = useDemoPersona("brand");
   const { run, pending } = useAction();
   const view = getBrandDashboard(store.db, scope);
 
+  const searchParams = useSearchParams();
+
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(() => {
+    const requested = searchParams.get("status") ?? "";
+    return (PROJECT_STATUSES as readonly string[]).includes(requested) ? requested : "";
+  });
   const [sortBy, setSortBy] = useState("newest");
 
   /* Executive Hero Aggregate Metrics Calculation */
@@ -73,8 +102,7 @@ export default function BrandProjectsPage() {
     <div className="space-y-6">
       {/* Header */}
       <SectionHeading
-        eyebrow="Projects"
-        title="Your programmes of work"
+        title="Projects"
         action={
           <Button as={Link} href="/demo/brand/projects/new" size="sm">
             New brief
@@ -82,66 +110,32 @@ export default function BrandProjectsPage() {
         }
       />
 
-      {/* Executive Impact Hero Bar */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Panel className="p-5">
-          <div className="flex items-center justify-between text-[var(--ink-muted)]">
-            <span className="text-[10px] font-bold uppercase tracking-[0.16em]">
-              Total Material Activated
-            </span>
-            <Layers className="h-4 w-4 text-[var(--brand-primary)]" />
-          </div>
-          <p className="mt-2 text-2xl font-bold tracking-[-0.04em] text-[var(--ink)]">
-            {formatQuantity(totalActivated, primaryUnit)}
-          </p>
-          <p className="mt-1 text-[11px] font-semibold text-[var(--ink-muted)]">
-            Across {view.projects.length} brand brief{view.projects.length === 1 ? "" : "s"}
-          </p>
-        </Panel>
-
-        <Panel className="p-5">
-          <div className="flex items-center justify-between text-[var(--ink-muted)]">
-            <span className="text-[10px] font-bold uppercase tracking-[0.16em]">
-              Avg. Material Yield
-            </span>
-            <Factory className="h-4 w-4 text-[var(--brand-secondary)]" />
-          </div>
-          <p className="mt-2 text-2xl font-bold tracking-[-0.04em] text-[var(--brand-secondary)]">
-            {overallYield !== undefined ? formatPercent(overallYield) : "N/A"}
-          </p>
-        </Panel>
-
-        <Panel className="p-5">
-          <div className="flex items-center justify-between text-[var(--ink-muted)]">
-            <span className="text-[10px] font-bold uppercase tracking-[0.16em]">
-              Craft Makers Engaged
-            </span>
-            <Users className="h-4 w-4 text-[var(--brand-primary)]" />
-          </div>
-          <p className="mt-2 text-2xl font-bold tracking-[-0.04em] text-[var(--ink)]">
-            {totalMakers} {totalMakers === 1 ? "maker" : "makers"}
-          </p>
-        </Panel>
-
-        <Panel className="p-5">
-          <div className="flex items-center justify-between text-[var(--ink-muted)]">
-            <span className="text-[10px] font-bold uppercase tracking-[0.16em]">
-              Finished Product Units
-            </span>
-            <ShieldCheck className="h-4 w-4 text-[var(--brand-secondary)]" />
-          </div>
-          <p className="mt-2 text-2xl font-bold tracking-[-0.04em] text-[var(--ink)]">
-            {totalUnits.toLocaleString()} units
-          </p>
-        </Panel>
-      </div>
+      {view.projects.length > 0 && (
+        <p className="flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums text-[var(--ink-muted)]">
+          <span>
+            <strong className="text-[var(--ink)]">{formatQuantity(totalActivated, primaryUnit)}</strong> activated
+          </span>
+          <span>
+            <strong className="text-[var(--ink)]">
+              {overallYield !== undefined ? formatPercent(overallYield) : "-"}
+            </strong>{" "}
+            yield
+          </span>
+          <span>
+            <strong className="text-[var(--ink)]">{totalMakers}</strong> makers
+          </span>
+          <span>
+            <strong className="text-[var(--ink)]">{totalUnits.toLocaleString()}</strong> units
+          </span>
+        </p>
+      )}
 
       {/* Filter and Search Panel */}
       <Panel className="p-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="relative">
             <Input
-              placeholder="Search title, reference or objective..."
+              placeholder="Search projects"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -158,20 +152,17 @@ export default function BrandProjectsPage() {
             ))}
           </Select>
 
-          <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="newest">Sort by: Newest created</option>
-            <option value="target">Sort by: Target date</option>
-            <option value="yield">Sort by: Highest yield %</option>
+          <Select aria-label="Sort" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <option value="newest">Newest</option>
+            <option value="target">Target date</option>
+            <option value="yield">Yield</option>
           </Select>
         </div>
       </Panel>
 
       {/* Project Cards (Hybrid Master Variant) */}
       {filteredProjects.length === 0 ? (
-        <EmptyState
-          title="No projects match your filter"
-          body="Clear the search or status filter."
-        />
+        <EmptyState title={view.projects.length === 0 ? "No projects yet" : "No matches"} />
       ) : (
         <div className="space-y-6">
           {filteredProjects.map((project) => {
@@ -188,24 +179,17 @@ export default function BrandProjectsPage() {
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/80 z-0" />
                     
                     <div className="relative z-10 space-y-1">
-                      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand-primary)]">
-                        📷 Maker Facility
-                      </span>
                       <h4 className="text-xs font-bold text-white leading-snug">
-                        {proof?.production[0]?.makerName ?? "Verified European Atelier"}
+                        {proof?.production[0]?.makerName ?? "No maker yet"}
                       </h4>
-                      <p className="text-[10px] text-white/80 leading-relaxed">
-                        {proof?.material.activated
-                          ? `${formatQuantity(proof.material.activated, proof.material.unit)} activated`
-                          : "Allocated Material"}
-                      </p>
+                      {proof && proof.material.activated > 0 && (
+                        <p className="text-[10px] text-white/80 leading-relaxed">
+                          {formatQuantity(proof.material.activated, proof.material.unit)} activated
+                        </p>
+                      )}
                     </div>
 
-                    <div className="relative z-10 pt-3 border-t border-white/20">
-                      <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--brand-secondary)]">
-                        <ShieldCheck className="h-3.5 w-3.5" /> Chain of Custody Verified
-                      </span>
-                    </div>
+                    {proof && <ReviewState {...proof.assurance} />}
                   </div>
 
                   {/* Right Column: Title, Objective, Metrics, Journey & Actions */}
@@ -240,42 +224,20 @@ export default function BrandProjectsPage() {
 
                       {/* Metrics Summary Strip */}
                       {proof && (
-                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 rounded-xl bg-[var(--surface)] border border-[var(--line)]">
-                          <div>
-                            <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              Activated
-                            </span>
-                            <span className="text-sm font-bold text-[var(--ink)]">
-                              {formatQuantity(proof.material.activated, proof.material.unit)}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              Material Yield
-                            </span>
-                            <span className="text-sm font-bold text-[var(--brand-secondary)]">
-                              {proof.material.yield !== undefined
-                                ? `${formatPercent(proof.material.yield)} yield`
-                                : "N/A"}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              Units Completed
-                            </span>
-                            <span className="text-sm font-bold text-[var(--ink)]">
-                              {proof.social.unitsCompleted} units
-                            </span>
-                          </div>
-                          <div>
-                            <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              Craft Makers
-                            </span>
-                            <span className="text-sm font-bold text-[var(--brand-primary)]">
-                              {proof.social.makersEngaged} makers
-                            </span>
-                          </div>
-                        </div>
+                        <dl className="mt-4 grid grid-cols-3 gap-3 p-3 rounded-xl bg-[var(--surface)] border border-[var(--line)]">
+                          {[
+                            ["Yield", proof.material.yield !== undefined ? formatPercent(proof.material.yield) : "-"],
+                            ["Units", String(proof.social.unitsCompleted)],
+                            ["Makers", String(proof.social.makersEngaged)],
+                          ].map(([label, value]) => (
+                            <div key={label}>
+                              <dt className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                                {label}
+                              </dt>
+                              <dd className="text-sm font-bold tabular-nums text-[var(--ink)]">{value}</dd>
+                            </div>
+                          ))}
+                        </dl>
                       )}
                     </div>
 
@@ -296,7 +258,7 @@ export default function BrandProjectsPage() {
 
                         <div className="flex flex-wrap items-center gap-2">
                           <Button as={Link} href={`/demo/brand/projects/${project._id}`} size="sm">
-                            Open proof view
+                            Open
                           </Button>
                           {project.status === "draft" && (
                             <Button

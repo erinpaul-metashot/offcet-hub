@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui";
 import { getBrandDashboard } from "../../_mock/selectors-brand";
 import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
-import { CirkaBadge, SectionHeading } from "../../_components/cirka-ui";
+import { SectionHeading } from "../../_components/cirka-ui";
 
 export default function BrandApprovalsPage() {
   const router = useRouter();
@@ -16,13 +16,10 @@ export default function BrandApprovalsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Pending Approvals" />
+      <SectionHeading title="Approvals" />
 
       {view.pendingApprovals.length === 0 ? (
-        <EmptyState
-          title="Nothing waiting"
-          body="Proposed matches appear here."
-        />
+        <EmptyState title="Nothing waiting" />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--paper)]">
           <table className="w-full border-collapse text-sm">
@@ -30,9 +27,6 @@ export default function BrandApprovalsPage() {
               <tr className="bg-[var(--surface-elevated)]">
                 <th className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                   Project · batch
-                </th>
-                <th className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  Status
                 </th>
                 <th className="px-5 py-3 text-right text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                   Quantity
@@ -68,9 +62,6 @@ export default function BrandApprovalsPage() {
                       <p className="truncate text-xs text-[var(--ink-muted)]">
                         {request?.reference} · {request?.title}
                       </p>
-                    </td>
-                    <td className="px-5 py-4">
-                      <CirkaBadge status={match.status} />
                     </td>
                     <td className="px-5 py-4 text-right tabular-nums">
                       <p className="text-sm font-medium text-[var(--ink)]">

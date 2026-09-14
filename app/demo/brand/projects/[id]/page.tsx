@@ -6,7 +6,6 @@ import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button, EmptyState, Field, Input, Panel, Select, Textarea } from "@/components/ui";
 import {
-  ASSURANCE_LABELS,
   DATA_SOURCE_LABELS,
   MATERIAL_CATEGORIES,
   UNITS,
@@ -188,25 +187,58 @@ function AddDemandForm({ projectId, projectTitle }: { projectId: Id; projectTitl
   );
 }
 
-function StoryStep({
-  index,
-  title,
-  children,
-}: {
-  index: number;
-  title: string;
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-5">
-      <div className="flex items-start gap-4">
-        <span className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)] text-sm font-bold text-white">
-          {index}
-        </span>
-        <h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)]">{title}</h2>
-      </div>
-      <div className="sm:pl-13">{children}</div>
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
+      {children}
     </section>
+  );
+}
+
+type Material = NonNullable<ReturnType<typeof getProjectProofView>>["material"];
+
+/**
+ * Where the activated material ended up. `received` counts both hops, so the
+ * split is built from parts that don't overlap; whatever they don't cover is
+ * still somewhere in the chain.
+ */
+function MaterialOutcome({ material }: { material: Material }) {
+  const parts = [
+    { bucket: "incorporated", label: "Into products", quantity: material.incorporated },
+    { bucket: "prototypes", label: "Prototypes", quantity: material.prototypes },
+    { bucket: "reusable", label: "Reusable", quantity: material.remaining + material.offcuts },
+    { bucket: "lost", label: "Lost", quantity: material.loss + material.writtenOffInTransit },
+  ];
+  const accounted = parts.reduce((total, part) => total + part.quantity, 0);
+  const total = Math.max(material.activated, accounted);
+  const slices = [
+    ...parts,
+    { bucket: "not_yet_used", label: "Not yet used", quantity: total - accounted },
+  ]
+    .filter((part) => part.quantity > 0)
+    .map((part) => ({ ...part, share: part.quantity / total }));
+
+  return (
+    <Panel className="grid gap-6 p-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+      {total > 0 ? (
+        <QuantityPotsBar slices={slices} total={total} unit={material.unit} totalLabel="Activated" />
+      ) : (
+        <p className="text-sm text-[var(--ink-muted)]">No material activated yet</p>
+      )}
+      <div className="md:border-l md:border-[var(--line)] md:pl-6 md:text-right">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+          Material yield
+        </p>
+        <p className="text-4xl font-semibold tracking-[-0.05em] tabular-nums text-[var(--brand-primary)]">
+          {formatPercent(material.yield)}
+        </p>
+        <p className="text-xs tabular-nums text-[var(--ink-muted)]">
+          {formatQuantity(material.incorporated, material.unit)} of{" "}
+          {formatQuantity(material.used, material.unit)} used
+        </p>
+      </div>
+    </Panel>
   );
 }
 
@@ -219,7 +251,7 @@ export default function BrandProofViewPage() {
   const proof = getProjectProofView(store.db, scope, params.id);
 
   if (!proof) {
-    return <EmptyState title="Project not found" body="The demo data may have been reset." />;
+    return <EmptyState title="Project not found" />;
   }
 
   const { project, material, operational, social, commercial, assurance } = proof;
@@ -246,12 +278,15 @@ export default function BrandProofViewPage() {
   }));
 
   return (
-    <div className="space-y-12 pb-10">
+    <div className="space-y-10 pb-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button as={Link} href="/demo/brand/projects" variant="ghost" size="sm">
           ← All projects
         </Button>
         <div className="flex flex-wrap gap-3">
+          <Button as={Link} href={`/demo/brand/projects/${project._id}/report`} size="sm">
+            Report
+          </Button>
           <Button
             variant="secondary"
             size="sm"
@@ -298,17 +333,16 @@ export default function BrandProofViewPage() {
         </div>
       </div>
 
-      <SectionHeading
-        eyebrow={`${project.reference} · ${proof.brandName}`}
-        title={project.title}
-        action={<CirkaBadge status={project.status} />}
-      />
+      <div className="space-y-6">
+        <SectionHeading
+          eyebrow={project.reference}
+          title={project.title}
+          action={<CirkaBadge status={project.status} />}
+        />
+        <MaterialOutcome material={material} />
+      </div>
 
-      {/* 1: The brief */}
-      <StoryStep
-        index={1}
-        title="The brief"
-      >
+      <Section title="Brief">
         <Panel className="p-6">
           <dl>
             <DataRow label="Objective" value={project.objective} />
@@ -342,12 +376,9 @@ export default function BrandProofViewPage() {
 
           <div className="mt-5 space-y-4 border-t border-[var(--line)] pt-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              What the makers build from
+              Brief pack
             </p>
-            <ProjectBriefPack
-              items={proof.references}
-              emptyBody="Attach the references, drawings and specifications your makers should work to."
-            />
+            <ProjectBriefPack items={proof.references} />
             <AddBriefResource projectId={project._id} />
           </div>
 
@@ -355,13 +386,9 @@ export default function BrandProofViewPage() {
             <AddDemandForm projectId={project._id} projectTitle={project.title} />
           </div>
         </Panel>
-      </StoryStep>
+      </Section>
 
-      {/* 2: The resource */}
-      <StoryStep
-        index={2}
-        title="The resource"
-      >
+      <Section title="Material sources">
         <div className="space-y-4">
           {proof.batches.map((batch) => (
             <Panel key={batch._id} className="space-y-4 p-6">
@@ -391,28 +418,14 @@ export default function BrandProofViewPage() {
                 <DataRow label="Source location" value={batch.locationText ?? "-"} />
                 <DataRow label="Available from" value={formatDate(batch.availableFrom)} />
                 <DataRow label="Quality" value={batch.qualityClass?.replace(/_/g, " ") ?? "-"} />
-                <DataRow
-                  label="Data source"
-                  value={DATA_SOURCE_LABELS[batch.dataSource]}
-                  hint={ASSURANCE_LABELS[batch.assuranceLevel]}
-                />
               </dl>
             </Panel>
           ))}
-          {proof.batches.length === 0 && (
-            <EmptyState
-              title="No resource matched yet"
-              body="Approved matches appear here."
-            />
-          )}
+          {proof.batches.length === 0 && <EmptyState title="No resource matched yet" />}
         </div>
-      </StoryStep>
+      </Section>
 
-      {/* 3: CIRKA activation */}
-      <StoryStep
-        index={3}
-        title="CIRKA activation"
-      >
+      <Section title="Matches & participants">
         <div className="space-y-4">
           {proof.matches.map(({ match, batch }) => (
             <Panel key={match._id} className="space-y-3 p-6">
@@ -431,7 +444,7 @@ export default function BrandProofViewPage() {
               <p className="text-xs text-[var(--ink-muted)]">
                 Proposed {formatDate(match.proposedAt)}
                 {match.decidedAt ? ` · approved ${formatDate(match.decidedAt)}` : ""}
-                {match.distanceKm ? ` · ${match.distanceKm} km between the parties` : ""}
+                {match.distanceKm ? ` · ${match.distanceKm} km` : ""}
               </p>
             </Panel>
           ))}
@@ -466,13 +479,9 @@ export default function BrandProofViewPage() {
             </div>
           </Panel>
         </div>
-      </StoryStep>
+      </Section>
 
-      {/* 4: The journey */}
-      <StoryStep
-        index={4}
-        title="The journey"
-      >
+      <Section title="Journey">
         <Panel className="overflow-x-auto">
           <table className="w-full min-w-[44rem] border-collapse text-sm">
             <thead>
@@ -512,65 +521,23 @@ export default function BrandProofViewPage() {
         </Panel>
 
         {(material.writtenOffInTransit > 0 || operational.issuesRaised > 0) && (
-          <NoticeBanner tone="warning" title="Exceptions on this project">
+          <NoticeBanner tone="warning" title="Exceptions">
             {material.writtenOffInTransit > 0 && (
-              <p>
-                {formatQuantity(material.writtenOffInTransit, material.unit)} was lost between
-                dispatch and receipt, investigated and closed as a confirmed loss.
-              </p>
+              <p>{formatQuantity(material.writtenOffInTransit, material.unit)} written off in transit</p>
             )}
             {operational.issuesRaised > 0 && (
               <p>
-                {operational.issuesRaised} operational issue
-                {operational.issuesRaised === 1 ? "" : "s"} raised, {operational.issuesResolved}{" "}
-                resolved.
+                {operational.issuesResolved} of {operational.issuesRaised} issue
+                {operational.issuesRaised === 1 ? "" : "s"} resolved
               </p>
             )}
           </NoticeBanner>
         )}
-      </StoryStep>
+      </Section>
 
-      {/* 5: The outputs */}
-      <StoryStep
-        index={5}
-        title="The outputs"
-      >
+      <Section title="Production">
         <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              ["Activated", material.activated],
-              ["Received", material.received],
-              ["Used", material.used],
-              ["Into products", material.incorporated],
-              ["Prototypes", material.prototypes],
-              ["Reusable offcuts", material.offcuts],
-              ["Production loss", material.loss],
-              ["Back in stock", material.remaining],
-            ].map(([label, value]) => (
-              <Panel key={label as string} className="p-5">
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  {label}
-                </p>
-                <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)]">
-                  {formatQuantity(value as number, material.unit)}
-                </p>
-              </Panel>
-            ))}
-          </div>
-
-          <Panel className="p-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Material yield
-            </p>
-            <p className="mt-1 text-4xl font-semibold tracking-[-0.05em] text-[var(--brand-primary)]">
-              {formatPercent(material.yield)}
-            </p>
-            <p className="mt-2 text-sm tabular-nums text-[var(--ink-muted)]">
-              {formatQuantity(material.incorporated, material.unit)} /{" "}
-              {formatQuantity(material.used, material.unit)} used
-            </p>
-          </Panel>
-
+          {proof.production.length === 0 && <EmptyState title="No production yet" />}
           {proof.production.map((entry) => (
             <Panel key={entry.production._id} className="space-y-4 p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -616,14 +583,10 @@ export default function BrandProofViewPage() {
             </Panel>
           ))}
         </div>
-      </StoryStep>
+      </Section>
 
-      {/* 6: The results */}
-      <StoryStep
-        index={6}
-        title="The results"
-      >
-        <div className="grid gap-6 lg:grid-cols-2">
+      <Section title="Results">
+        <div className="grid gap-6 lg:grid-cols-3">
           <Panel className="p-6">
             <h3 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
               Operational
@@ -645,11 +608,7 @@ export default function BrandProofViewPage() {
                     : "-"
                 }
               />
-              <DataRow
-                label="Delivery accuracy"
-                value={formatPercent(operational.deliveryAccuracy)}
-                hint="Received against dispatched"
-              />
+              <DataRow label="Delivery accuracy" value={formatPercent(operational.deliveryAccuracy)} />
               <DataRow
                 label="Production completion"
                 value={formatPercent(operational.completionRate)}
@@ -664,35 +623,7 @@ export default function BrandProofViewPage() {
 
           <Panel className="p-6">
             <h3 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Environmental
-            </h3>
-            <dl>
-              <DataRow
-                label="Secondary resource activated"
-                value={formatQuantity(material.activated, material.unit)}
-              />
-              <DataRow
-                label="Incorporated into products"
-                value={formatQuantity(material.incorporated, material.unit)}
-              />
-              <DataRow
-                label="Remaining available for further use"
-                value={formatQuantity(material.remaining + material.offcuts, material.unit)}
-              />
-              <DataRow
-                label="Production loss"
-                value={formatQuantity(material.loss + material.writtenOffInTransit, material.unit)}
-              />
-              <DataRow label="Material yield" value={formatPercent(material.yield)} />
-            </dl>
-            <p className="mt-4 border-t border-[var(--line)] pt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-              Carbon &amp; water withheld — no agreed methodology
-            </p>
-          </Panel>
-
-          <Panel className="p-6">
-            <h3 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Local economic and social
+              Social
             </h3>
             <dl>
               <DataRow label="Local makers engaged" value={social.makersEngaged} />
@@ -707,53 +638,29 @@ export default function BrandProofViewPage() {
 
           <Panel className="p-6">
             <h3 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Commercial learning
+              Commercial
             </h3>
             <dl>
               <DataRow
                 label="Production time per unit"
                 value={commercial.hoursPerUnit !== undefined ? `${commercial.hoursPerUnit} h` : "-"}
               />
-              <DataRow label="Material yield" value={formatPercent(material.yield)} />
-              <DataRow
-                label="Intended vs actual output"
-                value={`${social.unitsCompleted} of ${social.unitsPlanned}`}
-              />
+              {commercial.sharedCosts.map((row) => (
+                <DataRow
+                  key={row.productionReference}
+                  label={`Cost per unit · ${row.makerName}`}
+                  value={formatCurrency(row.baseCostPerUnit, row.currency)}
+                />
+              ))}
+              {commercial.sharedCosts.length === 0 && (
+                <DataRow label="Cost per unit" value="Not shared" />
+              )}
             </dl>
-
-            {commercial.sharedCosts.length > 0 ? (
-              <div className="mt-4 space-y-2">
-                {commercial.sharedCosts.map((row) => (
-                  <div
-                    key={row.productionReference}
-                    className="flex items-center justify-between gap-3 rounded-2xl bg-[var(--surface)] p-4"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-[var(--ink)]">{row.makerName}</p>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                        Shared voluntarily
-                      </p>
-                    </div>
-                    <p className="text-lg font-semibold text-[var(--ink)]">
-                      {formatCurrency(row.baseCostPerUnit, row.currency)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-4 border-t border-[var(--line)] pt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                No maker has opted in
-              </p>
-            )}
           </Panel>
         </div>
-      </StoryStep>
+      </Section>
 
-      {/* 7: Evidence and reporting */}
-      <StoryStep
-        index={7}
-        title="Evidence and reporting"
-      >
+      <Section title="Evidence">
         <div className="space-y-5">
           <Panel className="p-6">
             <dl className="grid gap-x-8 sm:grid-cols-2">
@@ -763,7 +670,7 @@ export default function BrandProofViewPage() {
               />
               <DataRow label="Self-reported" value={assurance.selfReported} />
               <DataRow
-                label="How the resource data arrived"
+                label="Data sources"
                 value={assurance.dataSources
                   .map((source) => DATA_SOURCE_LABELS[source])
                   .join(", ")}
@@ -782,26 +689,14 @@ export default function BrandProofViewPage() {
           </Panel>
 
           <EvidenceGrid items={proof.evidence} />
-
-          <Panel className="flex flex-wrap items-center justify-between gap-4 p-6">
-            <h3 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Take the data with you
-            </h3>
-            <Button as={Link} href={`/demo/brand/projects/${project._id}/report`} size="sm">
-              Open the printable report
-            </Button>
-          </Panel>
         </div>
-      </StoryStep>
+      </Section>
 
-      {/* 8: The record itself */}
-      <StoryStep index={8} title="The full record">
-        <ThreadTimelinePanel
-          role="brand"
-          anchor={{ table: "projects", id: project._id }}
-          title="Everything that happened"
-        />
-      </StoryStep>
+      <ThreadTimelinePanel
+        role="brand"
+        anchor={{ table: "projects", id: project._id }}
+        title="Activity"
+      />
     </div>
   );
 }

@@ -10,7 +10,7 @@ import {
 import { getBrandDashboard } from "../../_mock/selectors-brand";
 import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
-import { CirkaBadge, LinkRow, NoticeBanner } from "../../_components/cirka-ui";
+import { CirkaBadge, LinkRow, tileHref } from "../../_components/cirka-ui";
 import { RoleActivityFeed } from "../../_components/trace-timeline";
 import { classNames } from "@/lib/utils";
 
@@ -29,84 +29,48 @@ function CompactBrandStatsOverview({
 
   return (
     <div className="grid gap-4 lg:grid-cols-12 items-stretch">
-      {/* Material Impact & Transformation Panel */}
       <Panel className="lg:col-span-7 p-5 flex flex-col justify-between space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 border-b border-[var(--line)] pb-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-              Material Impact & Transformation
+              Material
             </p>
             <div className="flex items-baseline gap-2 mt-0.5">
               <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
                 {formatQuantity(activated, primaryUnit)}
               </span>
-              <span className="text-xs font-semibold text-[var(--ink-muted)]">
-                activated material
-              </span>
+              <span className="text-xs font-semibold text-[var(--ink-muted)]">activated</span>
             </div>
           </div>
-          <div className="flex items-center gap-3 text-[11px] font-semibold text-[var(--ink-muted)]">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#8CC63F]" />
-              {incorporatedPct}% Into Products
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#545454]" />
-              {remainingPct}% In Pipeline
-            </span>
-          </div>
+          <p className="text-sm text-[var(--ink-muted)] tabular-nums">
+            <strong className="text-[var(--ink)]">{unitsCompleted.toLocaleString()}</strong> units made
+          </p>
         </div>
 
-        {/* Multi-segment Progress Bar */}
-        <div className="space-y-1">
-          <div className="h-3 w-full flex rounded-full overflow-hidden bg-[var(--surface)] ring-1 ring-inset ring-[var(--line)] shadow-inner">
+        <div className="space-y-2.5">
+          <div className="h-3 w-full flex rounded-full overflow-hidden bg-[var(--surface)] ring-1 ring-inset ring-[var(--line)]">
             {incorporated > 0 && (
               <div
-                className="h-full bg-[#8CC63F] transition-all duration-700 ease-out"
+                className="h-full bg-[var(--brand-secondary)]"
                 style={{ width: `${incorporatedPct}%` }}
-                title={`Into Products: ${formatQuantity(incorporated, primaryUnit)} (${incorporatedPct}%)`}
               />
             )}
             {remainingPct > 0 && (
               <div
-                className="h-full bg-[#545454] transition-all duration-700 ease-out border-l border-white/20"
+                className="h-full bg-[var(--charcoal)] border-l border-[var(--paper)]"
                 style={{ width: `${remainingPct}%` }}
-                title={`In Pipeline: ${formatQuantity(activated - incorporated, primaryUnit)} (${remainingPct}%)`}
               />
             )}
           </div>
-        </div>
-
-        {/* Micro Breakdown Indicators */}
-        <div className="grid grid-cols-3 gap-2.5 pt-1">
-          <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
-              <span className="w-2 h-2 rounded-full bg-[#545454] shrink-0" />
-              Activated
-            </div>
-            <p className="text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums">
-              {formatQuantity(activated, primaryUnit)}
-            </p>
-          </div>
-
-          <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
-              <span className="w-2 h-2 rounded-full bg-[#8CC63F] shrink-0" />
-              Into Products
-            </div>
-            <p className="text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums">
-              {formatQuantity(incorporated, primaryUnit)}
-            </p>
-          </div>
-
-          <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
-              <span className="w-2 h-2 rounded-full bg-[#FF5C00] shrink-0" />
-              Units Made
-            </div>
-            <p className="text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums">
-              {unitsCompleted.toLocaleString()}
-            </p>
+          <div className="flex flex-wrap gap-x-5 gap-y-1 text-[12px] font-medium text-[var(--ink-muted)] tabular-nums">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[var(--brand-secondary)]" />
+              Into products · {formatQuantity(incorporated, primaryUnit)} · {incorporatedPct}%
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[var(--charcoal)]" />
+              In pipeline · {formatQuantity(Math.max(activated - incorporated, 0), primaryUnit)} · {remainingPct}%
+            </span>
           </div>
         </div>
       </Panel>
@@ -114,7 +78,11 @@ function CompactBrandStatsOverview({
       {/* Operational Key Metric Grid Cards */}
       <div className="lg:col-span-5 grid grid-cols-2 gap-2.5">
         <Link
-          href="/demo/brand/projects"
+          href={tileHref(
+            view.projects.filter((project) => project.status === "active"),
+            "/demo/brand/projects?status=active",
+            (project) => `/demo/brand/projects/${project._id}`,
+          )}
           className="group block focus-visible:outline-none"
         >
           <Panel
@@ -139,7 +107,11 @@ function CompactBrandStatsOverview({
         </Link>
 
         <Link
-          href="/demo/brand/approvals"
+          href={tileHref(
+            view.pendingApprovals,
+            "/demo/brand/approvals",
+            (entry) => `/demo/brand/approvals/${entry.match._id}`,
+          )}
           className="group block focus-visible:outline-none"
         >
           <Panel
@@ -164,24 +136,14 @@ function CompactBrandStatsOverview({
               />
             </div>
             <div className="mt-2">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={classNames(
-                    "text-2xl font-bold tracking-tight tabular-nums",
-                    view.metrics.pendingApprovals > 0 ? "text-[#FF5C00]" : "text-[var(--ink)]"
-                  )}
-                >
-                  {view.metrics.pendingApprovals}
-                </span>
-                {view.metrics.pendingApprovals > 0 && (
-                  <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#FF5C00] text-white rounded shadow-xs">
-                    Action required
-                  </span>
+              <span
+                className={classNames(
+                  "text-2xl font-bold tracking-tight tabular-nums",
+                  view.metrics.pendingApprovals > 0 ? "text-[#FF5C00]" : "text-[var(--ink)]"
                 )}
-              </div>
-              <p className="text-[11px] text-[var(--ink-muted)] font-medium mt-0.5">
-                {view.metrics.pendingApprovals === 1 ? "1 match waiting" : `${view.metrics.pendingApprovals} matches waiting`}
-              </p>
+              >
+                {view.metrics.pendingApprovals}
+              </span>
             </div>
           </Panel>
         </Link>
@@ -204,9 +166,6 @@ function CompactBrandStatsOverview({
               <span className="text-2xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
                 {view.metrics.makersEngaged}
               </span>
-              <p className="text-[11px] text-[var(--ink-muted)] font-medium mt-0.5">
-                {view.metrics.makersEngaged === 1 ? "1 atelier partner" : `${view.metrics.makersEngaged} atelier partners`}
-              </p>
             </div>
           </Panel>
         </Link>
@@ -221,7 +180,7 @@ function CompactBrandStatsOverview({
           >
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)] truncate">
-                Open Demand
+                Open requests
               </p>
               <ArrowUpRight size={15} className="text-[var(--ink-muted)] group-hover:text-[var(--ink)] transition-colors shrink-0" />
             </div>
@@ -229,9 +188,6 @@ function CompactBrandStatsOverview({
               <span className="text-2xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
                 {view.metrics.openRequests}
               </span>
-              <p className="text-[11px] text-[var(--ink-muted)] font-medium mt-0.5">
-                Resource requests
-              </p>
             </div>
           </Panel>
         </Link>
@@ -247,27 +203,12 @@ export default function BrandDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <DashboardHero
-        eyebrow="Brand workspace"
-        title={`${organisation?.name ?? "Your brand"}: projects & proof`}
-      />
+      <DashboardHero title={organisation?.name ?? "Dashboard"} />
 
       <CompactBrandStatsOverview view={view} />
 
-      {view.metrics.pendingApprovals > 0 && (
-        <NoticeBanner tone="info" title="CIRKA has proposed a match for your approval">
-          <p>
-            {view.metrics.pendingApprovals} match
-            {view.metrics.pendingApprovals === 1 ? "" : "es"} waiting on you.{" "}
-            <Link href="/demo/brand/approvals" className="underline font-medium">
-              Review matches →
-            </Link>
-          </p>
-        </NoticeBanner>
-      )}
-
       <DashboardSection
-        title="Your projects"
+        title="Projects"
         action={
           <Button as={Link} href="/demo/brand/projects/new" size="sm">
             New brief
@@ -298,7 +239,7 @@ export default function BrandDashboardPage() {
           })}
           {view.proofViews.length === 0 && (
             <p className="px-6 pb-6 text-sm text-[var(--ink-muted)]">
-              No projects yet. Start with a brief.
+              No projects yet
             </p>
           )}
         </div>

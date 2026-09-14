@@ -33,10 +33,7 @@ export default function BrandApprovalDetailPage() {
     return (
       <div className="space-y-6">
         <BackLink />
-        <EmptyState
-          title="Match not found"
-          body="It may have been withdrawn."
-        />
+        <EmptyState title="Match not found" />
       </div>
     );
   }
@@ -95,19 +92,19 @@ export default function BrandApprovalDetailPage() {
           {formatQuantity(match.quantityProposed, match.unit)} proposed
           {request &&
             (match.quantityProposed >= request.quantityNeeded
-              ? ": covers the full request"
+              ? " · full request"
               : ` of ${formatQuantity(request.quantityNeeded, request.unit)} needed`)}
         </p>
       </div>
 
-      <NoticeBanner tone="info" title="Why CIRKA suggested this match">
+      <NoticeBanner tone="info" title="Rationale">
         {match.rationale}
       </NoticeBanner>
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-1 rounded-2xl border border-[var(--line)] bg-[var(--paper)] px-5 py-4">
           <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            The resource
+            Resource
           </p>
           <dl>
             <DataRow
@@ -133,7 +130,7 @@ export default function BrandApprovalDetailPage() {
 
         <div className="space-y-1 rounded-2xl border border-[var(--line)] bg-[var(--paper)] px-5 py-4">
           <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            The proposed route
+            Route
           </p>
           <dl>
             <DataRow
@@ -163,9 +160,6 @@ export default function BrandApprovalDetailPage() {
 
       {isPending ? (
         <div className="space-y-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] px-5 py-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Your decision
-          </p>
           <Field label="Note (optional)">
             <Input
               value={note}
@@ -183,10 +177,13 @@ export default function BrandApprovalDetailPage() {
           </div>
         </div>
       ) : (
-        <NoticeBanner tone="info" title="This match has already been decided">
-          {match.status === "approved" ? "Approved" : "Rejected"}
-          {match.decidedAt ? ` on ${formatDate(match.decidedAt)}` : ""}
-          {match.decisionNote ? `: ${match.decisionNote}` : ""}
+        <NoticeBanner
+          tone="info"
+          title={`${match.status === "approved" ? "Approved" : "Rejected"}${
+            match.decidedAt ? ` ${formatDate(match.decidedAt)}` : ""
+          }`}
+        >
+          {match.decisionNote}
         </NoticeBanner>
       )}
     </div>

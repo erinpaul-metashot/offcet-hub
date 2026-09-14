@@ -18,7 +18,7 @@ export default function BrandProjectReportPage() {
   const proof = getProjectProofView(db, scope, params.id);
 
   if (!proof) {
-    return <EmptyState title="Project not found" body="The demo data may have been reset." />;
+    return <EmptyState title="Project not found" />;
   }
 
   const { project, material, operational, social, assurance } = proof;
@@ -27,10 +27,10 @@ export default function BrandProjectReportPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Button as={Link} href={`/demo/brand/projects/${project._id}`} variant="ghost" size="sm">
-          ← Back to the proof view
+          ← Back
         </Button>
         <Button size="sm" onClick={() => window.print()}>
-          Print or save as PDF
+          Print
         </Button>
       </div>
 
@@ -149,7 +149,7 @@ export default function BrandProjectReportPage() {
           </h2>
           <dl>
             <DataRow
-              label="How the resource data arrived"
+              label="Data sources"
               value={assurance.dataSources.map((source) => DATA_SOURCE_LABELS[source]).join(", ")}
             />
             <DataRow
@@ -168,9 +168,6 @@ export default function BrandProjectReportPage() {
               }
             />
           </dl>
-          <p className="border-t border-[var(--line)] pt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-            Excluded by design — carbon, water, maker costs
-          </p>
         </section>
       </Panel>
     </div>
