@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { EmptyState } from "@/components/ui";
 import type { AllocationStatus } from "../../_mock/domain";
@@ -49,9 +50,18 @@ export default function MakerAllocationsPage() {
   const { scope } = useDemoPersona("maker");
   const { run, error, pending, clearError } = useAction();
 
+  const searchParams = useSearchParams();
+
   const allocations = listMakerAllocations(store.db, scope.orgId);
-  const [tab, setTab] = useState<TabKey>("all");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [tab, setTab] = useState<TabKey>(() => {
+    const requested = searchParams.get("tab") ?? "";
+    return TABS.find((entry) => entry.key === requested)?.key ?? "all";
+  });
+  /* A dashboard card with exactly one allocation links here with ?id=, opening it straight away. */
+  const [openId, setOpenId] = useState<string | null>(() => {
+    const requested = searchParams.get("id");
+    return allocations.some((entry) => entry.allocation._id === requested) ? requested : null;
+  });
 
   const grouped = useMemo(
     () =>
@@ -73,7 +83,7 @@ export default function MakerAllocationsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Material Allocations" />
+      <SectionHeading title="Allocations" />
 
       {error && !openEntry && (
         <NoticeBanner tone="blocking" title="That step was refused">
@@ -82,42 +92,9 @@ export default function MakerAllocationsPage() {
       )}
 
       {allocations.length === 0 ? (
-        <EmptyState
-          title="Nothing allocated yet"
-          body="Allocations to you appear here."
-        />
+        <EmptyState title="Nothing allocated yet" />
       ) : (
         <>
-          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <OverviewStat
-              label="Total Allocations"
-              value={counts.all}
-              active={tab === "all"}
-              onClick={() => setTab("all")}
-            />
-            <OverviewStat
-              label="Needs You"
-              value={counts["needs-you"]}
-              tone={counts["needs-you"] > 0 ? "warn" : undefined}
-              active={tab === "needs-you"}
-              onClick={() => setTab(tab === "needs-you" ? "all" : "needs-you")}
-            />
-            <OverviewStat
-              label="In Progress"
-              value={counts["in-progress"]}
-              tone="progress"
-              active={tab === "in-progress"}
-              onClick={() => setTab(tab === "in-progress" ? "all" : "in-progress")}
-            />
-            <OverviewStat
-              label="Settled"
-              value={counts.settled}
-              tone={counts.settled > 0 ? "positive" : undefined}
-              active={tab === "settled"}
-              onClick={() => setTab(tab === "settled" ? "all" : "settled")}
-            />
-          </dl>
-
           <div className="flex gap-6 border-b border-[var(--line)]">
             {TABS.map((entry) => (
               <button
@@ -131,7 +108,13 @@ export default function MakerAllocationsPage() {
                 }`}
               >
                 {entry.label}
-                <span className="ml-2 text-[11px] font-medium tabular-nums text-[var(--ink-muted)]">
+                <span
+                  className={`ml-2 text-[11px] tabular-nums ${
+                    entry.key === "needs-you" && counts[entry.key] > 0
+                      ? "font-bold text-[var(--brand-primary)]"
+                      : "font-medium text-[var(--ink-muted)]"
+                  }`}
+                >
                   {counts[entry.key]}
                 </span>
                 {tab === entry.key && (
@@ -142,10 +125,7 @@ export default function MakerAllocationsPage() {
           </div>
 
           {visible.length === 0 ? (
-            <EmptyState
-              title="Nothing here"
-              body="No allocations match this filter right now."
-            />
+            <EmptyState title="Nothing here" />
           ) : (
             <div>
               {visible.map(({ entry, bucket }) => {
@@ -212,50 +192,3 @@ export default function MakerAllocationsPage() {
   );
 }
 
-function OverviewStat({
-  label,
-  value,
-  tone,
-  active,
-  onClick,
-}: {
-  label: string;
-  value: number;
-  tone?: "warn" | "progress" | "positive";
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group space-y-2 py-4 px-4 text-left transition-all duration-150 ease-[var(--ease-out)] cursor-pointer rounded-xl border ${
-        active
-          ? "bg-[var(--surface)] border-[var(--brand-primary)]/40 shadow-xs ring-1 ring-[var(--brand-primary)]/20"
-          : "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--surface)]/60"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)] group-hover:text-[var(--ink)]">
-          {label}
-        </dt>
-        {active && (
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-primary)]" />
-        )}
-      </div>
-      <dd
-        className={`text-[34px] font-semibold leading-none tracking-[-0.05em] tabular-nums ${
-          tone === "warn" && value > 0
-            ? "text-[var(--brand-primary)]"
-            : tone === "positive" && value > 0
-              ? "text-[var(--brand-secondary)]"
-              : tone === "progress" && value > 0
-                ? "text-[var(--ink)]"
-                : "text-[var(--ink)]"
-        }`}
-      >
-        {value}
-      </dd>
-    </button>
-  );
-}

@@ -72,7 +72,7 @@ export default function NewProductionBatchPage() {
       {available.length === 0 ? (
         <EmptyState
           title="No allocation available"
-          body="Accept an allocation first. One batch per allocation."
+          body="Accept an allocation first."
         />
       ) : (
         <form onSubmit={submit} className="space-y-6">

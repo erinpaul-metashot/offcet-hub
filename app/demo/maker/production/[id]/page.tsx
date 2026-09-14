@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { Lock } from "lucide-react";
 import { Button, EmptyState, Field, Input, Panel, Select, Textarea } from "@/components/ui";
 import {
   INPUT_TYPES,
@@ -80,7 +81,7 @@ export default function MakerProductionDetailPage() {
   const [isOutputModalOpen, setIsOutputModalOpen] = useState(false);
 
   if (!detail) {
-    return <EmptyState title="Production batch not found" body="The demo data may have been reset." />;
+    return <EmptyState title="Production batch not found" />;
   }
 
   const { production, balance, costs } = detail;
@@ -104,7 +105,6 @@ export default function MakerProductionDetailPage() {
       <SectionHeading
         eyebrow={production.reference}
         title={production.productName}
-        description={production.productDescription}
       />
 
       {error && <NoticeBanner tone="blocking" title="That step was refused">{error}</NoticeBanner>}
@@ -209,14 +209,9 @@ export default function MakerProductionDetailPage() {
         </Panel>
 
         <Panel className="space-y-4 p-6">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Material use
-            </h2>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Received = used + reusable + returned · Used = incorporated + prototypes + offcuts + loss
-            </p>
-          </div>
+          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
+            Material use
+          </h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {[
@@ -320,7 +315,7 @@ export default function MakerProductionDetailPage() {
 
           {detail.inputs.length === 0 ? (
             <p className="text-sm text-[var(--ink-muted)]">
-              Nothing else has gone into this run yet.
+              No inputs yet
             </p>
           ) : (
             <ul className="divide-y divide-[var(--line)]">
@@ -470,7 +465,6 @@ export default function MakerProductionDetailPage() {
       {/* Modals for adding entries */}
       {isInputModalOpen && (
         <Modal
-          eyebrow="Input details"
           title="Add production input"
           width="lg"
           onClose={() => setIsInputModalOpen(false)}
@@ -590,7 +584,6 @@ export default function MakerProductionDetailPage() {
 
       {isTimeModalOpen && (
         <Modal
-          eyebrow="Time record"
           title="Add production time"
           width="lg"
           onClose={() => setIsTimeModalOpen(false)}
@@ -655,7 +648,6 @@ export default function MakerProductionDetailPage() {
                   onChange={(event) =>
                     setTimeDraft((current) => ({ ...current, notes: event.target.value }))
                   }
-                  placeholder="Optional notes or details..."
                 />
               </Field>
             </div>
@@ -693,7 +685,6 @@ export default function MakerProductionDetailPage() {
 
       {isOutputModalOpen && (
         <Modal
-          eyebrow="Output record"
           title="Add output line"
           width="lg"
           onClose={() => setIsOutputModalOpen(false)}
@@ -812,13 +803,14 @@ export default function MakerProductionDetailPage() {
       )}
 
       <Panel className="space-y-4 p-6">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Costs and commercial data
-          </h2>
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Private · never reaches brand queries
-          </p>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Costs</h2>
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]"
+            title="Only you and CIRKA see these"
+          >
+            <Lock size={12} /> Private
+          </span>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -863,8 +855,8 @@ export default function MakerProductionDetailPage() {
             />
             <DataRow label="Revenue generated" value={formatCurrency(costs.revenueGenerated)} />
             <DataRow
-              label="Shared with the brand"
-              value={costs.shareCostPerUnitWithBrand ? "Cost per unit is shared" : "Nothing shared"}
+              label="Shared with brand"
+              value={costs.shareCostPerUnitWithBrand ? "Cost per unit" : "-"}
             />
           </dl>
         )}
@@ -904,8 +896,8 @@ export default function MakerProductionDetailPage() {
               }
             >
               {costs.shareCostPerUnitWithBrand
-                ? "Stop sharing cost per unit"
-                : "Share cost per unit with the brand"}
+                ? "Stop sharing"
+                : "Share cost per unit"}
             </Button>
           )}
         </div>
@@ -965,7 +957,7 @@ export default function MakerProductionDetailPage() {
                 )
               }
             >
-              Submit evidence for CIRKA review
+              Submit for review
             </Button>
           </div>
         )}
@@ -974,7 +966,7 @@ export default function MakerProductionDetailPage() {
       {detail.suitability && (
         <Panel className="p-6">
           <h2 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Material suitability you recorded
+            Suitability
           </h2>
           <dl>
             <DataRow

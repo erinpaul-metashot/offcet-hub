@@ -5,7 +5,7 @@ import { DemoAppLayout } from "../_components/demo-app-layout";
 import { useDemoPersona } from "../_mock/store";
 
 const navItems: NavItem[] = [
-  { label: "Overview", href: "/demo/maker/dashboard", icon: "overview" },
+  { label: "Dashboard", href: "/demo/maker/dashboard", icon: "overview" },
   { label: "Marketplace", href: "/demo/maker/marketplace", icon: "lots" },
   { label: "Allocations", href: "/demo/maker/allocations", icon: "allocations" },
   { label: "Production", href: "/demo/maker/production", icon: "production" },

@@ -58,7 +58,7 @@ function OutputRail({ row }: { row: MakerProjectRow }) {
       <div className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 bg-[var(--surface)] p-6 text-center lg:w-[220px] lg:shrink-0">
         <ImageOff size={18} className="text-[var(--ink-muted)]" />
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-          No finished output photographed yet
+          No photo
         </p>
       </div>
     );
@@ -131,8 +131,7 @@ export default function MakerProjectsPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        eyebrow="Projects"
-        title="What you have made"
+        title="Projects"
         action={
           <Button as={Link} href="/demo/maker/production/new" size="sm">
             New production batch
@@ -141,17 +140,14 @@ export default function MakerProjectsPage() {
       />
 
       {rows.length === 0 ? (
-        <EmptyState
-          title="Nothing made yet"
-          body="Open a production batch against an allocation."
-        />
+        <EmptyState title="Nothing made yet" />
       ) : (
         <>
           <Panel className="space-y-5 p-6">
             <div className="flex flex-wrap items-end justify-between gap-6">
               <div className="space-y-1">
                 <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  Material you turned into product
+                  Into product
                 </p>
                 <p className="text-3xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
                   {formatQuantity(portfolio.incorporated, unit)}
@@ -204,7 +200,7 @@ export default function MakerProjectsPage() {
                             </div>
                             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                               {unassigned
-                                ? "Own initiative · no brand brief"
+                                ? "Own initiative"
                                 : `${row.reference} · for ${row.brandName}`}
                             </p>
                           </div>
@@ -230,8 +226,8 @@ export default function MakerProjectsPage() {
                           />
                         ) : (
                           <p className="text-sm text-[var(--ink-muted)]">
-                            Material use not recorded yet:{" "}
-                            {formatQuantity(row.material.received, row.material.unit)} received so far.
+                            {formatQuantity(row.material.received, row.material.unit)} received · use not
+                            recorded
                           </p>
                         )}
 

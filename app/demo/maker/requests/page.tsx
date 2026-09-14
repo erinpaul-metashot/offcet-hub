@@ -87,8 +87,7 @@ export default function MakerRequestsPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        eyebrow="Demand"
-        title="Material you have asked for"
+        title="My requests"
         action={
           <Button size="sm" onClick={() => setComposeOpen(true)}>
             New request
@@ -122,12 +121,9 @@ export default function MakerRequestsPage() {
 
       {filteredRows.length === 0 ? (
         rows.length === 0 ? (
-          <EmptyState title="No requests yet" body="Requests you submit will be listed here." />
+          <EmptyState title="No requests yet" />
         ) : (
-          <EmptyState
-            title="No requests match this filter"
-            body="Clear the search or status filter."
-          />
+          <EmptyState title="No matches" />
         )
       ) : (
         <Panel className="overflow-hidden">

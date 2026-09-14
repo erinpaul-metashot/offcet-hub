@@ -1,7 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight, Zap } from "lucide-react";
 import { Button, Panel } from "@/components/ui";
 import {
   DashboardHero,
@@ -10,232 +11,221 @@ import {
 import { getMakerDashboard } from "../../_mock/selectors-maker";
 import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
-import { CirkaBadge, LinkRow, NoticeBanner, formatDate } from "../../_components/cirka-ui";
+import {
+  ACTION_URGENCY_CLASS,
+  CirkaBadge,
+  LinkRow,
+  formatDate,
+  tileHref,
+} from "../../_components/cirka-ui";
 import { RoleActivityFeed } from "../../_components/trace-timeline";
 import { classNames } from "@/lib/utils";
 
-function CompactMakerStatsOverview({
-  view,
-}: {
-  view: ReturnType<typeof getMakerDashboard>;
-}) {
-  const held = view.metrics.held;
-  const transformed = view.metrics.transformed;
-  const totalWeight = held + transformed;
-  const unitsMade = view.metrics.unitsMade;
+type MakerDashboardView = ReturnType<typeof getMakerDashboard>;
 
-  const transformedPct = totalWeight > 0 ? Math.round((transformed / totalWeight) * 100) : 0;
-  const heldPct = totalWeight > 0 ? Math.round((held / totalWeight) * 100) : 0;
+const MICRO_LABEL = "text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]";
+const NEUTRAL_CARD_CLASS = "border-[var(--line)] text-[var(--ink)]";
+
+interface ActionCardProps {
+  href: string;
+  title: string;
+  context: string;
+  toneClass: string;
+}
+
+function moreSuffix(count: number): string {
+  return count > 1 ? ` · +${count - 1} more` : "";
+}
+
+function ZoneHeader({ icon, label }: { icon: ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      {icon}
+      <p className={MICRO_LABEL}>{label}</p>
+    </div>
+  );
+}
+
+function ActionCard({ href, title, context, toneClass }: ActionCardProps) {
+  return (
+    <Link
+      href={href}
+      className={classNames(
+        "group flex items-center justify-between gap-4 rounded-2xl border bg-[var(--paper)] px-5 py-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2",
+        toneClass,
+      )}
+    >
+      <span className="min-w-0 space-y-1">
+        <span className="block text-base font-semibold tracking-[-0.02em] tabular-nums">
+          {title}
+        </span>
+        <span className="block truncate text-[13px] text-[var(--ink-muted)] tabular-nums">
+          {context}
+        </span>
+      </span>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-current">
+        <ArrowRight
+          size={16}
+          aria-hidden
+          className="transition-transform duration-200 ease-[var(--ease-out)] group-hover:translate-x-0.5 motion-reduce:transition-none"
+        />
+      </span>
+    </Link>
+  );
+}
+
+function actionCardsFor(view: MakerDashboardView): ActionCardProps[] {
+  const proposed = view.allocations.filter((entry) => entry.allocation.status === "proposed");
+  const overdueRows = view.production.filter((row) => row.overdue);
+  const [firstProposed] = proposed;
+  const [firstOverdue] = overdueRows;
+  const [firstFeedback] = view.feedbackDue;
+
+  return [
+    ...(firstProposed
+      ? [
+          {
+            href: tileHref(
+              proposed,
+              "/demo/maker/allocations?tab=needs-you",
+              (entry) => `/demo/maker/allocations?id=${entry.allocation._id}`,
+            ),
+            title: `${proposed.length} awaiting response`,
+            context: `${firstProposed.batchName} · ${formatQuantity(
+              firstProposed.allocation.quantityAllocated,
+              firstProposed.allocation.unit,
+            )}${moreSuffix(proposed.length)}`,
+            toneClass: ACTION_URGENCY_CLASS.waiting,
+          },
+        ]
+      : []),
+    ...(firstOverdue
+      ? [
+          {
+            href: tileHref(
+              overdueRows,
+              "/demo/maker/production",
+              (row) => `/demo/maker/production/${row.production._id}`,
+            ),
+            title: `${overdueRows.length} production overdue`,
+            context: `${firstOverdue.production.productName} · ${
+              firstOverdue.production.plannedQuantity
+            } units${moreSuffix(overdueRows.length)}`,
+            toneClass: ACTION_URGENCY_CLASS.late,
+          },
+        ]
+      : []),
+    ...(firstFeedback
+      ? [
+          {
+            href: tileHref(
+              view.feedbackDue,
+              "/demo/maker/allocations?tab=needs-you",
+              (entry) => `/demo/maker/allocations?id=${entry.allocation._id}`,
+            ),
+            title: `${view.feedbackDue.length} suitability due`,
+            context: `${firstFeedback.batchName}${moreSuffix(view.feedbackDue.length)}`,
+            toneClass: ACTION_URGENCY_CLASS.waiting,
+          },
+        ]
+      : []),
+  ];
+}
+
+function ActionZone({ view }: { view: MakerDashboardView }) {
+  const cards = actionCardsFor(view);
+  const active = view.metrics.activeProduction;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-12 items-stretch">
-      {/* Material Throughput & Transformation Progress Panel */}
-      <Panel className="lg:col-span-7 p-5 flex flex-col justify-between space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 border-b border-[var(--line)] pb-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-              Material & Production Output
-            </p>
-            <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
-                {formatQuantity(transformed, "kg")}
-              </span>
-              <span className="text-xs font-semibold text-[var(--ink-muted)]">
-                transformed into products
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 text-[11px] font-semibold text-[var(--ink-muted)]">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#8CC63F]" />
-              {transformedPct}% Into Products
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#545454]" />
-              {heldPct}% In Workshop
-            </span>
-          </div>
+    <section className="space-y-3" aria-label="Needs you now">
+      <ZoneHeader
+        icon={<Zap size={14} aria-hidden className="text-[var(--brand-primary)]" />}
+        label="Needs you now"
+      />
+      {cards.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {cards.map((card) => (
+            <ActionCard key={card.title} {...card} />
+          ))}
         </div>
-
-        {/* Multi-segment Visual Progress Bar */}
-        <div className="space-y-1">
-          <div className="h-3 w-full flex rounded-full overflow-hidden bg-[var(--surface)] ring-1 ring-inset ring-[var(--line)] shadow-inner">
-            {transformed > 0 && (
-              <div
-                className="h-full bg-[#8CC63F] transition-all duration-700 ease-out"
-                style={{ width: `${transformedPct}%` }}
-                title={`Into Products: ${formatQuantity(transformed, "kg")} (${transformedPct}%)`}
-              />
-            )}
-            {held > 0 && (
-              <div
-                className="h-full bg-[#545454] transition-all duration-700 ease-out border-l border-white/20"
-                style={{ width: `${heldPct}%` }}
-                title={`Held by you: ${formatQuantity(held, "kg")} (${heldPct}%)`}
-              />
-            )}
-          </div>
+      ) : active > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ActionCard
+            href="/demo/maker/production"
+            title={`${active} in production · on schedule`}
+            context="Nothing overdue"
+            toneClass={NEUTRAL_CARD_CLASS}
+          />
         </div>
+      ) : (
+        <p className="text-sm text-[var(--ink-muted)]">Nothing waiting on you.</p>
+      )}
+    </section>
+  );
+}
 
-        {/* Micro breakdown indicators */}
-        <div className="grid grid-cols-3 gap-2.5 pt-1">
-          <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
-              <span className="w-2 h-2 rounded-full bg-[#545454] shrink-0" />
-              Held by You
-            </div>
-            <p className="text-sm sm:text-base font-bold text-[var(--ink)] tabular-nums">
-              {formatQuantity(held, "kg")}
-            </p>
-          </div>
+function MaterialSplitBar({ held, transformed }: { held: number; transformed: number }) {
+  const total = held + transformed;
+  const transformedPct = total > 0 ? Math.round((transformed / total) * 100) : 0;
+  const heldPct = total > 0 ? 100 - transformedPct : 0;
 
-          <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
-              <span className="w-2 h-2 rounded-full bg-[#8CC63F] shrink-0" />
-              Into Products
-            </div>
-            <p className="text-sm sm:text-base font-bold text-[var(--ink)] tabular-nums">
-              {formatQuantity(transformed, "kg")}
-            </p>
-          </div>
-
-          <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
-              <span className="w-2 h-2 rounded-full bg-[#FF5C00] shrink-0" />
-              Units Made
-            </div>
-            <p className="text-sm sm:text-base font-bold text-[var(--ink)] tabular-nums">
-              {unitsMade}
-            </p>
-          </div>
-        </div>
-      </Panel>
-
-      {/* Operational Workflow Status Grid */}
-      <div className="lg:col-span-5 grid grid-cols-2 gap-3.5">
-        {/* Awaiting your response */}
-        <Link
-          href="/demo/maker/allocations"
-          className="group block rounded-2xl focus-visible:outline-none"
-        >
-          <Panel
-            interactive
-            className={classNames(
-              "relative h-full p-4 flex flex-col justify-between space-y-2 transition-all duration-200",
-              view.metrics.awaitingResponse > 0
-                ? "ring-1 ring-[#FF5C00]/20 border-[#FF5C00]/30 bg-[#FF5C00]/5"
-                : "bg-[var(--paper)]"
-            )}
-          >
-            <ArrowUpRight
-              size={15}
-              className="absolute right-3.5 top-3.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 text-[#FF5C00]"
-            />
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)] leading-tight pr-4">
-              Awaiting Response
-            </p>
-            <div>
-              <p
-                className={classNames(
-                  "text-2xl sm:text-3xl font-bold tracking-tight tabular-nums",
-                  view.metrics.awaitingResponse > 0 ? "text-[#FF5C00]" : "text-[var(--ink)]"
-                )}
-              >
-                {view.metrics.awaitingResponse}
-              </p>
-              <p className="text-[11px] font-medium text-[var(--ink-muted)] mt-0.5">
-                {view.metrics.awaitingResponse === 1 ? "1 allocation pending" : `${view.metrics.awaitingResponse} allocations`}
-              </p>
-            </div>
-          </Panel>
-        </Link>
-
-        {/* Active Production */}
-        <Link
-          href="/demo/maker/production"
-          className="group block rounded-2xl focus-visible:outline-none"
-        >
-          <Panel
-            interactive
-            className="relative h-full p-4 flex flex-col justify-between space-y-2 bg-[var(--paper)] transition-all duration-200"
-          >
-            <ArrowUpRight
-              size={15}
-              className="absolute right-3.5 top-3.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 text-[var(--brand-primary)]"
-            />
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)] leading-tight pr-4">
-              Active Production
-            </p>
-            <div>
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
-                {view.metrics.activeProduction}
-              </p>
-              <p className="text-[11px] font-medium mt-0.5 tabular-nums text-[var(--ink-muted)]">
-                {view.metrics.overdue > 0 ? (
-                  <span className="text-[#FF5C00] font-semibold">{view.metrics.overdue} overdue</span>
-                ) : (
-                  "On schedule"
-                )}
-              </p>
-            </div>
-          </Panel>
-        </Link>
-
-        {/* Awaiting CIRKA Review */}
-        <Link
-          href="/demo/maker/production"
-          className="group block rounded-2xl focus-visible:outline-none"
-        >
-          <Panel
-            interactive
-            className="relative h-full p-4 flex flex-col justify-between space-y-2 bg-[var(--paper)] transition-all duration-200"
-          >
-            <ArrowUpRight
-              size={15}
-              className="absolute right-3.5 top-3.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 text-[var(--brand-primary)]"
-            />
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)] leading-tight pr-4">
-              Awaiting Review
-            </p>
-            <div>
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
-                {view.metrics.awaitingReview}
-              </p>
-              <p className="text-[11px] font-medium text-[var(--ink-muted)] mt-0.5">
-                Submitted runs
-              </p>
-            </div>
-          </Panel>
-        </Link>
-
-        {/* Labour Hours */}
-        <Link
-          href="/demo/maker/production"
-          className="group block rounded-2xl focus-visible:outline-none"
-        >
-          <Panel
-            interactive
-            className="relative h-full p-4 flex flex-col justify-between space-y-2 bg-[var(--paper)] transition-all duration-200"
-          >
-            <ArrowUpRight
-              size={15}
-              className="absolute right-3.5 top-3.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 text-[var(--brand-primary)]"
-            />
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)] leading-tight pr-4">
-              Labour Hours
-            </p>
-            <div>
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
-                {view.metrics.hours}
-              </p>
-              <p className="text-[11px] font-medium text-[var(--ink-muted)] mt-0.5">
-                Hours recorded
-              </p>
-            </div>
-          </Panel>
-        </Link>
+  return (
+    <div className="space-y-2.5">
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--surface)] ring-1 ring-inset ring-[var(--line)]">
+        {transformed > 0 && (
+          <div
+            className="h-full bg-[var(--brand-secondary)]"
+            style={{ width: `${transformedPct}%` }}
+            title={`Into products: ${formatQuantity(transformed, "kg")} (${transformedPct}%)`}
+          />
+        )}
+        {held > 0 && (
+          <div
+            className="h-full border-l border-[var(--paper)] bg-[var(--charcoal)]"
+            style={{ width: `${heldPct}%` }}
+            title={`Held by you: ${formatQuantity(held, "kg")} (${heldPct}%)`}
+          />
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12px] font-medium text-[var(--ink-muted)] tabular-nums">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-[var(--brand-secondary)]" />
+          Into products · {formatQuantity(transformed, "kg")} · {transformedPct}%
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-[var(--charcoal)]" />
+          In your workshop · {formatQuantity(held, "kg")} · {heldPct}%
+        </span>
       </div>
     </div>
+  );
+}
+
+function MetricsZone({ view }: { view: MakerDashboardView }) {
+  const { held, transformed, unitsMade, hours, yieldRate } = view.metrics;
+  const tiles = [
+    { label: "Labour hours", value: `${hours}h` },
+    { label: "Units made", value: String(unitsMade) },
+    { label: "Yield rate", value: yieldRate === null ? "—" : `${Math.round(yieldRate * 100)}%` },
+  ];
+
+  return (
+    <Panel className="space-y-5 p-5">
+      <MaterialSplitBar held={held} transformed={transformed} />
+      <dl className="grid grid-cols-3 gap-3">
+        {tiles.map((tile) => (
+          <div
+            key={tile.label}
+            className="flex flex-col-reverse gap-1 rounded-xl bg-[var(--surface)] px-4 py-3.5"
+          >
+            <dt className={MICRO_LABEL}>{tile.label}</dt>
+            <dd className="text-2xl font-semibold tracking-[-0.03em] text-[var(--ink)] tabular-nums">
+              {tile.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </Panel>
   );
 }
 
@@ -243,28 +233,14 @@ export default function MakerDashboardPage() {
   const { db } = useDemoStore();
   const { scope, organisation } = useDemoPersona("maker");
   const view = getMakerDashboard(db, scope);
+  const awaitingReview = view.metrics.awaitingReview;
 
   return (
     <div className="space-y-6">
-      <DashboardHero
-        eyebrow="Maker"
-        title={`${organisation?.name ?? "Your workshop"}: material in, products out`}
-      />
+      <DashboardHero title={organisation?.name ?? "Dashboard"} />
 
-      {view.metrics.awaitingResponse > 0 && (
-        <NoticeBanner tone="info" title="An allocation is waiting on your decision">
-          Quantity only reaches you when you confirm receipt.
-        </NoticeBanner>
-      )}
-
-      {view.feedbackDue.length > 0 && (
-        <NoticeBanner tone="warning" title="Suitability feedback outstanding">
-          {view.feedbackDue.length} received allocation
-          {view.feedbackDue.length === 1 ? "" : "s"} with no suitability recorded.
-        </NoticeBanner>
-      )}
-
-      <CompactMakerStatsOverview view={view} />
+      <ActionZone view={view} />
+      <MetricsZone view={view} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <DashboardSection
@@ -297,6 +273,9 @@ export default function MakerDashboardPage() {
 
         <DashboardSection
           title="Production"
+          description={
+            awaitingReview > 0 ? `${awaitingReview} awaiting CIRKA review` : undefined
+          }
           action={
             <Button as={Link} href="/demo/maker/production" variant="secondary" size="sm">
               Open production

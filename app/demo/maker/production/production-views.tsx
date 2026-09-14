@@ -112,15 +112,14 @@ export function ProductionGridCard({ href, production, batchReference, outputs, 
             </span>
           </div>
         ) : (
-          <p className="text-sm text-[var(--ink-muted)]">Material yield not calculated yet.</p>
+          <p className="text-sm text-[var(--ink-muted)]">Yield –</p>
         )}
 
         {segments.length > 0 ? (
           <FlowBar segments={segments} max={flowMax} unit={production.unit} />
         ) : (
           <p className="text-sm text-[var(--ink-muted)]">
-            Material use not recorded yet: {formatQuantity(production.qtyReceived ?? 0, production.unit)} received
-            so far.
+            {formatQuantity(production.qtyReceived ?? 0, production.unit)} received · use not recorded
           </p>
         )}
       </div>
@@ -139,9 +138,7 @@ export function ProductionGridCard({ href, production, batchReference, outputs, 
           hint={
             production.actualCompletionDate
               ? `Completed ${formatDate(production.actualCompletionDate)}`
-              : overdue
-                ? "Overdue"
-                : undefined
+              : undefined
           }
         />
         <DataRow

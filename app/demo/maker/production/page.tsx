@@ -17,8 +17,7 @@ export default function MakerProductionPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        eyebrow="Production"
-        title="What you are making"
+        title="Production"
         action={
           <div className="flex items-center gap-3">
             <ViewModeToggle value={view} onChange={setView} />

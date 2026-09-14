@@ -29,10 +29,7 @@ export default function MakerProjectDetailPage() {
 
   if (!detail) {
     return (
-      <EmptyState
-        title="Project not found"
-        body="No production on this project."
-      />
+      <EmptyState title="Project not found" />
     );
   }
 
@@ -86,14 +83,11 @@ export default function MakerProjectDetailPage() {
 
       <section className="space-y-4">
         <SectionHeading title={`Brief from ${detail.brandName}`} />
-        <ProjectBriefPack
-          items={detail.references}
-          emptyBody={`${detail.brandName} has not attached any references or drawings to this project.`}
-        />
+        <ProjectBriefPack items={detail.references} />
       </section>
 
       <section className="space-y-4">
-        <SectionHeading title="Material Usage" />
+        <SectionHeading title="Material" />
 
         <Panel className="space-y-6 p-6">
           <div className="flex flex-wrap items-end justify-between gap-6">
@@ -119,7 +113,7 @@ export default function MakerProjectDetailPage() {
             <FlowBar segments={segments} max={material.used} unit={material.unit} />
           ) : (
             <p className="text-sm text-[var(--ink-muted)]">
-              Material use has not been recorded on any run yet.
+              Use not recorded yet
             </p>
           )}
 
@@ -150,9 +144,7 @@ export default function MakerProjectDetailPage() {
       <section className="space-y-4">
         <SectionHeading title="Outputs" />
         {detail.outputs.length === 0 ? (
-          <NoticeBanner tone="info" title="No output lines recorded yet">
-            Record completed units on a production batch and they will show here.
-          </NoticeBanner>
+          <p className="text-sm text-[var(--ink-muted)]">No outputs yet</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {detail.outputs.map((output) => (
@@ -192,7 +184,7 @@ export default function MakerProjectDetailPage() {
       </section>
 
       <section className="space-y-4">
-        <SectionHeading title="Production Runs" />
+        <SectionHeading title="Production" />
         <div className="overflow-hidden rounded-[1.5rem] border border-[var(--line)] bg-[var(--paper)]">
           {runs.map(({ production, batch, outputs, overdue: runOverdue }) => (
             <ProductionListRow
@@ -208,14 +200,10 @@ export default function MakerProjectDetailPage() {
       </section>
 
       <section className="space-y-4">
-        <SectionHeading title="Project Journey" />
-        {journey.length === 0 ? (
-          <NoticeBanner tone="info" title="The journey hasn't started" />
-        ) : (
-          <Panel className="p-6">
-            <ProjectJourneyStepper journey={journey} />
-          </Panel>
-        )}
+        <SectionHeading title="Journey" />
+        <Panel className="p-6">
+          <ProjectJourneyStepper journey={journey} />
+        </Panel>
       </section>
     </div>
   );
