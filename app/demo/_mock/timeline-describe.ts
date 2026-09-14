@@ -624,7 +624,7 @@ export function describeMovement(db: MockDatabase, movement: QuantityMovement): 
     headline:
       movement.reason === "initial_record"
         ? `${who} opened the ledger at ${amount}`
-        : `${amount} · ${label}`,
+        : `${amount} ${label.charAt(0).toLowerCase()}${label.slice(1)}`,
     detail: [route, MOVEMENT_REASON_LABELS[movement.reason]].filter(Boolean).join(" · "),
     tone: MOVEMENT_TONE[movement.reason] ?? "progress",
     custodyOrgId: custodyAfter(db, movement),

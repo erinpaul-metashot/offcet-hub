@@ -927,7 +927,7 @@ export const batchSeeds: BatchSeed[] = [
       availableUntil: daysAhead(35),
       releasedAt: daysAgo(25),
       locationText: "Bulltoftavägen 42, 212 23 Malmö, Sweden",
-      status: "completely_assigned",
+      status: "fully_allocated",
       exceptionStatus: "receipt_discrepancy",
       exceptionNote: "5 kg short on arrival at Malmö Resource Node. Awaiting manufacturer response.",
       dataSource: "manual_entry",

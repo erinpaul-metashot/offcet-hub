@@ -197,11 +197,20 @@ export function deriveBatchStatus(
     return "closed";
   }
 
-  if (pots.available === 0) {
-    return "completely_assigned";
+  /* Reserved is promised but not yet accepted by whoever receives it; the
+     rest of `assigned` has been accepted or is already moving. The badge only
+     claims "allocated" for the accepted part. */
+  const confirmed = round(assigned - pots.reserved);
+
+  if (pots.available === 0 && pots.reserved === 0) {
+    return "fully_allocated";
   }
 
-  return assigned > 0 ? "partially_assigned" : "awaiting_allocation";
+  if (confirmed === 0 && pots.reserved > 0) {
+    return "match_proposed";
+  }
+
+  return confirmed > 0 ? "partially_allocated" : "awaiting_allocation";
 }
 
 /** Recomputes the derived status of one batch against the current database. */

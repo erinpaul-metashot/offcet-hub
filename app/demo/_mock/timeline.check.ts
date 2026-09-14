@@ -134,8 +134,8 @@ assert.ok(
   "The owning organisation lost sight of its own price change",
 );
 
-/* 6. Nobody's own feed contains an event on a record they may not open. */
-for (const role of ["manufacturer", "custodian", "maker", "brand"] as const) {
+/* 6. Every event in every role's feed names its subject and has a working deep link. */
+for (const role of ["admin", "manufacturer", "custodian", "maker", "brand"] as const) {
   const viewer = scopeFor(role);
   const feed = getRoleTimeline(db, viewer, { limit: 100 });
 
@@ -145,6 +145,18 @@ for (const role of ["manufacturer", "custodian", "maker", "brand"] as const) {
     assert.ok(
       canSeeEntity(db, viewer, { table: event.entityTable, id: event.entityId }),
       `${role} feed leaked ${event.entityTable}/${event.entityId}`,
+    );
+
+    /* Every event names its subject batch, product, or project. */
+    assert.ok(
+      event.subject !== undefined && event.subject.length > 0,
+      `${role} feed has an event with no subject: ${event.headline}`,
+    );
+
+    /* Every event has a functional deep-link. */
+    assert.ok(
+      event.href !== undefined && event.href.length > 0,
+      `${role} feed has an event with no href: ${event.headline}`,
     );
   }
 }

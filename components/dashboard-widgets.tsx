@@ -12,7 +12,7 @@ export function DashboardHero({
   description,
   children,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   description?: string;
   children?: ReactNode;
@@ -20,9 +20,11 @@ export function DashboardHero({
   return (
     <div className="relative space-y-5 py-2">
       <div className="space-y-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--brand-primary)]">
-          {eyebrow}
-        </p>
+        {eyebrow ? (
+          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--brand-primary)]">
+            {eyebrow}
+          </p>
+        ) : null}
         <h1 className="max-w-3xl text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)] sm:text-3xl">
           {title}
         </h1>

@@ -64,6 +64,57 @@ function QuantityChip({ event }: { event: TimelineEvent }) {
   );
 }
 
+function HeadlineWithSubject({
+  headline,
+  subject,
+  href,
+}: {
+  headline: string;
+  subject?: string;
+  href?: string;
+}) {
+  if (!subject) {
+    return <span>{headline}</span>;
+  }
+
+  const subjectStyle = classNames(
+    "font-semibold",
+    href &&
+      "underline decoration-[var(--line-strong)] underline-offset-2 transition-colors duration-200 ease-[var(--ease-out)] group-hover:text-[var(--brand-primary)] group-hover:decoration-[var(--brand-primary)]",
+  );
+
+  const quoted = `"${subject}"`;
+  if (headline.includes(quoted)) {
+    const parts = headline.split(quoted);
+    return (
+      <>
+        {parts[0]}
+        <span className={subjectStyle}>&ldquo;{subject}&rdquo;</span>
+        {parts.slice(1).join(quoted)}
+      </>
+    );
+  }
+
+  if (headline.includes(subject)) {
+    const parts = headline.split(subject);
+    return (
+      <>
+        {parts[0]}
+        <span className={subjectStyle}>{subject}</span>
+        {parts.slice(1).join(subject)}
+      </>
+    );
+  }
+
+  return (
+    <>
+      {headline}
+      {" — "}
+      <span className={subjectStyle}>{subject}</span>
+    </>
+  );
+}
+
 function EventRow({ event }: { event: TimelineEvent }) {
   const body = (
     <>
@@ -78,7 +129,13 @@ function EventRow({ event }: { event: TimelineEvent }) {
       </span>
 
       <div className="min-w-0 flex-1 space-y-1 pb-5">
-        <p className="text-sm leading-snug text-[var(--ink)]">{event.headline}</p>
+        <p className="text-sm leading-snug text-[var(--ink)]">
+          <HeadlineWithSubject
+            headline={event.headline}
+            subject={event.subject}
+            href={event.href}
+          />
+        </p>
 
         {event.detail && (
           <p className="text-xs leading-relaxed text-[var(--ink-muted)]">{event.detail}</p>
@@ -183,7 +240,6 @@ export function ThreadTimelinePanel({
   role,
   anchor,
   title = "Journey",
-  description,
   collapsible = true,
   defaultExpanded = true,
   plain = false,
@@ -192,7 +248,6 @@ export function ThreadTimelinePanel({
   role: CirkaRole;
   anchor: EntityRef;
   title?: string;
-  description?: string;
   collapsible?: boolean;
   defaultExpanded?: boolean;
   plain?: boolean;
@@ -233,12 +288,7 @@ export function ThreadTimelinePanel({
           )}
           onClick={collapsible ? () => setIsExpanded((prev) => !prev) : undefined}
         >
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
-            {description && (
-              <p className="text-xs text-[var(--ink-muted)] mt-0.5">{description}</p>
-            )}
-          </div>
+          <h2 className="min-w-0 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
               {thread.events.length} events
@@ -304,7 +354,7 @@ export function RoleActivityFeed({
         <div className="max-h-[22rem] overflow-y-auto">
           <TraceTimeline
             events={events}
-            emptyLabel="Nothing has been recorded against your organisation yet."
+            emptyLabel="No activity yet"
           />
         </div>
       )}

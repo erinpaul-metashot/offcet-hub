@@ -5,6 +5,7 @@ import { round } from "./ledger";
 import type { Id, MockDatabase } from "./types";
 import type { ViewerScope } from "./visibility";
 import { listBatches } from "./selectors-batches";
+import { listPendingArrivals } from "./selectors-intake";
 import {
   allocationsForOrg,
   batchesForOrg,
@@ -71,6 +72,9 @@ export function getManufacturerDashboard(db: MockDatabase, viewer: ViewerScope) 
 
   const awaitingRelease = batches.filter((batch) => !batch.releasedAt);
   const dispatchQueue = listDispatchQueue(db, viewer.orgId);
+  const readyToDispatch = dispatchQueue.filter((entry) =>
+    ["accepted", "awaiting_dispatch"].includes(entry.allocation.status),
+  );
   const discrepancies = listOpenDiscrepancies(db, viewer.orgId);
   const allocations = allocationsForOrg(db, viewer.orgId);
 
@@ -82,11 +86,18 @@ export function getManufacturerDashboard(db: MockDatabase, viewer: ViewerScope) 
       committed,
       transformed,
       awaitingRelease: awaitingRelease.length,
-      awaitingDispatch: dispatchQueue.filter((entry) =>
-        ["accepted", "awaiting_dispatch"].includes(entry.allocation.status),
-      ).length,
+      awaitingDispatch: readyToDispatch.length,
       openDiscrepancies: discrepancies.length,
     },
+    readyToDispatch,
+    /** Where each batch is before it can be matched: not released, released but unchecked, or recorded. */
+    reviewTrack: {
+      draft: batches.filter((batch) => batch.status === "draft").length,
+      awaitingReview: batches.filter((batch) => batch.status === "awaiting_review").length,
+      recorded: batches.filter((batch) => !["draft", "awaiting_review"].includes(batch.status)).length,
+    },
+    /** Records a connected system pushed in, waiting for this org to confirm or skip. */
+    pendingArrivals: listPendingArrivals(db, viewer),
     unit: batches[0]?.unit ?? "kg",
     trend: buildMonthBuckets(batches.map((batch) => batch.createdAt)),
     categories: topCategories(batches),

@@ -33,13 +33,15 @@ import type { PotSlice } from "../_mock/selectors-batches";
 import { formatQuantity } from "../_mock/selectors-shared";
 import type { Unit } from "../_mock/domain";
 
-type Tone = "neutral" | "progress" | "positive" | "warning" | "terminal" | "muted";
+type Tone = "neutral" | "progress" | "positive" | "confirmed" | "warning" | "terminal" | "muted";
 
 const TONE_CLASS: Record<Tone, string> = {
   neutral: "border border-[var(--line)] text-[var(--ink-muted)]",
   progress: "border border-dashed border-[var(--brand-primary)] text-[var(--brand-primary)]",
   positive:
     "border border-[var(--brand-secondary)] bg-[var(--brand-secondary-muted)] text-[var(--brand-secondary)]",
+  /* Solid where "progress" is dashed: accepted, not merely proposed. */
+  confirmed: "border border-[var(--charcoal)] text-[var(--charcoal)]",
   warning: "border border-[#B4531A] bg-[#FBE9DC] text-[#8A3D11]",
   terminal: "bg-[var(--brand-primary)] text-white border-transparent",
   muted: "border border-[var(--line)] bg-[var(--surface)] text-[var(--ink-muted)]",
@@ -55,8 +57,9 @@ const STATUS_TONE: Record<string, Tone> = {
   // resource batches
   awaiting_review: "progress",
   awaiting_allocation: "positive",
-  partially_assigned: "progress",
-  completely_assigned: "terminal",
+  match_proposed: "progress",
+  partially_allocated: "confirmed",
+  fully_allocated: "terminal",
   // quantity pots and allocations
   available: "positive",
   reserved: "progress",
@@ -107,6 +110,15 @@ const STATUS_TONE: Record<string, Tone> = {
   dismissed: "muted",
   overdue: "warning",
 };
+
+/**
+ * Border and accent text for a dashboard card that asks the viewer to act:
+ * `waiting` is on them now, `late` is past its date (the warning ochre).
+ */
+export const ACTION_URGENCY_CLASS = {
+  waiting: "border-[var(--brand-primary)] text-[var(--brand-primary)]",
+  late: "border-[#B4531A] text-[#8A3D11]",
+} as const;
 
 /** Inline warning-ochre text for a gap or caveat that doesn't warrant a full NoticeBanner. */
 export function GapNote({ children }: { children: React.ReactNode }) {
@@ -205,6 +217,12 @@ export const BUCKET_COLOUR: Record<string, string> = {
   consumed: "bg-[#5C3A21]",
   written_off: "bg-[#9A9A9A]",
   unexplained: "bg-[#D14343]",
+  /* Where a project's activated material ended up (brand proof view). */
+  incorporated: "bg-[var(--brand-primary)]",
+  prototypes: "bg-[#B4531A]",
+  reusable: "bg-[var(--brand-secondary)]",
+  lost: "bg-[#9A9A9A]",
+  not_yet_used: "bg-[var(--line-strong)]",
 };
 
 /** The stacked pot view: the invariant made visible. */
@@ -213,11 +231,13 @@ export function QuantityPotsBar({
   total,
   unit,
   compact = false,
+  totalLabel = "Recorded",
 }: {
-  slices: PotSlice[];
+  slices: Array<Omit<PotSlice, "bucket" | "terminal"> & { bucket: string }>;
   total: number;
   unit: Unit;
   compact?: boolean;
+  totalLabel?: string;
 }) {
   return (
     <div className="space-y-3">
@@ -252,7 +272,7 @@ export function QuantityPotsBar({
           ))}
           <div className="flex items-center gap-2">
             <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-              Recorded
+              {totalLabel}
             </dt>
             <dd className="text-sm font-semibold text-[var(--ink)]">
               {formatQuantity(total, unit)}
@@ -464,7 +484,6 @@ export function SectionHeading({
 }: {
   eyebrow?: string;
   title: string;
-  description?: string;
   action?: React.ReactNode;
 }) {
   return (
@@ -588,14 +607,13 @@ export function LinkRow({
 export function Modal({
   eyebrow,
   title,
-  description,
   width = "lg",
   onClose,
   children,
 }: {
-  eyebrow: string;
+  /** Only when the title alone doesn't say what the dialog does (e.g. "Edit" over a name). */
+  eyebrow?: string;
   title: string;
-  description?: React.ReactNode;
   width?: "md" | "lg";
   onClose: () => void;
   children: React.ReactNode;
@@ -636,13 +654,12 @@ export function Modal({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              {eyebrow}
-            </p>
-            <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
-            {description && (
-              <div className="text-sm leading-relaxed text-[var(--ink-muted)]">{description}</div>
+            {eyebrow && (
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                {eyebrow}
+              </p>
             )}
+            <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
           </div>
           <button
             type="button"
@@ -675,7 +692,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   body: React.ReactNode;
   confirmLabel: string;
@@ -701,7 +718,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             className="inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--paper)] px-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--ink)] transition-colors duration-200 ease-[var(--ease-out)] hover:bg-[var(--surface)]"
           >
-            Keep it
+            Cancel
           </button>
           <button
             type="button"
@@ -738,6 +755,14 @@ export function FormSection({
       {children}
     </section>
   );
+}
+
+/**
+ * Where a dashboard tile goes: straight to the item when there is exactly one,
+ * otherwise to the list with the matching filter already applied.
+ */
+export function tileHref<T>(items: readonly T[], listHref: string, itemHref: (item: T) => string): string {
+  return items.length === 1 ? itemHref(items[0]) : listHref;
 }
 
 export function formatDate(timestamp?: number): string {

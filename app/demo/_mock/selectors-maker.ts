@@ -299,6 +299,9 @@ export function getMakerDashboard(db: MockDatabase, viewer: ViewerScope) {
   const transformed = round(
     production.reduce((total, entry) => total + (entry.production.qtyIncorporated ?? 0), 0),
   );
+  const used = round(
+    production.reduce((total, entry) => total + (entry.production.qtyUsed ?? 0), 0),
+  );
   const unitsMade = production.reduce(
     (total, entry) => total + (entry.production.actualQuantity ?? 0),
     0,
@@ -324,6 +327,8 @@ export function getMakerDashboard(db: MockDatabase, viewer: ViewerScope) {
       transformed,
       unitsMade,
       hours,
+      /** Incorporated ÷ used across all runs — same basis as the per-project `material.yield`. */
+      yieldRate: used > 0 ? round(transformed / used) : null,
       openRequests: requests.filter((request) =>
         ["submitted", "under_review", "partially_matched", "matched", "in_delivery"].includes(
           request.status,

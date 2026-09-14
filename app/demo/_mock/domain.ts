@@ -195,15 +195,18 @@ export type MovementReason = (typeof MOVEMENT_REASONS)[number];
  * ------------------------------------------------------------------ */
 
 /**
- * One journey, six steps. Movement detail lives in the pots and in the
+ * One journey, seven steps. Movement detail lives in the pots and in the
  * allocation status; the batch badge answers only "how far through is it?".
+ * "Match proposed" is promised but not yet accepted by the receiver;
+ * "Partially allocated" has an accepted share with a remainder still open.
  */
 export const BATCH_STATUSES = [
   "draft",
   "awaiting_review",
   "awaiting_allocation",
-  "partially_assigned",
-  "completely_assigned",
+  "match_proposed",
+  "partially_allocated",
+  "fully_allocated",
   "closed",
 ] as const;
 export type BatchStatus = (typeof BATCH_STATUSES)[number];
@@ -597,8 +600,9 @@ export const STATUS_LABELS: Record<string, string> = {
   // resource batch
   awaiting_review: "Awaiting review",
   awaiting_allocation: "Awaiting allocation",
-  partially_assigned: "Partially assigned",
-  completely_assigned: "Completely assigned",
+  match_proposed: "Match proposed",
+  partially_allocated: "Partially allocated",
+  fully_allocated: "Fully allocated",
   // quantity pots + allocations
   available: "Available",
   reserved: "Reserved",
@@ -667,15 +671,15 @@ export const ARRIVAL_ISSUE_LABELS: Record<ArrivalIssue, string> = {
 };
 
 export const ACTION_KIND_LABELS: Record<ActionKind, string> = {
-  awaiting_match: "Requests awaiting matching",
-  awaiting_acceptance: "Allocations awaiting acceptance",
-  awaiting_dispatch: "Resources awaiting dispatch",
-  awaiting_receipt: "Receipts awaiting confirmation",
+  awaiting_match: "Awaiting match",
+  awaiting_acceptance: "Awaiting acceptance",
+  awaiting_dispatch: "Awaiting dispatch",
+  awaiting_receipt: "Awaiting receipt",
   quantity_discrepancy: "Quantity discrepancies",
-  arrival_issue: "Issues reported on arrival",
-  production_stalled: "Production batches with no recent update",
+  arrival_issue: "Arrival issues",
+  production_stalled: "Stalled production",
   missing_evidence: "Evidence missing",
-  awaiting_review: "Records awaiting CIRKA review",
+  awaiting_review: "Awaiting review",
   transfer_failed: "Failed data transfers",
   overdue: "Past expected date",
 };
