@@ -177,7 +177,7 @@ function summariseMakerProject(db: MockDatabase, key: Id, runs: MakerProductionR
     ),
     activeRuns: runs.filter((row) => ACTIVE_PRODUCTION.includes(row.production.status)).length,
     reviewedRuns: runs.filter((row) => row.production.evidenceStatus === "cirka_reviewed").length,
-    lastActivity: Math.max(...runs.map((row) => row.production.updatedAt)),
+    lastActivity: Math.max(0, ...runs.map((row) => row.production.updatedAt)),
   };
 }
 
@@ -194,6 +194,18 @@ export function listMakerProjects(db: MockDatabase, orgId: Id): MakerProjectRow[
     const key = row.production.projectId ?? allocation?.projectId ?? UNASSIGNED_PROJECT;
 
     groups.set(key, [...(groups.get(key) ?? []), row]);
+  }
+
+  // Briefs allocated to this maker with no run yet: listed as upcoming (runs: []).
+  for (const allocation of db.allocations) {
+    if (
+      allocation.toOrgId === orgId &&
+      allocation.projectId &&
+      !groups.has(allocation.projectId) &&
+      !["declined", "cancelled"].includes(allocation.status)
+    ) {
+      groups.set(allocation.projectId, []);
+    }
   }
 
   return Array.from(groups.entries())

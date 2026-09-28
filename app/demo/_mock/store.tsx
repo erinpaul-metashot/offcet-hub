@@ -7,6 +7,7 @@ import {
   DEMO_CUSTODIAN_ID,
   DEMO_MAKER_ID,
   DEMO_MANUFACTURER_ID,
+  createFreshDatabase,
   createMockDatabase,
 } from "./data";
 import type { CirkaRole } from "./domain";
@@ -41,6 +42,10 @@ export const PERSONA_IDS: Record<CirkaRole, Id> = {
 interface DemoStoreValue {
   db: MockDatabase;
   resetDemo: () => void;
+  /** Wipes every transactional row; keeps the five persona accounts approved. */
+  resetToFresh: () => void;
+  /** True while the database descends from `resetToFresh` rather than the seed story. */
+  isFresh: boolean;
   /** Replaces the whole database. Story mode pushes each replayed beat in here. */
   loadDatabase: (next: MockDatabase) => void;
   personaFor: (role: CirkaRole) => User;
@@ -284,13 +289,21 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     [db],
   );
 
+  const [isFresh, setIsFresh] = useState(false);
+
   const loadDatabase = useCallback((next: MockDatabase) => {
     dbRef.current = next;
     setDb(next);
+    setIsFresh(false);
   }, []);
 
   const resetDemo = useCallback(() => {
     loadDatabase(createMockDatabase());
+  }, [loadDatabase]);
+
+  const resetToFresh = useCallback(() => {
+    loadDatabase(createFreshDatabase());
+    setIsFresh(true);
   }, [loadDatabase]);
 
   /** Runs an operation that also returns a value alongside the new database. */
@@ -322,6 +335,8 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     return {
       db,
       resetDemo,
+      resetToFresh,
+      isFresh,
       loadDatabase,
       personaFor,
       scopeFor,
@@ -426,7 +441,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
         commit((current) => arrivalOps.skipArrival(current, scopeFor(role), args.arrivalId));
       },
     };
-  }, [commit, commitWith, db, loadDatabase, personaFor, resetDemo, scopeFor]);
+  }, [commit, commitWith, db, isFresh, loadDatabase, personaFor, resetDemo, resetToFresh, scopeFor]);
 
   return <DemoStoreContext.Provider value={value}>{children}</DemoStoreContext.Provider>;
 }

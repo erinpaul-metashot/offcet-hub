@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, ShieldAlert, Filter, Layers, PackageCheck, Check } from "lucide-react";
 import { Button, EmptyState } from "@/components/ui";
@@ -206,7 +206,10 @@ export default function CustodianStockPage() {
   const { scope } = useDemoPersona("custodian");
   const { run, error, pending, clearError } = useAction();
 
-  const view = getCustodianDashboard(store.db, scope);
+  const view = useMemo(
+    () => getCustodianDashboard(store.db, scope),
+    [store.db, scope],
+  );
 
   const searchParams = useSearchParams();
   const linkedBatchId = searchParams.get("batchId");
@@ -220,17 +223,26 @@ export default function CustodianStockPage() {
         }
       : {},
   );
+  const lastOpenedIdRef = useRef<string | null>(linkedHolding?.batch._id ?? null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
-    if (linkedBatchId && view.holdings.some((h) => h.batch._id === linkedBatchId)) {
+    if (!linkedBatchId) return;
+    if (lastOpenedIdRef.current === linkedBatchId) return;
+    lastOpenedIdRef.current = linkedBatchId;
+
+    if (view.holdings.some((h) => h.batch._id === linkedBatchId)) {
       setSelectedBatchId(linkedBatchId);
-      setDrafts((prev) => ({
-        ...prev,
-        [linkedBatchId]: prev[linkedBatchId] ?? { quantity: "", reason: "" },
-      }));
+      setDrafts((prev) =>
+        prev[linkedBatchId]
+          ? prev
+          : {
+              ...prev,
+              [linkedBatchId]: { quantity: "", reason: "" },
+            },
+      );
     }
   }, [linkedBatchId, view.holdings]);
 
@@ -239,11 +251,16 @@ export default function CustodianStockPage() {
 
   function openDrawer(batchId: string) {
     clearError();
-    setDrafts((current) => ({
-      ...current,
-      [batchId]: current[batchId] ?? { quantity: "", reason: "" },
-    }));
+    setDrafts((current) =>
+      current[batchId]
+        ? current
+        : {
+            ...current,
+            [batchId]: { quantity: "", reason: "" },
+          },
+    );
     setSelectedBatchId(batchId);
+    lastOpenedIdRef.current = batchId;
   }
 
   function closeDrawer() {

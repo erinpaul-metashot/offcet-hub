@@ -13,7 +13,7 @@ export function DemoAppLayout({
   navItems,
   children,
 }: {
-  user: { name: string; email: string };
+  user: { name: string; email: string; role?: string };
   roleTitle: string;
   navItems: NavItem[];
   children: React.ReactNode;

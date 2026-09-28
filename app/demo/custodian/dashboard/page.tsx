@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Button, Panel } from "@/components/ui";
@@ -13,6 +14,8 @@ import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { CirkaBadge, LinkRow, NoticeBanner, formatDate, tileHref } from "../../_components/cirka-ui";
 import { RoleActivityFeed } from "../../_components/trace-timeline";
 import { classNames } from "@/lib/utils";
+import { DiscrepancyModal } from "../../_components/discrepancy-analysis";
+import type { Allocation, ResourceBatch } from "../../_mock/types";
 
 /** One arrival opens straight into its drawer on the arrivals page. */
 const arrivalHref = (entry: { allocation: { _id: string } }) =>
@@ -243,25 +246,100 @@ export default function CustodianDashboardPage() {
   const { scope, organisation } = useDemoPersona("custodian");
   const view = getCustodianDashboard(db, scope);
 
+  const [activeModalAllocation, setActiveModalAllocation] = useState<{
+    allocation: Allocation;
+    batch?: ResourceBatch;
+    fromName: string;
+    toName: string;
+  } | null>(null);
+
+  const discrepancyEntries = view.arrivals.filter(
+    (entry) => entry.allocation.status === "discrepancy",
+  );
+
   return (
     <div className="space-y-6">
+      {/* Modal for Quick Discrepancy Inspection */}
+      {activeModalAllocation && (
+        <DiscrepancyModal
+          isOpen={Boolean(activeModalAllocation)}
+          onClose={() => setActiveModalAllocation(null)}
+          allocation={activeModalAllocation.allocation}
+          batch={activeModalAllocation.batch}
+          fromName={activeModalAllocation.fromName}
+          toName={activeModalAllocation.toName}
+        />
+      )}
+
       <DashboardHero title={organisation?.name ?? "Dashboard"} />
 
       <CompactCustodianStatsOverview view={view} />
 
-      {view.metrics.openDiscrepancies > 0 && (
+      {discrepancyEntries.length > 0 && (
         <NoticeBanner
           tone="blocking"
-          title={`${view.metrics.openDiscrepancies} open discrepanc${view.metrics.openDiscrepancies === 1 ? "y" : "ies"} with CIRKA`}
+          title={`${discrepancyEntries.length} open discrepanc${discrepancyEntries.length === 1 ? "y" : "ies"} with CIRKA`}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-            <Link
-              href="/demo/custodian/arrivals"
-              className="inline-flex items-center gap-1 shrink-0 rounded-full bg-[#FF5C00] px-3.5 py-1 text-xs font-bold text-white hover:bg-[#e05200] transition-colors shadow-xs"
-            >
-              <span>View</span>
-              <ArrowUpRight size={13} />
-            </Link>
+          <div className="space-y-3 pt-1">
+            {discrepancyEntries.map((entry) => {
+              const dispatched =
+                entry.allocation.quantityDispatched ?? entry.allocation.quantityAllocated;
+              const received = entry.allocation.quantityReceived ?? 0;
+              const shortfall =
+                entry.allocation.quantityDiscrepancy ?? Math.max(0, dispatched - received);
+
+              return (
+                <div
+                  key={entry.allocation._id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#FF5C00]/20 pb-3 last:border-0 last:pb-0"
+                >
+                  <div>
+                    <p className="text-xs font-semibold text-[#2A2A2A]">
+                      <span className="font-bold text-[#FF5C00]">{entry.allocation.reference}</span> ·{" "}
+                      {entry.batch?.name ?? `Batch ${entry.allocation.batchId}`}
+                    </p>
+                    <p className="text-xs text-[#545454] mt-0.5">
+                      From <strong>{entry.fromName}</strong> ·{" "}
+                      {formatQuantity(received, entry.allocation.unit)} of{" "}
+                      {formatQuantity(dispatched, entry.allocation.unit)} received (
+                      <span className="font-semibold text-[#FF5C00]">
+                        -{formatQuantity(shortfall, entry.allocation.unit)} short
+                      </span>
+                      )
+                    </p>
+                    {entry.allocation.discrepancyReason && (
+                      <p className="text-[11px] text-[var(--ink-muted)] italic mt-1">
+                        “{entry.allocation.discrepancyReason}”
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveModalAllocation({
+                          allocation: entry.allocation,
+                          batch: entry.batch,
+                          fromName: entry.fromName,
+                          toName: organisation?.name ?? "Malmö Resource Node",
+                        })
+                      }
+                      className="inline-flex items-center gap-1 rounded-full bg-[#FF5C00] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#e05200] transition-colors shadow-xs"
+                    >
+                      <span>Analyze Discrepancy</span>
+                      <ArrowUpRight size={13} />
+                    </button>
+                    <Link
+                      href={`/demo/custodian/arrivals?id=${entry.allocation._id}`}
+                      className="inline-flex items-center gap-1 rounded-full border border-[var(--line-strong)] bg-[var(--paper)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors"
+                    >
+                      <span>Open in Arrivals</span>
+                      <ArrowUpRight size={13} />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </NoticeBanner>
       )}
@@ -282,7 +360,7 @@ export default function CustodianDashboardPage() {
               view.arrivals.slice(0, 5).map((entry) => (
                 <LinkRow
                   key={entry.allocation._id}
-                  href="/demo/custodian/arrivals"
+                  href={`/demo/custodian/arrivals?id=${entry.allocation._id}`}
                   title={`${entry.allocation.reference} · ${entry.batch?.name ?? "Resource batch"}`}
                   meta={`${entry.fromName} · ${formatQuantity(entry.allocation.quantityAllocated, entry.allocation.unit)}${
                     entry.allocation.expectedArrivalDate
@@ -311,7 +389,7 @@ export default function CustodianDashboardPage() {
               view.holdings.map((holding) => (
                 <LinkRow
                   key={holding.batch._id}
-                  href="/demo/custodian/stock"
+                  href={`/demo/custodian/stock?batchId=${holding.batch._id}`}
                   title={holding.batch.name}
                   meta={`${holding.batch.reference} · owned by ${holding.ownerName} · ${formatQuantity(holding.uncommitted, holding.batch.unit)} uncommitted`}
                   right={
@@ -343,7 +421,7 @@ export default function CustodianDashboardPage() {
             view.outgoing.slice(0, 6).map((entry) => (
               <LinkRow
                 key={entry.allocation._id}
-                href="/demo/custodian/dispatches"
+                href={`/demo/custodian/dispatches?id=${entry.allocation._id}`}
                 title={`${entry.allocation.reference} · ${entry.makerName}`}
                 meta={`${entry.batch?.name ?? "Resource batch"} · ${formatQuantity(entry.allocation.quantityAllocated, entry.allocation.unit)}`}
                 right={<CirkaBadge status={entry.allocation.status} />}

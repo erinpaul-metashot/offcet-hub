@@ -14,6 +14,7 @@ const navItems: NavItem[] = [
   { label: "Production", href: "/demo/admin/production", icon: "production", group: "Resources" },
   { label: "Organisations", href: "/demo/admin/organisations", icon: "organisations", group: "System" },
   { label: "People", href: "/demo/admin/users", icon: "users", group: "System" },
+  { label: "Integrations", href: "/demo/admin/integrations", icon: "integrations", group: "System" },
   { label: "Exports", href: "/demo/admin/exports", icon: "exports", group: "System" },
 ];
 

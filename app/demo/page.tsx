@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  Eraser,
   Factory,
   FolderOpen,
   PlayCircle,
@@ -30,7 +31,7 @@ const ROLE_ICONS: Record<CirkaRole, React.ReactNode> = {
 };
 
 export default function DemoRoleSelectorPage() {
-  const { db, personaFor, resetDemo } = useDemoStore();
+  const { db, personaFor, resetDemo, resetToFresh, isFresh } = useDemoStore();
 
   const admin = getAdminDashboard(db);
   const integrity = checkLedgerIntegrity(db);
@@ -110,6 +111,11 @@ export default function DemoRoleSelectorPage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-sm flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-xs">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[var(--sidebar-text-muted)]">
             <span className="text-white font-medium">Database state:</span>
+            {isFresh ? (
+              <span className="rounded-full border border-[var(--brand-primary)] px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--brand-primary)]">
+                Fresh slate
+              </span>
+            ) : null}
             <span>Recorded: <strong className="text-white tabular-nums">{formatQuantity(admin.metrics.recorded, "kg")}</strong></span>
             <span>Available: <strong className="text-white tabular-nums">{formatQuantity(admin.metrics.available, "kg")}</strong></span>
             <span>In Motion: <strong className="text-white tabular-nums">{formatQuantity(admin.metrics.inMotion, "kg")}</strong></span>
@@ -152,7 +158,17 @@ export default function DemoRoleSelectorPage() {
             className="gap-2 border-[var(--sidebar-border)] bg-transparent text-white hover:bg-[var(--sidebar-hover)]"
           >
             <RotateCcw size={14} />
-            Reset data
+            Reset seed data
+          </Button>
+          <Button
+            onClick={resetToFresh}
+            variant="secondary"
+            size="sm"
+            className="gap-2 border-[var(--sidebar-border)] bg-transparent text-white hover:bg-[var(--sidebar-hover)]"
+            title="Clear all batches, projects and allocations. The five role accounts stay approved."
+          >
+            <Eraser size={14} />
+            Wipe data (fresh demo)
           </Button>
           <Button
             as={Link}

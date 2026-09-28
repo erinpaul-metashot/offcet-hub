@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertTriangle, Clock, Zap } from "lucide-react";
 import { EmptyState } from "@/components/ui";
@@ -111,11 +111,15 @@ export default function CustodianArrivalsPage() {
   const { scope } = useDemoPersona("custodian");
   const { run, error, pending, clearError } = useAction();
 
-  const view = getCustodianDashboard(store.db, scope);
+  const view = useMemo(
+    () => getCustodianDashboard(store.db, scope),
+    [store.db, scope],
+  );
 
   /* A dashboard tile with exactly one arrival links here with ?id=, opening it straight away. */
   const searchParams = useSearchParams();
-  const linked = view.arrivals.find((a) => a.allocation._id === searchParams.get("id"));
+  const idParam = searchParams.get("id");
+  const linked = view.arrivals.find((a) => a.allocation._id === idParam);
 
   const [selectedId, setSelectedId] = useState<string | null>(() => linked?.allocation._id ?? null);
   const [drafts, setDrafts] = useState<
@@ -131,6 +135,8 @@ export default function CustodianArrivalsPage() {
       : {},
   );
 
+  const lastOpenedIdRef = useRef<string | null>(linked?.allocation._id ?? null);
+
   const selectedEntry = view.arrivals.find(
     (a) => a.allocation._id === selectedId,
   ) ?? null;
@@ -142,12 +148,38 @@ export default function CustodianArrivalsPage() {
     const dispatched =
       entry.allocation.quantityDispatched ?? entry.allocation.quantityAllocated;
     // Seed the draft with the dispatch amount if not already set
-    setDrafts((prev) => ({
-      ...prev,
-      [id]: prev[id] ?? { received: String(dispatched), note: "" },
-    }));
+    setDrafts((prev) =>
+      prev[id]
+        ? prev
+        : {
+            ...prev,
+            [id]: { received: String(dispatched), note: "" },
+          },
+    );
     setSelectedId(id);
+    lastOpenedIdRef.current = id;
   }
+
+  useEffect(() => {
+    if (!idParam) return;
+    if (lastOpenedIdRef.current === idParam) return;
+    lastOpenedIdRef.current = idParam;
+
+    const entry = view.arrivals.find((a) => a.allocation._id === idParam);
+    if (entry) {
+      const dispatched =
+        entry.allocation.quantityDispatched ?? entry.allocation.quantityAllocated;
+      setDrafts((prev) =>
+        prev[idParam]
+          ? prev
+          : {
+              ...prev,
+              [idParam]: { received: String(dispatched), note: "" },
+            },
+      );
+      setSelectedId(idParam);
+    }
+  }, [idParam, view.arrivals]);
 
   function closeDrawer() {
     setSelectedId(null);

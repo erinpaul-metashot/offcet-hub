@@ -37,6 +37,44 @@ export interface NavItem {
   group?: string;
 }
 
+function parseRoleBadge(roleTitle?: string, userRole?: string) {
+  let role = userRole || "";
+  let org = "";
+
+  if (roleTitle) {
+    if (roleTitle.includes("·")) {
+      const parts = roleTitle.split("·");
+      role = role || parts[0]?.trim() || "";
+      org = parts.slice(1).join("·").trim();
+    } else {
+      role = role || roleTitle.trim();
+    }
+  }
+
+  const normalized = role.toLowerCase();
+  let label = role;
+  let badgeClasses = "bg-white/15 text-white border-white/20";
+
+  if (normalized.includes("admin")) {
+    label = "Admin";
+    badgeClasses = "bg-[#8CC63F]/20 text-[#8CC63F] border-[#8CC63F]/40";
+  } else if (normalized.includes("brand")) {
+    label = "Brand";
+    badgeClasses = "bg-[#FF5C00]/20 text-[#FF5C00] border-[#FF5C00]/40";
+  } else if (normalized.includes("manufacturer")) {
+    label = "Manufacturer";
+    badgeClasses = "bg-[#FF5C00]/20 text-[#FF5C00] border-[#FF5C00]/40";
+  } else if (normalized.includes("custodian")) {
+    label = "Custodian";
+    badgeClasses = "bg-white/20 text-white border-white/35";
+  } else if (normalized.includes("maker")) {
+    label = "Maker";
+    badgeClasses = "bg-[#8CC63F]/20 text-[#8CC63F] border-[#8CC63F]/40";
+  }
+
+  return { label, org, badgeClasses };
+}
+
 const ICONS: Record<string, React.ReactNode> = {
   overview: <LayoutDashboard size={18} />,
   lots: <Package size={18} />,
@@ -62,7 +100,7 @@ const ICONS: Record<string, React.ReactNode> = {
 };
 
 export function AppLayout(props: {
-  user: { name: string; email: string };
+  user: { name: string; email: string; role?: string };
   roleTitle: string;
   navItems: NavItem[];
   pageTitle?: string;
@@ -85,7 +123,7 @@ function AppLayoutInner({
   footerAction,
   children,
 }: {
-  user: { name: string; email: string };
+  user: { name: string; email: string; role?: string };
   roleTitle: string;
   navItems: NavItem[];
   pageTitle?: string;
@@ -93,6 +131,7 @@ function AppLayoutInner({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const roleBadge = parseRoleBadge(roleTitle, user.role);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setCollapsed] = useState(false);
   const { isSigningOut } = useSignOut();
@@ -216,11 +255,37 @@ function AppLayoutInner({
           "border-t border-[var(--sidebar-border)] p-4",
           isCollapsed ? "lg:flex lg:flex-col lg:items-center lg:justify-center lg:px-2" : ""
         )}>
-          {!isCollapsed && (
-            <div className="mb-5">
-              <p className="text-sm font-medium text-[var(--sidebar-text)]">{user.name}</p>
-              <p className="text-xs text-[var(--sidebar-text-muted)] truncate">{user.email}</p>
+          {!isCollapsed ? (
+            <div className="mb-4 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-[var(--sidebar-text)] truncate">{user.name}</p>
+                {roleBadge.label && (
+                  <span
+                    className={classNames(
+                      "shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] border",
+                      roleBadge.badgeClasses
+                    )}
+                  >
+                    {roleBadge.label}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[var(--sidebar-text-muted)] truncate">
+                {roleBadge.org ? `${roleBadge.org} · ` : ""}{user.email}
+              </p>
             </div>
+          ) : (
+            roleBadge.label && (
+              <div
+                className={classNames(
+                  "mb-3 hidden lg:flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold uppercase border cursor-default",
+                  roleBadge.badgeClasses
+                )}
+                title={`${user.name} (${roleBadge.label}${roleBadge.org ? ` · ${roleBadge.org}` : ""})`}
+              >
+                {roleBadge.label[0]}
+              </div>
+            )
           )}
           {footerAction ? footerAction(isCollapsed) : <SignOutButton collapsed={isCollapsed} />}
         </div>
@@ -228,19 +293,31 @@ function AppLayoutInner({
 
       <div className="flex flex-1 flex-col overflow-hidden bg-[var(--surface)]">
         {/* Mobile Header */}
-        <header className="flex h-16 shrink-0 items-center gap-x-4 border-b border-[var(--line)] bg-[var(--paper)] px-4 sm:gap-x-6 sm:px-6 lg:hidden">
-          <button
-            type="button"
-            className="-m-2.5 p-2.5 text-[var(--ink-muted)] hover:text-[var(--brand-primary)] transition-colors"
-            onClick={toggleMobileSidebar}
-          >
-            <span className="sr-only">Open sidebar</span>
-            <Menu size={24} />
-          </button>
-          {pageTitle && (
-            <div className="flex flex-1 font-bold text-sm tracking-widest uppercase text-[var(--brand-primary)]">
-              {pageTitle}
-            </div>
+        <header className="flex h-16 shrink-0 items-center justify-between gap-x-4 border-b border-[var(--line)] bg-[var(--paper)] px-4 sm:gap-x-6 sm:px-6 lg:hidden">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="-m-2.5 p-2.5 text-[var(--ink-muted)] hover:text-[var(--brand-primary)] transition-colors"
+              onClick={toggleMobileSidebar}
+            >
+              <span className="sr-only">Open sidebar</span>
+              <Menu size={24} />
+            </button>
+            {pageTitle && (
+              <div className="font-bold text-sm tracking-widest uppercase text-[var(--brand-primary)]">
+                {pageTitle}
+              </div>
+            )}
+          </div>
+          {roleBadge.label && (
+            <span
+              className={classNames(
+                "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] border",
+                roleBadge.badgeClasses
+              )}
+            >
+              {roleBadge.label}
+            </span>
           )}
         </header>
 

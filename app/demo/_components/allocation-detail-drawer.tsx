@@ -6,10 +6,11 @@ import { X } from "lucide-react";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
 import { SUITABILITY_LABELS, SUITABILITY_RATINGS, type SuitabilityRating } from "../_mock/domain";
 import type { MakerAllocation } from "../_mock/selectors-maker";
-import { formatQuantity } from "../_mock/selectors-shared";
+import { formatQuantity, projectReferences } from "../_mock/selectors-shared";
 import type { useAction } from "./use-action";
 import type { useDemoStore } from "../_mock/store";
 import { CirkaBadge, DataRow, NoticeBanner, formatDate } from "./cirka-ui";
+import { ProjectBriefPack } from "./project-brief-pack";
 
 interface FeedbackDraft {
   receivedAsDescribed: boolean;
@@ -49,6 +50,9 @@ export function AllocationDetailDrawer({
   onClose: () => void;
 }) {
   const { allocation } = entry;
+  const project = allocation.projectId
+    ? store.db.projects.find((item) => item._id === allocation.projectId)
+    : undefined;
   const dispatched = allocation.quantityDispatched ?? allocation.quantityAllocated;
   const [received, setReceived] = useState(String(dispatched));
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -142,6 +146,29 @@ export function AllocationDetailDrawer({
             />
             {allocation.notes && <DataRow label="Note from the custodian" value={allocation.notes} />}
           </dl>
+
+          {project && (
+            <section className="space-y-4 rounded-2xl bg-[var(--surface)] p-5">
+              <div className="space-y-1">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                  Brief · {project.reference}
+                </p>
+                <h3 className="text-base font-semibold tracking-[-0.02em] text-[var(--ink)]">
+                  {project.title}
+                </h3>
+                <p className="line-clamp-2 text-sm leading-relaxed text-[var(--ink-muted)]">
+                  {project.objective}
+                </p>
+              </div>
+              <ProjectBriefPack items={projectReferences(store.db, project._id)} />
+              <Link
+                href={`/demo/maker/projects/${project._id}`}
+                className="inline-flex text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--brand-primary)] transition-colors duration-200 ease-[var(--ease-out)] hover:text-[var(--ink)]"
+              >
+                Open full brief
+              </Link>
+            </section>
+          )}
 
           {allocation.status === "proposed" && (
             <div className="flex flex-wrap gap-3 border-t border-[var(--line)] pt-5">

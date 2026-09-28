@@ -13,7 +13,16 @@ import type { MockDatabase } from "./types";
 import { allocations } from "./data/allocations";
 import { batchSeeds } from "./data/batches";
 import { matches, projectMilestones, projects, resourceRequests } from "./data/demand";
-import { facilities, organisations, users } from "./data/orgs";
+import {
+  DEMO_ADMIN_ID,
+  DEMO_BRAND_ID,
+  DEMO_CUSTODIAN_ID,
+  DEMO_MAKER_ID,
+  DEMO_MANUFACTURER_ID,
+  facilities,
+  organisations,
+  users,
+} from "./data/orgs";
 import {
   actionItems,
   evidenceItems,
@@ -108,4 +117,52 @@ export function createMockDatabase(): MockDatabase {
 
   /* The seeded status on each batch is a placeholder; the replay derives the real one. */
   return replayed;
+}
+
+const PERSONA_USER_IDS = [
+  DEMO_ADMIN_ID,
+  DEMO_MANUFACTURER_ID,
+  DEMO_CUSTODIAN_ID,
+  DEMO_MAKER_ID,
+  DEMO_BRAND_ID,
+];
+
+/**
+ * A "fresh slate" database for live walkthroughs: the five persona accounts,
+ * their organisations and facilities, all approved, and no transactional
+ * history at all. Everything else starts empty.
+ */
+export function createFreshDatabase(): MockDatabase {
+  resetIdCounter();
+
+  const personaUsers = users.filter((user) => PERSONA_USER_IDS.includes(user._id));
+  const personaOrgIds = new Set(personaUsers.map((user) => user.orgId));
+
+  return {
+    organisations: organisations
+      .filter((org) => personaOrgIds.has(org._id))
+      .map((org) => ({ ...org, status: "approved" as const })),
+    users: personaUsers.map((user) => ({ ...user, status: "approved" as const })),
+    facilities: clone(facilities.filter((facility) => personaOrgIds.has(facility.orgId))),
+    resourceBatches: [],
+    quantityMovements: [],
+    projects: [],
+    resourceRequests: [],
+    matches: [],
+    allocations: [],
+    productionBatches: [],
+    productionInputs: [],
+    productionTimeEntries: [],
+    productionOutputs: [],
+    productionCosts: [],
+    suitabilityFeedback: [],
+    auditLog: [],
+    evidenceItems: [],
+    importJobs: [],
+    integrationConnections: [],
+    integrationTransfers: [],
+    projectMilestones: [],
+    actionItems: [],
+    pendingArrivals: [],
+  };
 }

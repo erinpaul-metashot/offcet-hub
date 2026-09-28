@@ -126,12 +126,14 @@ export function createResourceBatch(
     ),
   );
 
+  const dataSource = input.dataSource ?? "manual_entry";
+
   const batch: ResourceBatch = {
     _id: batchId,
     reference,
     ownerOrgId,
     sourceFacilityId: input.sourceFacilityId,
-    createdByUserId: input.dataSource === "manual_entry" ? actor.userId : undefined,
+    createdByUserId: dataSource === "manual_entry" ? actor.userId : undefined,
     name,
     description,
     materialCategory: input.materialCategory,
@@ -149,13 +151,13 @@ export function createResourceBatch(
     releasedAt: input.releaseImmediately ? now : undefined,
     locationText: input.locationText,
     status: "draft",
-    dataSource: input.dataSource,
+    dataSource,
     assuranceLevel: "self_reported",
     externalSystemName: input.externalSystemName,
     externalRecordId: input.externalRecordId,
     externalRecordUrl: input.externalRecordUrl,
     importJobId: input.importJobId,
-    importedAt: input.dataSource === "manual_entry" ? undefined : now,
+    importedAt: dataSource === "manual_entry" ? undefined : now,
     estimatedValue: input.estimatedValue,
     currency: input.currency ?? "SEK",
     imageUrls: input.imageUrls ?? [],
@@ -175,7 +177,7 @@ export function createResourceBatch(
     performedByUserId: actor.userId,
     performedByOrgId: ownerOrgId,
     occurredAt: now,
-    notes: input.dataSource === "manual_entry" ? undefined : "Created by import.",
+    notes: dataSource === "manual_entry" ? undefined : "Created by import.",
   });
 
   return {
@@ -185,8 +187,8 @@ export function createResourceBatch(
       action: "created",
       actorUserId: actor.userId,
       actorOrgId: ownerOrgId,
-      actorType: input.dataSource === "manual_entry" ? "user" : "import",
-      notes: `Recorded ${quantity} ${input.unit}: source: ${input.dataSource.replace(/_/g, " ")}.`,
+      actorType: dataSource === "manual_entry" ? "user" : "import",
+      notes: `Recorded ${quantity} ${input.unit}: source: ${dataSource.replace(/_/g, " ")}.`,
     }),
     batchId,
   };

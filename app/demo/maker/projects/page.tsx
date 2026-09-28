@@ -110,7 +110,9 @@ function OutputRail({ row }: { row: MakerProjectRow }) {
 export default function MakerProjectsPage() {
   const { db } = useDemoStore();
   const { scope } = useDemoPersona("maker");
-  const rows = listMakerProjects(db, scope.orgId);
+  const allRows = listMakerProjects(db, scope.orgId);
+  const upcoming = allRows.filter((row) => row.runs.length === 0);
+  const rows = allRows.filter((row) => row.runs.length > 0);
 
   const unit = rows[0]?.material.unit ?? "kg";
   const portfolio = rows.reduce(
@@ -139,8 +141,27 @@ export default function MakerProjectsPage() {
         }
       />
 
+      {upcoming.length > 0 && (
+        <section className="space-y-3">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+            Upcoming briefs
+          </p>
+          <Panel className="overflow-hidden p-0">
+            {upcoming.map((row) => (
+              <LinkRow
+                key={row.key}
+                href={`/demo/maker/projects/${row.key}`}
+                title={row.title}
+                meta={`${row.reference} · for ${row.brandName} · no production batch yet`}
+                right={row.project && <CirkaBadge status={row.project.status} />}
+              />
+            ))}
+          </Panel>
+        </section>
+      )}
+
       {rows.length === 0 ? (
-        <EmptyState title="Nothing made yet" />
+        upcoming.length === 0 && <EmptyState title="Nothing made yet" />
       ) : (
         <>
           <Panel className="space-y-5 p-6">

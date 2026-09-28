@@ -36,7 +36,9 @@ export function useAction() {
     }
   }, []);
 
-  const clearError = useCallback(() => setError(null), []);
+  const clearError = useCallback(() => {
+    setError((prev) => (prev === null ? prev : null));
+  }, []);
 
   return { run, error, pending, clearError };
 }

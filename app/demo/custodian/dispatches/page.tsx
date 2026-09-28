@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, Zap } from "lucide-react";
 import { EmptyState } from "@/components/ui";
@@ -98,7 +98,10 @@ export default function CustodianDispatchesPage() {
   const { scope } = useDemoPersona("custodian");
   const { run, error, pending, clearError } = useAction();
 
-  const view = getCustodianDashboard(store.db, scope);
+  const view = useMemo(
+    () => getCustodianDashboard(store.db, scope),
+    [store.db, scope],
+  );
 
   const searchParams = useSearchParams();
   const linkedId = searchParams.get("id");
@@ -118,19 +121,27 @@ export default function CustodianDispatchesPage() {
       : {},
   );
 
+  const lastOpenedIdRef = useRef<string | null>(linkedEntry?.allocation._id ?? null);
+
   useEffect(() => {
-    if (linkedId && view.outgoing.some((a) => a.allocation._id === linkedId)) {
+    if (!linkedId) return;
+    if (lastOpenedIdRef.current === linkedId) return;
+    lastOpenedIdRef.current = linkedId;
+
+    const entry = view.outgoing.find((a) => a.allocation._id === linkedId);
+    if (entry) {
       setSelectedId(linkedId);
-      const entry = view.outgoing.find((a) => a.allocation._id === linkedId);
-      if (entry) {
-        setDrafts((current) => ({
-          ...current,
-          [linkedId]: current[linkedId] ?? {
-            quantity: String(entry.allocation.quantityAllocated),
-            reference: "",
-          },
-        }));
-      }
+      setDrafts((current) =>
+        current[linkedId]
+          ? current
+          : {
+              ...current,
+              [linkedId]: {
+                quantity: String(entry.allocation.quantityAllocated),
+                reference: "",
+              },
+            },
+      );
     }
   }, [linkedId, view.outgoing]);
 
@@ -141,15 +152,20 @@ export default function CustodianDispatchesPage() {
     clearError();
     const entry = view.outgoing.find((a) => a.allocation._id === id);
     if (entry) {
-      setDrafts((current) => ({
-        ...current,
-        [id]: current[id] ?? {
-          quantity: String(entry.allocation.quantityAllocated),
-          reference: "",
-        },
-      }));
+      setDrafts((current) =>
+        current[id]
+          ? current
+          : {
+              ...current,
+              [id]: {
+                quantity: String(entry.allocation.quantityAllocated),
+                reference: "",
+              },
+            },
+      );
     }
     setSelectedId(id);
+    lastOpenedIdRef.current = id;
   }
 
   function closeDrawer() {
