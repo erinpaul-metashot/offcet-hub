@@ -6,7 +6,8 @@
     "dev": "concurrently \"convex dev --cloud\" \"next dev\"",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "i18n:translate": "tsx scripts/i18n-translate.ts"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.12.2",
@@ -30,7 +31,9 @@
     "concurrently": "^8.2.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "google-auth-library": "^11.1.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

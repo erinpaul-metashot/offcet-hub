@@ -5,6 +5,9 @@ import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
+import { LocaleToggle } from "@/components/locale-toggle";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { landing } from "@/lib/i18n/messages/landing";
 
 const easeOut = [0.23, 1, 0.32, 1] as const;
 
@@ -12,14 +15,17 @@ interface NavbarProps {
   scrollContainerRef?: React.RefObject<HTMLElement | null>;
   showLoginButton?: boolean;
   showDemoButton?: boolean;
+  showLocaleToggle?: boolean;
 }
 
 export default function Navbar({ 
   scrollContainerRef, 
   showLoginButton = false,
-  showDemoButton = true 
+  showDemoButton = true,
+  showLocaleToggle = false,
 }: NavbarProps) {
   const router = useRouter();
+  const { nav } = useMessages(landing);
   const navRef = useRef<HTMLElement>(null);
   const [navVisible, setNavVisible] = useState(true);
   const { scrollY: windowScrollY } = useScroll();
@@ -78,17 +84,18 @@ export default function Navbar({
               }
             }
           }}>
-            <div className="relative w-32 md:w-48 h-8 md:h-10 flex items-center">
+            <div className="relative w-24 sm:w-32 md:w-48 h-8 md:h-10 flex items-center">
                <img src="/cirka-logo-white.png" alt="Cirka" className="absolute left-0 h-16 md:h-20 w-auto object-contain object-left scale-[1.5] origin-left" />
             </div>
           </div>
-          <div className="flex items-center gap-3 md:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+            {showLocaleToggle && <LocaleToggle label={nav.language} />}
             {showDemoButton && (
               <button 
                 onClick={() => router.push('/demo')}
                 className="bg-cirka-orange hover:bg-white hover:text-cirka-orange text-pure-white px-5 md:px-6 py-1.5 md:py-2 rounded-full font-bold uppercase tracking-wide text-xs md:text-sm transition-all duration-300 shadow-[0_0_10px_rgba(255,92,0,0.4)] hover:shadow-[0_0_15px_rgba(255,255,255,0.6)]"
               >
-                Demo
+                {nav.demo}
               </button>
             )}
             {showLoginButton && (
@@ -96,7 +103,7 @@ export default function Navbar({
                 onClick={() => router.push('/login')}
                 className="border border-white/30 bg-white/10 hover:bg-white hover:text-charcoal text-pure-white px-4 md:px-5 py-1.5 md:py-2 rounded-full font-bold uppercase tracking-wide text-xs md:text-sm transition-all duration-300 backdrop-blur-sm"
               >
-                Login
+                {nav.login}
               </button>
             )}
           </div>

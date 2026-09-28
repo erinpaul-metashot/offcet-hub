@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "description": "The missing infrastructure for secondary textile resources."
+  },
+  "nav": {
+    "demo": "Demo",
+    "login": "Login",
+    "language": "Language"
+  },
+  "hero": {
+    "title": "The missing infrastructure for secondary textile resources.",
+    "subtitle": "Connecting materials, data and people to create measurable local value and impact."
+  },
+  "gap": {
+    "heading": "Every major industry has an operating system",
+    "industries": [
+      "Manufacturing has EPR",
+      "Finance has banking infrastructure",
+      "Retail has ecommerce platforms",
+      "Logistics has global networks."
+    ],
+    "none": "Secondary textile resources has none.",
+    "cirkaFills": "That is the gap CIRKA exists to fill."
+  },
+  "lost": {
+    "heading": "Value is lost....",
+    "lede": "When resources, data and people remain disconnected.",
+    "items": ["Valuable materials.", "Valuable skills.", "Valuable communities.", "Valuable data."],
+    "disconnected": "Disconnected.",
+    "imageAlt": "Textile waste"
+  },
+  "connects": {
+    "heading": "CIRKA connects",
+    "secondaryResources": "Secondary\nResources",
+    "people": "People",
+    "activation": "Activation",
+    "data": "Data",
+    "traceability": "Traceability",
+    "measurableValue": "Measurable\nValue"
+  },
+  "how": {
+    "heading": "How Cirka works",
+    "secondaryResources": "Secondary\nResources",
+    "people": "People",
+    "localEconomy": "Local Economy",
+    "impact": "Impact",
+    "closing": "Connecting materials, people and data to create measurable local value and impact."
+  },
+  "people": {
+    "heading": "Built around people",
+    "lede": "Technology doesn't create circularity. People do.",
+    "sublede": "CIRKA exists to connect everyone already creating value.",
+    "imageAlt": "Person sewing",
+    "collectors": "Textile\nCollectors",
+    "brands": "Brands",
+    "manufacturers": "Manufacturers",
+    "remakers": "Re-Makers",
+    "communities": "Local\nCommunities",
+    "education": "Educational\nInstitutions",
+    "technology": "Technology\nProviders",
+    "governmentShort": "Government & Trade",
+    "governmentLong": "Government\n& Trade\nAssoc."
+  },
+  "changing": {
+    "heading": "The World Is\nChanging.",
+    "shifts": [
+      "Consumers demand transparency.",
+      "Brands need measurable impact.",
+      "Manufacturers need new value streams.",
+      "Governments require accountability."
+    ],
+    "possible": "Technology now makes it possible.",
+    "essential": "Infrastructure has become essential.",
+    "imageAlt": "Pattern maker"
+  },
+  "impact": {
+    "heading": "Measurable impact",
+    "social": "Social",
+    "socialOutcomes": ["Communities Connected", "Jobs Created", "Skills Developed"],
+    "environmental": "Environmental",
+    "environmentalOutcomes": ["Resources Activated", "Waste Diverted", "Materials Traced"],
+    "economic": "Economic",
+    "economicOutcomes": ["Value Generated", "Local Businesses Strengthened", "New Revenue Streams Created"]
+  },
+  "ecosystem": {
+    "heading": "We Are Building ......",
+    "subline": "Something bigger than a platform.",
+    "ecosystemLead": "We are building an",
+    "ecosystemWord": "ecosystem.",
+    "items": ["Shared Infrastructure.", "New Opportunities.", "Measurable Impact."],
+    "imageAlt": "Group selfie"
+  },
+  "imagine": {
+    "heading": "Imagine a world where ...",
+    "lines": [
+      "Every community can create value from resources already around them.",
+      "Every maker has access to the materials they need.",
+      "Every manufacturer has visibility.",
+      "Every brand can prove impact.",
+      "Every resource gets another chance."
+    ],
+    "closer": "That's the future we are building.",
+    "imageAlt": "Background"
+  },
+  "contact": {
+    "heading": "Connecting secondary resources, people and data.\nCreating measurable value.",
+    "callout": "Help build the missing infrastructure.",
+    "paragraph": "Whether you are a manufacturer, a brand, a university, a government agency, an innovator, a technology provider, a recycler, or an organization working closely with any aspect of the built environment: your expertise and engagement are crucial.",
+    "getStarted": "Get Started",
+    "founderTitle": "Founder"
+  },
+  "footer": {
+    "rights": "© {year} CIRKA. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  }
+}

@@ -33,6 +33,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Google service-account keys (i18n translation script)
+opengrad-scheduling-*.json
+.i18n-sa-key.json
+
 # vercel
 .vercel
 

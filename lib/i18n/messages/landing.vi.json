@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "description": "Hạ tầng còn thiếu cho tài nguyên dệt may thứ cấp."
+  },
+  "nav": {
+    "demo": "Demo",
+    "login": "Đăng nhập",
+    "language": "Ngôn ngữ"
+  },
+  "hero": {
+    "title": "Hạ tầng còn thiếu cho tài nguyên dệt may thứ cấp.",
+    "subtitle": "Kết nối vật liệu, dữ liệu và con người để tạo ra giá trị và tác động đo lường được tại địa phương."
+  },
+  "gap": {
+    "heading": "Mỗi ngành công nghiệp lớn đều có một hệ điều hành",
+    "industries": [
+      "Sản xuất có EPR",
+      "Tài chính có cơ sở hạ tầng ngân hàng",
+      "Bán lẻ có nền tảng thương mại điện tử",
+      "Logistics có mạng lưới toàn cầu."
+    ],
+    "none": "Tài nguyên dệt may thứ cấp hoàn toàn không có.",
+    "cirkaFills": "Đó là khoảng trống mà CIRKA ra đời để lấp đầy."
+  },
+  "lost": {
+    "heading": "Giá trị bị thất thoát....",
+    "lede": "Khi tài nguyên, dữ liệu và con người chưa được kết nối.",
+    "items": [
+      "Vật liệu có giá trị.",
+      "Kỹ năng có giá trị.",
+      "Cộng đồng có giá trị.",
+      "Dữ liệu có giá trị."
+    ],
+    "disconnected": "Mất kết nối.",
+    "imageAlt": "Chất thải dệt may"
+  },
+  "connects": {
+    "heading": "CIRKA kết nối",
+    "secondaryResources": "Tài nguyên\nthứ cấp",
+    "people": "Con người",
+    "activation": "Kích hoạt",
+    "data": "Dữ liệu",
+    "traceability": "Truy xuất nguồn gốc",
+    "measurableValue": "Giá trị\nđo lường được"
+  },
+  "how": {
+    "heading": "Cách Cirka hoạt động",
+    "secondaryResources": "Tài nguyên\nthứ cấp",
+    "people": "Con người",
+    "localEconomy": "Kinh tế địa phương",
+    "impact": "Tác động",
+    "closing": "Kết nối vật liệu, con người và dữ liệu để tạo ra giá trị và tác động đo lường được tại địa phương."
+  },
+  "people": {
+    "heading": "Được xây dựng xoay quanh con người",
+    "lede": "Công nghệ không tạo nên tính tuần hoàn. Chính con người mới làm được điều đó.",
+    "sublede": "CIRKA ra đời để kết nối tất cả những ai đang tạo ra giá trị.",
+    "imageAlt": "Người đang may vá",
+    "collectors": "Đơn vị thu gom\ndệt may",
+    "brands": "Thương hiệu",
+    "manufacturers": "Nhà sản xuất",
+    "remakers": "Re-Makers",
+    "communities": "Cộng đồng\nđịa phương",
+    "education": "Cơ sở\ngiáo dục",
+    "technology": "Nhà cung cấp\ncông nghệ",
+    "governmentShort": "Chính phủ và Thương mại",
+    "governmentLong": "Chính phủ &\nHiệp hội\nthương mại"
+  },
+  "changing": {
+    "heading": "Thế giới đang\nthay đổi.",
+    "shifts": [
+      "Người tiêu dùng yêu cầu sự minh bạch.",
+      "Các thương hiệu cần tác động đo lường được.",
+      "Các nhà sản xuất cần những dòng giá trị mới.",
+      "Chính phủ yêu cầu trách nhiệm giải trình."
+    ],
+    "possible": "Giờ đây, công nghệ đã biến điều đó thành khả thi.",
+    "essential": "Cơ sở hạ tầng đã trở nên thiết yếu.",
+    "imageAlt": "Người làm rập"
+  },
+  "impact": {
+    "heading": "Tác động đo lường được",
+    "social": "Xã hội",
+    "socialOutcomes": [
+      "Cộng đồng được kết nối",
+      "Việc làm được tạo ra",
+      "Kỹ năng được phát triển"
+    ],
+    "environmental": "Môi trường",
+    "environmentalOutcomes": [
+      "Tài nguyên được kích hoạt",
+      "Giảm thiểu rác thải chôn lấp",
+      "Vật liệu được truy xuất"
+    ],
+    "economic": "Kinh tế",
+    "economicOutcomes": [
+      "Giá trị tạo ra",
+      "Các doanh nghiệp địa phương được củng cố",
+      "Tạo ra các nguồn doanh thu mới"
+    ]
+  },
+  "ecosystem": {
+    "heading": "Chúng tôi đang xây dựng ......",
+    "subline": "Hơn cả một nền tảng.",
+    "ecosystemLead": "Chúng tôi đang xây dựng một",
+    "ecosystemWord": "hệ sinh thái.",
+    "items": [
+      "Cơ sở hạ tầng dùng chung.",
+      "Cơ hội mới.",
+      "Tác động đo lường được."
+    ],
+    "imageAlt": "Ảnh chụp tập thể"
+  },
+  "imagine": {
+    "heading": "Hãy tưởng tượng một thế giới nơi...",
+    "lines": [
+      "Mọi cộng đồng đều có thể tạo ra giá trị từ nguồn tài nguyên sẵn có quanh mình.",
+      "Mọi người làm nghề đều có thể tiếp cận nguồn nguyên liệu họ cần.",
+      "Mọi nhà sản xuất đều có sự minh bạch trong chuỗi cung ứng.",
+      "Mọi thương hiệu đều có thể chứng minh tác động thực chất.",
+      "Mọi tài nguyên đều có thêm một vòng đời mới."
+    ],
+    "closer": "Đó chính là tương lai mà chúng ta đang xây dựng.",
+    "imageAlt": "Hình nền"
+  },
+  "contact": {
+    "heading": "Kết nối tài nguyên thứ cấp, con người và dữ liệu.\nTạo ra giá trị đo lường được.",
+    "callout": "Hãy chung tay xây dựng cơ sở hạ tầng còn thiếu.",
+    "paragraph": "Cho dù bạn là nhà sản xuất, thương hiệu, trường đại học, cơ quan chính phủ, nhà đổi mới, nhà cung cấp công nghệ, đơn vị tái chế hay tổ chức hoạt động chặt chẽ trong bất kỳ lĩnh vực nào của môi trường xây dựng: chuyên môn và sự tham gia của bạn đều vô cùng quan trọng.",
+    "getStarted": "Bắt đầu",
+    "founderTitle": "Người sáng lập"
+  },
+  "footer": {
+    "rights": "© {year} CIRKA. Mọi quyền được bảo lưu.",
+    "privacy": "Chính sách bảo mật",
+    "terms": "Điều khoản dịch vụ"
+  }
+}

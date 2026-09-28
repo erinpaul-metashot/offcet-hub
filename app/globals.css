@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* `vi:` applies only while <html lang="vi">: Vietnamese-only overflow fixes. */
+@custom-variant vi (&:lang(vi));
+
 @theme {
   --color-charcoal: #545454;
   --color-cirka-orange: #FF5C00;

@@ -1,0 +1,19 @@
+{
+  "doNotTranslate": [
+    "CIRKA",
+    "Cirka",
+    "Demo",
+    "EPR",
+    "Re-Makers"
+  ],
+  "terms": {
+    "Traceability": "Truy xuất nguồn gốc",
+    "traceability": "truy xuất nguồn gốc",
+    "secondary resources": "tài nguyên thứ cấp",
+    "measurable impact": "tác động đo lường được",
+    "measurable value": "giá trị đo lường được",
+    "accountability": "trách nhiệm giải trình",
+    "value streams": "dòng giá trị",
+    "circularity": "tính tuần hoàn"
+  }
+}

@@ -7,6 +7,9 @@ import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { landing } from "@/lib/i18n/messages/landing";
 
 // Custom easings and variants based on emil-design-eng philosophy
 const easeOut = [0.23, 1, 0.32, 1] as const;
@@ -43,6 +46,7 @@ const springHover = {
 export default function Home() {
   const router = useRouter();
   const mainRef = useRef<HTMLElement>(null);
+  const t = useMessages(landing);
 
   useEffect(() => {
     // ... Any other effects if needed ...
@@ -53,7 +57,7 @@ export default function Home() {
       <Script src="/liquid-glass.js" strategy="afterInteractive" />
 
       {/* TOP NAVBAR */}
-      <Navbar scrollContainerRef={mainRef} showLoginButton showDemoButton />
+      <Navbar scrollContainerRef={mainRef} showLoginButton showDemoButton showLocaleToggle />
 
       {/* SECTION 1: HERO */}
       <section className="relative w-full min-h-[100dvh] md:h-screen flex flex-col md:snap-start overflow-hidden bg-charcoal">
@@ -75,13 +79,13 @@ export default function Home() {
             </motion.div>
 
             {/* Subtitle 1 */}
-            <motion.h1 variants={fadeUp} className="text-[5.5vw] sm:text-[4vw] md:text-[2.2vw] lg:text-[1.8vw] xl:text-[1.4vw] md:whitespace-nowrap max-w-none font-bold uppercase text-pure-white mb-4 md:mb-6 tracking-wide">
-              The missing infrastructure for secondary textile resources.
+            <motion.h1 variants={fadeUp} className="text-[5.5vw] sm:text-[4vw] md:text-[2.2vw] lg:text-[1.8vw] xl:text-[1.4vw] md:whitespace-nowrap vi:whitespace-normal vi:text-balance max-w-none font-bold uppercase text-pure-white mb-4 md:mb-6 tracking-wide">
+              {t.hero.title}
             </motion.h1>
 
             {/* Subtitle 2 */}
             <motion.p variants={fadeUp} className="text-xs md:text-sm lg:text-base font-light uppercase text-gray-300 tracking-wider max-w-4xl">
-              Connecting materials, data and people to create measurable local value and impact.
+              {t.hero.subtitle}
             </motion.p>
           </motion.div>
         </div>
@@ -122,8 +126,8 @@ export default function Home() {
 
         {/* Middle Charcoal Area */}
         <div className="bg-charcoal text-pure-white py-10 md:py-12 lg:py-16 px-6 md:px-12 lg:px-16 flex flex-col items-center justify-center relative z-10 w-full shrink-0 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-          <h2 className="text-3xl md:text-4xl font-bold uppercase mb-8 md:mb-10 lg:mb-12 text-center max-w-6xl tracking-wide md:whitespace-nowrap">
-            Every major industry has an operating system
+          <h2 className="text-3xl md:text-4xl font-bold uppercase mb-8 md:mb-10 lg:mb-12 text-center max-w-6xl tracking-wide md:whitespace-nowrap vi:whitespace-normal vi:text-balance">
+            {t.gap.heading}
           </h2>
 
           <motion.div 
@@ -136,12 +140,11 @@ export default function Home() {
 
             {/* Left Column - List */}
             <div className="flex-1 w-full text-base md:text-lg lg:text-xl font-light space-y-4 md:space-y-6 text-center md:text-left">
-              <motion.p variants={fadeUp} className="md:whitespace-nowrap">Manufacturing has EPR</motion.p>
-              <motion.p variants={fadeUp} className="md:whitespace-nowrap">Finance has banking infrastructure</motion.p>
-              <motion.p variants={fadeUp} className="md:whitespace-nowrap">Retail has ecommerce platforms</motion.p>
-              <motion.p variants={fadeUp} className="md:whitespace-nowrap">Logistics has global networks.</motion.p>
-              <motion.p variants={fadeUp} className="font-bold pt-2 text-xl md:text-2xl lg:text-3xl text-pure-white md:whitespace-nowrap">
-                Secondary textile resources has none.
+              {t.gap.industries.map((line, index) => (
+                <motion.p key={index} variants={fadeUp} className="md:whitespace-nowrap vi:whitespace-normal vi:text-balance">{line}</motion.p>
+              ))}
+              <motion.p variants={fadeUp} className="font-bold pt-2 text-xl md:text-2xl lg:text-3xl text-pure-white md:whitespace-nowrap vi:whitespace-normal vi:text-balance">
+                {t.gap.none}
               </motion.p>
             </div>
 
@@ -158,7 +161,7 @@ export default function Home() {
                 <Image src="/cirka-c-logo-white.png" alt="Cirka" fill className="object-contain" />
               </motion.div>
               <motion.p variants={fadeUp} className="font-bold uppercase text-center text-lg md:text-xl lg:text-2xl tracking-wide">
-                That is the gap CIRKA exists to fill.
+                {t.gap.cirkaFills}
               </motion.p>
             </div>
 
@@ -190,19 +193,18 @@ export default function Home() {
             viewport={{ once: true, margin: "-10%" }}
           >
             <motion.h2 variants={fadeUp} className="text-4xl sm:text-5xl md:text-6xl font-bold uppercase mb-6 md:mb-8 pointer-events-auto">
-              Value is lost....
+              {t.lost.heading}
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-xl sm:text-2xl md:text-3xl mb-8 md:mb-12 font-medium pointer-events-auto">
-              WHEN RESOURCES, DATA AND PEOPLE REMAIN DISCONNECTED.
+            <motion.p variants={fadeUp} className="text-xl sm:text-2xl md:text-3xl mb-8 md:mb-12 font-medium uppercase pointer-events-auto">
+              {t.lost.lede}
             </motion.p>
             <motion.ul variants={staggerContainer} className="space-y-4 text-lg sm:text-xl md:text-2xl font-light text-gray-500 pointer-events-auto">
-              <motion.li variants={fadeRight}>Valuable materials.</motion.li>
-              <motion.li variants={fadeRight}>Valuable skills.</motion.li>
-              <motion.li variants={fadeRight}>Valuable communities.</motion.li>
-              <motion.li variants={fadeRight}>Valuable data.</motion.li>
+              {t.lost.items.map((item, index) => (
+                <motion.li key={index} variants={fadeRight}>{item}</motion.li>
+              ))}
             </motion.ul>
             <motion.p variants={fadeUp} className="text-3xl sm:text-4xl md:text-5xl font-black mt-10 md:mt-12 uppercase text-charcoal pointer-events-auto">
-              DISCONNECTED.
+              {t.lost.disconnected}
             </motion.p>
           </motion.div>
         </div>
@@ -217,7 +219,7 @@ export default function Home() {
           >
             <Image
               src="/cirka_textile_waste.png"
-              alt="Textile Waste"
+              alt={t.lost.imageAlt}
               fill
               className="object-cover"
             />
@@ -252,7 +254,7 @@ export default function Home() {
         <div className="z-10 w-full flex justify-center mt-12 md:mt-0 md:absolute md:top-24">
           <div className="bg-[#545454] px-8 md:px-16 py-4 md:py-6 shadow-lg">
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase text-pure-white tracking-wide">
-              CIRKA CONNECTS
+              {t.connects.heading}
             </h2>
           </div>
         </div>
@@ -264,7 +266,7 @@ export default function Home() {
             <div className="w-12 h-12 rounded-full bg-[#8CC63F] flex items-center justify-center shrink-0">
               <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
             </div>
-            <span className="font-bold text-base text-charcoal">Secondary Resources</span>
+            <span className="font-bold text-base text-charcoal">{t.connects.secondaryResources}</span>
           </div>
 
           <div className="w-1 h-6 bg-cirka-orange"></div>
@@ -284,31 +286,31 @@ export default function Home() {
               <div className="w-12 h-12 rounded-full bg-[#FF5C00] flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
               </div>
-              <span className="font-bold text-sm text-charcoal">People</span>
+              <span className="font-bold text-sm text-charcoal">{t.connects.people}</span>
             </div>
             <div className="flex flex-col items-center space-y-2 text-center bg-white p-4 rounded-xl shadow-sm border border-gray-200">
               <div className="w-12 h-12 rounded-full bg-[#FF5C00] flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
-              <span className="font-bold text-sm text-charcoal">Activation</span>
+              <span className="font-bold text-sm text-charcoal">{t.connects.activation}</span>
             </div>
             <div className="flex flex-col items-center space-y-2 text-center bg-white p-4 rounded-xl shadow-sm border border-gray-200">
               <div className="w-12 h-12 rounded-full bg-[#545454] flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               </div>
-              <span className="font-bold text-sm text-charcoal">Data</span>
+              <span className="font-bold text-sm text-charcoal">{t.connects.data}</span>
             </div>
             <div className="flex flex-col items-center space-y-2 text-center bg-white p-4 rounded-xl shadow-sm border border-gray-200">
               <div className="w-12 h-12 rounded-full bg-[#545454] flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
               </div>
-              <span className="font-bold text-sm text-charcoal">Traceability</span>
+              <span className="font-bold text-sm text-charcoal">{t.connects.traceability}</span>
             </div>
             <div className="flex flex-col items-center space-y-2 text-center bg-white p-4 rounded-xl shadow-sm border border-gray-200 col-span-2">
               <div className="w-12 h-12 rounded-full bg-[#8CC63F] flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
               </div>
-              <span className="font-bold text-sm text-charcoal">Measurable Value</span>
+              <span className="font-bold text-sm text-charcoal">{t.connects.measurableValue}</span>
             </div>
           </div>
         </div>
@@ -356,8 +358,8 @@ export default function Home() {
             <div className="w-14 h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full bg-[#8CC63F] flex items-center justify-center shadow-lg border-[4px] border-white shrink-0">
               <svg className="w-8 h-8 md:w-12 md:h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
             </div>
-            <div className="absolute right-full mr-2 md:mr-4 bg-[#545454] text-white px-2 py-1 md:px-3 md:py-2 font-bold text-xs md:text-sm lg:text-base text-right leading-tight shadow-md whitespace-nowrap">
-              Secondary<br />Resources
+            <div className="absolute right-full mr-2 md:mr-4 bg-[#545454] text-white px-2 py-1 md:px-3 md:py-2 font-bold text-xs md:text-sm lg:text-base text-right leading-tight shadow-md whitespace-pre-line">
+              {t.connects.secondaryResources}
             </div>
           </div>
 
@@ -367,7 +369,7 @@ export default function Home() {
               <svg className="w-8 h-8 md:w-12 md:h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
             </div>
             <div className="absolute left-full ml-2 md:ml-4 bg-[#545454] text-white px-3 py-1 md:px-4 md:py-2 font-bold text-xs md:text-sm lg:text-base shadow-md whitespace-nowrap">
-              People
+              {t.connects.people}
             </div>
           </div>
 
@@ -377,7 +379,7 @@ export default function Home() {
               <svg className="w-8 h-8 md:w-12 md:h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
             </div>
             <div className="absolute top-full mt-2 md:mt-4 bg-[#545454] text-white px-4 py-1 md:px-6 md:py-2 font-bold text-xs md:text-sm lg:text-base shadow-md whitespace-nowrap">
-              Data
+              {t.connects.data}
             </div>
           </div>
 
@@ -386,8 +388,8 @@ export default function Home() {
             <div className="w-14 h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full bg-[#FF5C00] flex items-center justify-center shadow-lg border-[4px] border-white shrink-0">
               <svg className="w-8 h-8 md:w-12 md:h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
-            <div className="absolute left-full ml-3 md:ml-5 text-[#545454] font-bold text-sm md:text-lg lg:text-xl whitespace-nowrap">
-              Activation
+            <div className="absolute left-full ml-3 md:ml-5 text-[#545454] font-bold text-sm md:text-lg lg:text-xl whitespace-pre-line">
+              {t.connects.activation}
             </div>
           </div>
 
@@ -396,8 +398,8 @@ export default function Home() {
             <div className="w-14 h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full bg-[#545454] flex items-center justify-center shadow-lg border-[4px] border-white shrink-0">
               <svg className="w-8 h-8 md:w-12 md:h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
             </div>
-            <div className="absolute left-full ml-3 md:ml-5 text-[#545454] font-bold text-sm md:text-lg lg:text-xl whitespace-nowrap">
-              Traceability
+            <div className="absolute left-full ml-3 md:ml-5 text-[#545454] font-bold text-sm md:text-lg lg:text-xl whitespace-pre-line">
+              {t.connects.traceability}
             </div>
           </div>
 
@@ -406,8 +408,8 @@ export default function Home() {
             <div className="w-14 h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full bg-[#8CC63F] flex items-center justify-center shadow-lg border-[4px] border-white shrink-0">
               <svg className="w-8 h-8 md:w-12 md:h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
             </div>
-            <div className="absolute left-full ml-3 md:ml-5 text-[#545454] font-bold text-sm md:text-lg lg:text-xl leading-tight whitespace-nowrap">
-              Measurable<br />Value
+            <div className="absolute left-full ml-3 md:ml-5 text-[#545454] font-bold text-sm md:text-lg lg:text-xl leading-tight whitespace-pre-line">
+              {t.connects.measurableValue}
             </div>
           </div>
 
@@ -427,7 +429,7 @@ export default function Home() {
           transition={{ duration: 0.5, ease: easeOut }}
         >
           <h2 className="text-4xl md:text-5xl font-black uppercase text-pure-white text-center tracking-wide">
-            How Cirka Works
+            {t.how.heading}
           </h2>
         </motion.div>
 
@@ -465,7 +467,7 @@ export default function Home() {
             <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400, damping: 10 }} className="w-24 h-24 rounded-full bg-cirka-green flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
               <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
             </motion.div>
-            <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal leading-tight">Secondary<br />Resources</p>
+            <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal leading-tight whitespace-pre-line">{t.how.secondaryResources}</p>
           </motion.div>
 
           {/* 2. CIRKA */}
@@ -483,7 +485,7 @@ export default function Home() {
             <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400, damping: 10 }} className="w-24 h-24 rounded-full bg-cirka-orange flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
               <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
             </motion.div>
-            <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal">People</p>
+            <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal">{t.how.people}</p>
           </motion.div>
 
           {/* 4. Local Economy */}
@@ -491,7 +493,7 @@ export default function Home() {
             <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400, damping: 10 }} className="w-24 h-24 rounded-full bg-cirka-orange flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
               <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </motion.div>
-            <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal">Local Economy</p>
+            <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal">{t.how.localEconomy}</p>
           </motion.div>
 
           {/* 5. Impact */}
@@ -500,12 +502,12 @@ export default function Home() {
             <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400, damping: 10 }} className="w-24 h-24 rounded-full bg-cirka-green flex items-center justify-center shadow-lg border-[4px] border-[#F5F5F5] shrink-0 relative z-10">
               <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </motion.div>
-            <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal">Impact</p>
+            <p className="mt-6 font-bold text-center text-sm md:text-base text-charcoal">{t.how.impact}</p>
           </motion.div>
         </motion.div>
 
         <p className="text-xl md:text-2xl font-bold uppercase mt-24 text-center w-full max-w-none px-4 tracking-wide text-charcoal relative z-10">
-          Connecting materials, people and data to create measurable local value and impact.
+          {t.how.closing}
         </p>
       </section>
 
@@ -514,22 +516,22 @@ export default function Home() {
         <NetworkBackground className="text-white opacity-20 z-0" />
 
         <h2 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase mb-8 md:mb-12 text-center tracking-tighter relative z-10 shrink-0">
-          Built Around People
+          {t.people.heading}
         </h2>
 
         <div className="relative z-10 w-full max-w-7xl flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
 
           <div className="w-full lg:w-1/2 flex flex-col justify-center shrink-0">
-            <p className="text-[2.8vw] sm:text-[2.2vw] md:text-lg lg:text-xl xl:text-2xl font-bold uppercase mb-4 md:mb-6 whitespace-nowrap tracking-tight">
-              Technology doesn't create circularity. People do.
+            <p className="text-[2.8vw] sm:text-[2.2vw] md:text-lg lg:text-xl xl:text-2xl font-bold uppercase mb-4 md:mb-6 whitespace-nowrap vi:whitespace-normal vi:text-balance tracking-tight">
+              {t.people.lede}
             </p>
-            <p className="text-[2vw] sm:text-[1.6vw] md:text-base lg:text-lg xl:text-xl font-light mb-8 md:mb-10 whitespace-nowrap">
-              CIRKA exists to connect everyone already creating value.
+            <p className="text-[2vw] sm:text-[1.6vw] md:text-base lg:text-lg xl:text-xl font-light mb-8 md:mb-10 whitespace-nowrap vi:whitespace-normal vi:text-balance">
+              {t.people.sublede}
             </p>
             <div className="relative w-full max-w-[90%] mx-auto lg:max-w-none aspect-video border-4 md:border-8 border-pure-white shadow-2xl shrink-0">
               <Image
                 src="/cirka_sewing_machine.png"
-                alt="Person sewing"
+                alt={t.people.imageAlt}
                 fill
                 className="object-cover"
               />
@@ -540,14 +542,14 @@ export default function Home() {
             
             {/* MOBILE LAYOUT (Pills) */}
             <div className="flex lg:hidden flex-wrap justify-center gap-3 w-full max-w-sm mx-auto z-10 pb-12">
-              <div className="bg-cirka-green px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">Textile Collectors</div>
-              <div className="bg-cirka-green px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">Brands</div>
-              <div className="bg-cirka-green px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">Manufacturers</div>
-              <div className="bg-cirka-orange px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">Re-Makers</div>
-              <div className="bg-cirka-orange px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">Local Communities</div>
-              <div className="bg-cirka-orange px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">Educational Institutions</div>
-              <div className="bg-[#444444] px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/50">Technology Providers</div>
-              <div className="bg-[#444444] px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/50">Government & Trade</div>
+              <div className="bg-cirka-green px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">{t.people.collectors}</div>
+              <div className="bg-cirka-green px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">{t.people.brands}</div>
+              <div className="bg-cirka-green px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">{t.people.manufacturers}</div>
+              <div className="bg-cirka-orange px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">{t.people.remakers}</div>
+              <div className="bg-cirka-orange px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">{t.people.communities}</div>
+              <div className="bg-cirka-orange px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/20">{t.people.education}</div>
+              <div className="bg-[#444444] px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/50">{t.people.technology}</div>
+              <div className="bg-[#444444] px-5 py-2.5 rounded-full font-bold text-sm text-white shadow-lg border-2 border-white/50">{t.people.governmentShort}</div>
             </div>
 
             {/* DESKTOP LAYOUT (SVG Diagram) */}
@@ -581,29 +583,29 @@ export default function Home() {
               </motion.svg>
 
               {/* Role Bubbles */}
-              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[300px] top-[40px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
-                Textile<br />Collectors
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[300px] top-[40px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white whitespace-pre-line vi:text-base">
+                {t.people.collectors}
               </motion.div>
-              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[484px] top-[116px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
-                Brands
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[484px] top-[116px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white whitespace-pre-line vi:text-base">
+                {t.people.brands}
               </motion.div>
-              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[560px] top-[300px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
-                Re-Makers
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[560px] top-[300px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white whitespace-pre-line vi:text-base">
+                {t.people.remakers}
               </motion.div>
-              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[484px] top-[484px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
-                Local<br />Communities
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[484px] top-[484px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white whitespace-pre-line vi:text-base">
+                {t.people.communities}
               </motion.div>
-              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[300px] top-[560px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
-                Educational<br />Institutions
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[300px] top-[560px] w-32 h-32 rounded-full bg-cirka-orange flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white whitespace-pre-line vi:text-base">
+                {t.people.education}
               </motion.div>
-              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[116px] top-[484px] w-32 h-32 rounded-full bg-charcoal flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
-                Technology<br />Providers
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[116px] top-[484px] w-32 h-32 rounded-full bg-charcoal flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white whitespace-pre-line vi:text-base">
+                {t.people.technology}
               </motion.div>
-              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[40px] top-[300px] w-32 h-32 rounded-full bg-charcoal flex items-center justify-center text-center font-bold text-base shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight px-2 text-white">
-                Government<br />& Trade<br />Assoc.
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[40px] top-[300px] w-32 h-32 rounded-full bg-charcoal flex items-center justify-center text-center font-bold text-base shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight px-2 text-white whitespace-pre-line vi:text-sm">
+                {t.people.governmentLong}
               </motion.div>
-              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[116px] top-[116px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white">
-                Manufacturers
+              <motion.div variants={scaleIn} whileHover={{ scale: 1.05 }} className="absolute left-[116px] top-[116px] w-32 h-32 rounded-full bg-cirka-green flex items-center justify-center text-center font-bold text-lg shadow-xl z-20 -translate-x-1/2 -translate-y-1/2 border-[3px] border-pure-white leading-tight text-white whitespace-pre-line vi:text-base">
+                {t.people.manufacturers}
               </motion.div>
             </motion.div>
           </div>
@@ -623,7 +625,7 @@ export default function Home() {
           >
             <Image
               src="/cirka_pattern_maker.png"
-              alt="Pattern Maker"
+              alt={t.changing.imageAlt}
               fill
               className="object-cover"
             />
@@ -642,21 +644,20 @@ export default function Home() {
             whileInView="show"
             viewport={{ once: true, margin: "-10%" }}
           >
-            <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl lg:text-6xl font-black uppercase mb-8 lg:mb-12 tracking-tight">
-              The World Is<br />Changing.
+            <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl lg:text-6xl font-black uppercase mb-8 lg:mb-12 tracking-tight whitespace-pre-line">
+              {t.changing.heading}
             </motion.h2>
             <motion.ul variants={staggerContainer} className="space-y-4 lg:space-y-6 text-lg md:text-xl lg:text-2xl font-light">
-              <motion.li variants={fadeUp}>Consumers demand transparency.</motion.li>
-              <motion.li variants={fadeUp}>Brands need measurable impact.</motion.li>
-              <motion.li variants={fadeUp}>Manufacturers need new value streams.</motion.li>
-              <motion.li variants={fadeUp}>Governments require accountability.</motion.li>
+              {t.changing.shifts.map((shift, index) => (
+                <motion.li key={index} variants={fadeUp}>{shift}</motion.li>
+              ))}
             </motion.ul>
             <motion.div variants={staggerContainer} className="mt-8 lg:mt-12 space-y-2 lg:space-y-4">
               <motion.p variants={fadeUp} className="text-lg md:text-xl lg:text-2xl font-bold uppercase">
-                Technology now makes it possible.
+                {t.changing.possible}
               </motion.p>
               <motion.p variants={fadeUp} className="text-lg md:text-xl lg:text-2xl font-bold uppercase">
-                Infrastructure has become essential.
+                {t.changing.essential}
               </motion.p>
             </motion.div>
           </motion.div>
@@ -676,7 +677,7 @@ export default function Home() {
         >
           <div className="bg-charcoal text-pure-white py-6 px-16 shadow-xl">
             <h2 className="text-4xl md:text-6xl font-black uppercase tracking-widest">
-              Measurable Impact
+              {t.impact.heading}
             </h2>
           </div>
         </motion.div>
@@ -693,11 +694,11 @@ export default function Home() {
           <motion.div variants={fadeUp} className="flex flex-col items-center flex-1 w-full relative z-10">
             <div className="relative w-64 h-64 md:w-80 md:h-80 mb-8">
               <motion.div whileHover={springHover} className="absolute inset-0 rounded-full border-8 border-cirka-orange overflow-hidden shadow-2xl bg-white z-0">
-                <Image src="/cirka_pattern_maker.png" alt="Social" fill className="object-cover opacity-80" />
+                <Image src="/cirka_pattern_maker.png" alt={t.impact.social} fill className="object-cover opacity-80" />
                 <div className="absolute inset-0 bg-black/20"></div>
               </motion.div>
               <div className="absolute inset-x-0 bottom-8 flex justify-center z-10">
-                <span className="bg-cirka-orange text-white font-bold px-4 py-2 uppercase tracking-wider shadow">Social</span>
+                <span className="bg-cirka-orange text-white font-bold px-4 py-2 uppercase tracking-wider shadow">{t.impact.social}</span>
               </div>
               {/* Far Left Logo (moved away) */}
               <div className="hidden lg:flex absolute -left-12 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-[#545454] items-center justify-center shadow-2xl z-20">
@@ -707,9 +708,9 @@ export default function Home() {
               </div>
             </div>
             <div className="text-center font-bold text-lg md:text-xl uppercase space-y-2">
-              <p>Communities Connected</p>
-              <p>Jobs Created</p>
-              <p>Skills Developed</p>
+              {t.impact.socialOutcomes.map((outcome, index) => (
+                <p key={index}>{outcome}</p>
+              ))}
             </div>
           </motion.div>
 
@@ -717,11 +718,11 @@ export default function Home() {
           <motion.div variants={fadeUp} className="flex flex-col items-center flex-1 w-full relative z-20 lg:-mx-12">
             <div className="relative w-64 h-64 md:w-80 md:h-80 mb-8">
               <motion.div whileHover={springHover} className="absolute inset-0 rounded-full border-8 border-cirka-orange overflow-hidden shadow-2xl bg-white z-0">
-                <Image src="/cirka_textile_waste.png" alt="Environmental" fill className="object-cover opacity-80" />
+                <Image src="/cirka_textile_waste.png" alt={t.impact.environmental} fill className="object-cover opacity-80" />
                 <div className="absolute inset-0 bg-black/20"></div>
               </motion.div>
               <div className="absolute inset-x-0 bottom-8 flex justify-center z-10">
-                <span className="bg-cirka-orange text-white font-bold px-4 py-2 uppercase tracking-wider shadow">Environmental</span>
+                <span className="bg-cirka-orange text-white font-bold px-4 py-2 uppercase tracking-wider shadow">{t.impact.environmental}</span>
               </div>
               {/* Center Left Logo */}
               <div className="hidden lg:flex absolute -left-8 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-[#545454] items-center justify-center shadow-2xl z-20">
@@ -737,9 +738,9 @@ export default function Home() {
               </div>
             </div>
             <div className="text-center font-bold text-lg md:text-xl uppercase space-y-2">
-              <p>Resources Activated</p>
-              <p>Waste Diverted</p>
-              <p>Materials Traced</p>
+              {t.impact.environmentalOutcomes.map((outcome, index) => (
+                <p key={index}>{outcome}</p>
+              ))}
             </div>
           </motion.div>
 
@@ -747,11 +748,11 @@ export default function Home() {
           <motion.div variants={fadeUp} className="flex flex-col items-center flex-1 w-full relative z-10">
             <div className="relative w-64 h-64 md:w-80 md:h-80 mb-8">
               <motion.div whileHover={springHover} className="absolute inset-0 rounded-full border-8 border-cirka-orange overflow-hidden shadow-2xl bg-white z-0">
-                <Image src="/cirka_shopping_bags.png" alt="Economic" fill className="object-cover opacity-80" />
+                <Image src="/cirka_shopping_bags.png" alt={t.impact.economic} fill className="object-cover opacity-80" />
                 <div className="absolute inset-0 bg-black/20"></div>
               </motion.div>
               <div className="absolute inset-x-0 bottom-8 flex justify-center z-10">
-                <span className="bg-cirka-orange text-white font-bold px-4 py-2 uppercase tracking-wider shadow">Economic</span>
+                <span className="bg-cirka-orange text-white font-bold px-4 py-2 uppercase tracking-wider shadow">{t.impact.economic}</span>
               </div>
               {/* Far Right Logo (moved away) */}
               <div className="hidden lg:flex absolute -right-12 top-1/2 translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-[#545454] items-center justify-center shadow-2xl z-20">
@@ -761,9 +762,9 @@ export default function Home() {
               </div>
             </div>
             <div className="text-center font-bold text-lg md:text-xl uppercase space-y-2">
-              <p>Value Generated</p>
-              <p>Local Businesses Strengthened</p>
-              <p>New Revenue Streams Created</p>
+              {t.impact.economicOutcomes.map((outcome, index) => (
+                <p key={index}>{outcome}</p>
+              ))}
             </div>
           </motion.div>
 
@@ -780,18 +781,18 @@ export default function Home() {
           whileInView="show"
           viewport={{ once: true, margin: "-10%" }}
         >
-          <motion.h2 variants={fadeUp} className="text-[9vw] sm:text-[6vw] md:text-5xl lg:text-6xl font-black uppercase mb-4 md:mb-8 tracking-tight leading-tight shrink-0 md:whitespace-nowrap">
-            We Are Building ......
+          <motion.h2 variants={fadeUp} className="text-[9vw] sm:text-[6vw] md:text-5xl lg:text-6xl font-black uppercase mb-4 md:mb-8 tracking-tight leading-tight shrink-0 md:whitespace-nowrap vi:whitespace-normal vi:text-balance">
+            {t.ecosystem.heading}
           </motion.h2>
-          <motion.p variants={fadeUp} className="text-[5vw] sm:text-[3.5vw] md:text-2xl lg:text-3xl font-bold uppercase mb-8 md:mb-16 shrink-0 md:whitespace-nowrap">
-            Something bigger than a platform.
+          <motion.p variants={fadeUp} className="text-[5vw] sm:text-[3.5vw] md:text-2xl lg:text-3xl font-bold uppercase mb-8 md:mb-16 shrink-0 md:whitespace-nowrap vi:whitespace-normal vi:text-balance">
+            {t.ecosystem.subline}
           </motion.p>
 
-          <motion.ul variants={staggerContainer} className="space-y-4 md:space-y-6 lg:space-y-8 text-[4.5vw] sm:text-[3vw] md:text-xl lg:text-2xl font-bold uppercase shrink-0 md:whitespace-nowrap">
-            <motion.li variants={fadeUp}>We are building an <span className="underline decoration-2 md:decoration-4 underline-offset-4 md:underline-offset-8">ecosystem.</span></motion.li>
-            <motion.li variants={fadeUp}>Shared Infrastructure.</motion.li>
-            <motion.li variants={fadeUp}>New Opportunities.</motion.li>
-            <motion.li variants={fadeUp}>Measurable Impact.</motion.li>
+          <motion.ul variants={staggerContainer} className="space-y-4 md:space-y-6 lg:space-y-8 text-[4.5vw] sm:text-[3vw] md:text-xl lg:text-2xl font-bold uppercase shrink-0 md:whitespace-nowrap vi:whitespace-normal vi:text-balance">
+            <motion.li variants={fadeUp}>{t.ecosystem.ecosystemLead} <span className="underline decoration-2 md:decoration-4 underline-offset-4 md:underline-offset-8">{t.ecosystem.ecosystemWord}</span></motion.li>
+            {t.ecosystem.items.map((item, index) => (
+              <motion.li key={index} variants={fadeUp}>{item}</motion.li>
+            ))}
           </motion.ul>
 
           <motion.div variants={scaleIn} className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 mt-8 md:mt-12 relative shrink-0">
@@ -809,7 +810,7 @@ export default function Home() {
           >
             <Image
               src="/cirka_group_selfie.png"
-              alt="Group Selfie"
+              alt={t.ecosystem.imageAlt}
               fill
               className="object-cover"
             />
@@ -829,7 +830,7 @@ export default function Home() {
           >
             <Image
               src="/cirka_sewing_machine.png"
-              alt="Background"
+              alt={t.imagine.imageAlt}
               fill
               className="object-cover"
             />
@@ -847,20 +848,18 @@ export default function Home() {
 
           <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-10%" }} className="relative z-10 flex flex-col justify-center h-full">
             <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl lg:text-6xl font-bold uppercase tracking-wide text-pure-white shrink-0 relative z-10">
-              IMAGINE A WORLD WHERE ...
+              {t.imagine.heading}
             </motion.h2>
 
             <motion.div variants={staggerContainer} className="mt-6 md:mt-8 lg:mt-10 space-y-4 md:space-y-5 lg:space-y-6 text-base md:text-xl lg:text-2xl font-normal tracking-wide text-pure-white relative z-10">
-              <motion.p variants={fadeUp}>Every community can create value from resources already around them.</motion.p>
-              <motion.p variants={fadeUp}>Every maker has access to the materials they need.</motion.p>
-              <motion.p variants={fadeUp}>Every manufacturer has visibility.</motion.p>
-              <motion.p variants={fadeUp}>Every brand can prove impact.</motion.p>
-              <motion.p variants={fadeUp}>Every resource gets another chance.</motion.p>
+              {t.imagine.lines.map((line, index) => (
+                <motion.p key={index} variants={fadeUp}>{line}</motion.p>
+              ))}
             </motion.div>
 
             <motion.div variants={fadeUp} className="mt-10 md:mt-12 lg:mt-16 w-full shrink-0 relative z-10">
               <p className="text-xl md:text-2xl lg:text-3xl font-bold uppercase text-pure-white tracking-wide max-w-[65%]">
-                THAT'S THE FUTURE WE ARE BUILDING.
+                {t.imagine.closer}
               </p>
             </motion.div>
           </motion.div>
@@ -904,24 +903,21 @@ export default function Home() {
             </motion.div>
 
             {/* Subheadings - Reduced Size */}
-            <motion.h2 variants={fadeUp} className="text-[4vw] sm:text-[3vw] md:text-lg lg:text-xl xl:text-2xl font-bold uppercase tracking-wide text-pure-white mb-2 md:mb-4 leading-snug">
-              CONNECTING SECONDARY RESOURCES,PEOPLE AND DATA.<br />
-              CREATING MEASURABLE VALUE.
+            <motion.h2 variants={fadeUp} className="text-[4vw] sm:text-[3vw] md:text-lg lg:text-xl xl:text-2xl font-bold uppercase tracking-wide text-pure-white mb-2 md:mb-4 leading-snug whitespace-pre-line">
+              {t.contact.heading}
             </motion.h2>
 
             <motion.h3 variants={fadeUp} className="text-[3.5vw] sm:text-[2.5vw] md:text-base lg:text-lg xl:text-xl font-bold uppercase tracking-wider text-cirka-orange mb-4 md:mb-8" style={{ WebkitTextStroke: '0.5px #FF5C00' }}>
-              HELP BUILD THE MISSING INFRASTRUCTURE.
+              {t.contact.callout}
             </motion.h3>
 
             {/* Paragraph - Reduced Size */}
-            <motion.p variants={fadeUp} className="text-[3.5vw] sm:text-[2vw] md:text-sm lg:text-base xl:text-lg font-medium text-pure-white max-w-4xl leading-relaxed px-4 md:px-0">
-              Whether you are a manufacturer, a brand, a university, a government agency, an innovator, a<br className="hidden md:block" />
-              technology provider, a recycler, or an organization working closely with any aspect of the built<br className="hidden md:block" />
-              environment: your expertise and engagement are crucial.
+            <motion.p variants={fadeUp} className="text-[3.5vw] sm:text-[2vw] md:text-sm lg:text-base xl:text-lg font-medium text-pure-white max-w-4xl leading-relaxed text-balance px-4 md:px-0">
+              {t.contact.paragraph}
             </motion.p>
 
             <motion.button onClick={() => router.push('/login')} variants={fadeUp} className="mt-6 md:mt-10 lg:mt-12 group relative inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold text-pure-white transition-all duration-200 bg-cirka-orange border-2 border-cirka-orange hover:bg-transparent hover:text-cirka-orange focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cirka-orange overflow-hidden shadow-lg z-20 pointer-events-auto cursor-pointer">
-              <span className="text-[3vw] sm:text-[2vw] md:text-base lg:text-lg tracking-wider uppercase">Get Started</span>
+              <span className="text-[3vw] sm:text-[2vw] md:text-base lg:text-lg tracking-wider uppercase">{t.contact.getStarted}</span>
               <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-2 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
@@ -935,7 +931,7 @@ export default function Home() {
           <div className="w-full flex-grow bg-pure-white flex flex-col items-center justify-center text-charcoal px-4 py-6 md:py-8">
             <div className="flex flex-col items-center space-y-2 md:space-y-3 text-sm md:text-base lg:text-lg font-medium">
               <p className="font-bold uppercase text-base md:text-lg lg:text-xl xl:text-2xl mb-1 md:mb-2 tracking-wide">
-                TZE CHING YEUNG (FOUNDER)
+                Tze Ching Yeung ({t.contact.founderTitle})
               </p>
               <p className="tracking-wide">+46 (0)70 5508833</p>
               <p className="tracking-wide">hello@cirka.global</p>
@@ -953,10 +949,10 @@ export default function Home() {
           transition={{ duration: 1, ease: easeOut }}
         >
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-xs md:text-sm text-pure-white/60">
-            <p>&copy; {new Date().getFullYear()} CIRKA. All rights reserved.</p>
+            <p>{format(t.footer.rights, { year: new Date().getFullYear() })}</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="hover:text-pure-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-pure-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-pure-white transition-colors">{t.footer.privacy}</a>
+              <a href="#" className="hover:text-pure-white transition-colors">{t.footer.terms}</a>
               <a href="#" className="hover:text-pure-white transition-colors">LinkedIn</a>
             </div>
           </div>
