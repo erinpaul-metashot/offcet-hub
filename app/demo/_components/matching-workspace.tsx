@@ -4,8 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Button, Field, Input, Panel } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import type { MatchingWorkspace } from "../_mock/selectors-admin";
-import { categoryLabel, formatQuantity } from "../_mock/selectors-shared";
 import { useDemoStore } from "../_mock/store";
 import {
   CirkaBadge,
@@ -13,10 +16,11 @@ import {
   NoticeBanner,
   ProvenanceChip,
   QuantityPotsBar,
-  formatDate,
 } from "./cirka-ui";
 import { ProposeDrawer, type ProposeDrawerValues } from "./propose-drawer";
 import { useAction } from "./use-action";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 type WorkspaceTab = "shortlist" | "decisions";
 
@@ -31,6 +35,11 @@ const EMPTY_PROPOSAL: ProposeDrawerValues = {
 export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorkspace }) {
   const store = useDemoStore();
   const { request, candidates, matches } = workspace;
+  const { matching: t } = useMessages(demoAdmin);
+  const { ui } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
+  const category = (value: typeof request.materialCategory) => labels.MATERIAL_CATEGORY_LABELS[value];
 
   const briefAction = useAction();
   const proposeAction = useAction();
@@ -56,11 +65,14 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
       custodianOrgId: "",
       makerOrgId: "",
       categoryFitNote: candidate.categoryFit
-        ? `Exact category match: ${categoryLabel(batch.materialCategory)}.`
-        : `Different category: ${categoryLabel(batch.materialCategory)} against a ${categoryLabel(request.materialCategory)} request.`,
+        ? format(t.exactCategory, { category: category(batch.materialCategory) })
+        : format(t.differentCategory, {
+            category: category(batch.materialCategory),
+            requested: category(request.materialCategory),
+          }),
     });
     setAvailabilityFitNote(
-      `${formatQuantity(batch.pots.available, batch.unit)} uncommitted at the time of proposal.`,
+      format(t.uncommitted, { quantity: fmt.quantity(batch.pots.available, batch.unit) }),
     );
   }
 
@@ -74,7 +86,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Button as={Link} href="/demo/admin/requests" variant="ghost" size="sm">
-          ← All requests
+          {t.allRequests}
         </Button>
         <CirkaBadge status={request.status} />
       </div>
@@ -89,19 +101,22 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
               {request.title}
             </h1>
             <p className="text-[13px] text-[var(--ink-muted)]">
-              {workspace.requesterName} needs {formatQuantity(request.quantityNeeded, request.unit)}{" "}
-              of {categoryLabel(request.materialCategory)}
-              {request.neededBy ? `, by ${formatDate(request.neededBy)}` : ""}
+              {format(t.needs, {
+                requester: workspace.requesterName,
+                quantity: fmt.quantity(request.quantityNeeded, request.unit),
+                category: category(request.materialCategory),
+              })}
+              {request.neededBy ? format(t.by, { date: fmt.date(request.neededBy) }) : ""}
             </p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm font-semibold text-[var(--ink)]">
-                {formatQuantity(request.quantityMatched, request.unit)} /{" "}
-                {formatQuantity(request.quantityNeeded, request.unit)}
+                {fmt.quantity(request.quantityMatched, request.unit)} /{" "}
+                {fmt.quantity(request.quantityNeeded, request.unit)}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                Matched
+                {t.matched}
               </p>
             </div>
             <button
@@ -110,7 +125,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--line-strong)] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--ink-muted)] transition-colors duration-200 ease-[var(--ease-out)] hover:bg-[var(--surface)] hover:text-[var(--ink)]"
               aria-expanded={briefExpanded}
             >
-              {briefExpanded ? "Hide full brief" : "View full brief"}
+              {briefExpanded ? t.hideBrief : t.viewBrief}
               <ChevronDown
                 size={14}
                 className={`transition-transform duration-200 ease-[var(--ease-out)] ${briefExpanded ? "rotate-180" : ""}`}
@@ -122,38 +137,38 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
         {briefExpanded && (
           <div className="mt-5 space-y-5 border-t border-[var(--line)] pt-5">
             <dl>
-              <DataRow label="Requested by" value={workspace.requesterName} />
+              <DataRow label={t.requestedBy} value={workspace.requesterName} />
               {workspace.project && (
                 <DataRow
-                  label="Project"
+                  label={t.project}
                   value={workspace.project.title}
                   hint={workspace.project.reference}
                 />
               )}
-              <DataRow label="Material" value={request.materialDescription ?? "-"} />
-              <DataRow label="Composition" value={request.compositionRequirements ?? "-"} />
-              <DataRow label="Quality" value={request.qualityRequirements ?? "-"} />
-              <DataRow label="Intended product" value={request.intendedProduct ?? "-"} />
+              <DataRow label={t.material} value={request.materialDescription ?? "-"} />
+              <DataRow label={t.composition} value={request.compositionRequirements ?? "-"} />
+              <DataRow label={t.quality} value={request.qualityRequirements ?? "-"} />
+              <DataRow label={t.intendedProduct} value={request.intendedProduct ?? "-"} />
               <DataRow
-                label="Location preference"
+                label={t.locationPreference}
                 value={request.productionLocationPreference ?? "-"}
-                hint={request.maxDistanceKm ? `Within ${request.maxDistanceKm} km` : undefined}
+                hint={request.maxDistanceKm ? format(t.within, { distance: fmt.number(request.maxDistanceKm) }) : undefined}
               />
-              <DataRow label="Needed by" value={formatDate(request.neededBy)} />
+              <DataRow label={t.neededBy} value={fmt.date(request.neededBy)} />
             </dl>
 
             {["submitted", "under_review"].includes(request.status) && (
               <div className="space-y-3 border-t border-[var(--line)] pt-5">
                 {briefAction.error && (
-                  <NoticeBanner tone="blocking" title="That step was refused">
+                  <NoticeBanner tone="blocking" title={ui.stepRefused}>
                     {briefAction.error}
                   </NoticeBanner>
                 )}
-                <Field label="Unfulfillable reason">
+                <Field label={t.unfulfillableReason}>
                   <Input
                     value={unfulfillableNote}
                     onChange={(event) => setUnfulfillableNote(event.target.value)}
-                    placeholder="No leather in the system above 500 kg"
+                    placeholder={t.unfulfillablePlaceholder}
                   />
                 </Field>
                 <Button
@@ -169,7 +184,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                     )
                   }
                 >
-                  Mark unfulfillable
+                  {t.markUnfulfillable}
                 </Button>
               </div>
             )}
@@ -187,7 +202,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
               : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
           }`}
         >
-          Shortlist ({candidates.length})
+          {format(t.shortlist, { count: candidates.length })}
         </button>
         <button
           type="button"
@@ -198,7 +213,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
               : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
           }`}
         >
-          Decisions ({matches.length})
+          {format(t.decisions, { count: matches.length })}
         </button>
       </div>
 
@@ -226,7 +241,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                       </p>
                     </div>
                     <p className="text-lg font-semibold text-[var(--ink)]">
-                      {formatQuantity(batch.pots.available, batch.unit)}
+                      {fmt.quantity(batch.pots.available, batch.unit)}
                     </p>
                   </div>
 
@@ -240,17 +255,17 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                   <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em]">
                     {candidate.requested && (
                       <span className="rounded-full border border-[var(--brand-primary)] bg-[var(--brand-primary-muted)] px-2.5 py-1 text-[var(--brand-primary)]">
-                        Asked for this lot
+                        {t.askedForLot}
                       </span>
                     )}
                     {!candidate.categoryFit && (
                       <span className="rounded-full border border-dashed border-[var(--line-strong)] px-2.5 py-1 text-[var(--ink-muted)]">
-                        Category differs
+                        {t.categoryDiffers}
                       </span>
                     )}
                     {!candidate.quantityFit && (
                       <span className="rounded-full border border-dashed border-[var(--line-strong)] px-2.5 py-1 text-[var(--ink-muted)]">
-                        Partial
+                        {t.partial}
                       </span>
                     )}
                     {candidate.distanceKm !== undefined && (
@@ -266,7 +281,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
             })}
             {candidates.length === 0 && (
               <p className="px-6 py-8 text-sm text-[var(--ink-muted)]">
-                No candidates
+                {t.noCandidates}
               </p>
             )}
           </div>
@@ -278,7 +293,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
 
           {decisionAction.error && (
             <div className="px-6 pt-5">
-              <NoticeBanner tone="blocking" title="That step was refused">
+              <NoticeBanner tone="blocking" title={ui.stepRefused}>
                 {decisionAction.error}
               </NoticeBanner>
             </div>
@@ -286,7 +301,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
 
           {matches.length === 0 ? (
             <p className="px-6 py-8 text-sm text-[var(--ink-muted)]">
-              No matches yet
+              {t.noMatches}
             </p>
           ) : (
             <div className="divide-y divide-[var(--line)]">
@@ -295,12 +310,12 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-medium text-[var(--ink)]">
-                        {formatQuantity(match.quantityProposed, match.unit)} · {batch?.name}
+                        {fmt.quantity(match.quantityProposed, match.unit)} · {batch?.name}
                       </p>
                       <p className="text-xs uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                         {batch?.reference}
-                        {custodianName ? ` · custodian ${custodianName}` : ""}
-                        {makerName ? ` · maker ${makerName}` : ""}
+                        {custodianName ? format(t.custodian, { name: custodianName }) : ""}
+                        {makerName ? format(t.maker, { name: makerName }) : ""}
                       </p>
                     </div>
                     <CirkaBadge status={match.status} />
@@ -324,7 +339,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
 
                   {match.status === "proposed" && (
                     <div className="space-y-3 rounded-2xl bg-[var(--surface)] p-4">
-                      <Field label="Decision note">
+                      <Field label={t.decisionNote}>
                         <Input
                           value={decisionNote}
                           onChange={(event) => setDecisionNote(event.target.value)}
@@ -345,7 +360,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                             )
                           }
                         >
-                          Approve
+                          {t.approve}
                         </Button>
                         <Button
                           size="sm"
@@ -361,7 +376,7 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                             )
                           }
                         >
-                          Reject
+                          {t.reject}
                         </Button>
                         <Button
                           size="sm"
@@ -376,15 +391,15 @@ export function MatchingWorkspaceView({ workspace }: { workspace: MatchingWorksp
                             )
                           }
                         >
-                          Withdraw
+                          {t.withdraw}
                         </Button>
                       </div>
                     </div>
                   )}
 
                   <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                    Proposed {formatDate(match.proposedAt)}
-                    {match.decidedAt ? ` · decided ${formatDate(match.decidedAt)}` : ""}
+                    {format(t.proposed, { date: fmt.date(match.proposedAt) })}
+                    {match.decidedAt ? format(t.decided, { date: fmt.date(match.decidedAt) }) : ""}
                     {match.decisionNote ? ` · ${match.decisionNote}` : ""}
                   </p>
                 </div>

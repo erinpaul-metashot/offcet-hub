@@ -1,6 +1,9 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import { classNames } from "@/lib/utils";
 
 export interface FormStep {
@@ -45,12 +48,13 @@ export function FormStepper({
   visited: Set<number> | number[];
   onJump: (index: number) => void;
 }) {
+  const { stepper } = useMessages(demoCommon);
   const reached = visited instanceof Set ? visited : new Set(visited);
   const stateOf = (index: number): NodeState =>
     index === current ? "current" : reached.has(index) ? "visited" : "upcoming";
 
   return (
-    <nav aria-label={`Step ${current + 1} of ${steps.length}`}>
+    <nav aria-label={format(stepper.stepOf, { current: current + 1, total: steps.length })}>
       <ol className="flex items-start">
         {steps.map((step, index) => {
           const state = stateOf(index);
@@ -90,7 +94,7 @@ export function FormStepper({
                 <button
                   type="button"
                   onClick={() => onJump(index)}
-                  aria-label={`Go to step ${index + 1}: ${step.label}`}
+                  aria-label={format(stepper.goTo, { n: index + 1, label: step.label })}
                   className="group flex w-full flex-col items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2"
                 >
                   {node}

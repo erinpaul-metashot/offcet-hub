@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { MapPin, UserRound } from "lucide-react";
 import { Button, Panel } from "@/components/ui";
-import { FACILITY_TYPE_LABELS } from "../_mock/domain";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import type { FacilityInput, FacilityPatch } from "../_mock/operations/facilities";
 import type { OrganisationFacility } from "../_mock/selectors-admin";
 import { useDemoStore } from "../_mock/store";
@@ -11,6 +14,7 @@ import type { Facility, Organisation } from "../_mock/types";
 import { CirkaBadge, ConfirmDialog, Modal, NoticeBanner } from "./cirka-ui";
 import { FacilityForm } from "./facility-form";
 import { useAction } from "./use-action";
+import { useLabels } from "./use-labels";
 
 /**
  * A site never changes hands, so the patch deliberately drops `orgId`. Every
@@ -70,6 +74,10 @@ export function OrganisationFacilities({
   const rowAction = useAction();
   const form = useAction();
   const removal = useAction();
+  const { orgFacilities: t } = useMessages(demoAdmin);
+  /** Site vocabulary shared with the manufacturer and custodian facilities screens. */
+  const { facilities: c } = useMessages(demoCommon);
+  const labels = useLabels();
 
   /** `null` = closed. An entry with no `facility` is a new site. */
   const [editing, setEditing] = useState<{ facility?: Facility } | null>(null);
@@ -115,27 +123,27 @@ export function OrganisationFacilities({
     <section className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--line)] pb-2">
         <div className="space-y-1">
-          <h3 className="text-lg font-semibold text-[var(--ink)]">Sites ({facilities.length})</h3>
+          <h3 className="text-lg font-semibold text-[var(--ink)]">{format(t.title, { count: facilities.length })}</h3>
           {activeCount !== facilities.length && (
             <p className="text-xs tabular-nums text-[var(--ink-muted)]">
-              {activeCount} active · {facilities.length - activeCount} deactivated
+              {format(c.activeSplit, { active: activeCount, inactive: facilities.length - activeCount })}
             </p>
           )}
         </div>
         <Button size="sm" onClick={() => setEditing({})}>
-          Add site
+          {c.addSite}
         </Button>
       </div>
 
       {rowAction.error && (
-        <NoticeBanner tone="blocking" title="That change was refused">
+        <NoticeBanner tone="blocking" title={t.refused}>
           {rowAction.error}
         </NoticeBanner>
       )}
 
       {facilities.length === 0 ? (
         <Panel className="p-8 text-center">
-          <p className="text-sm font-semibold text-[var(--ink)]">No sites yet</p>
+          <p className="text-sm font-semibold text-[var(--ink)]">{c.noSites}</p>
         </Panel>
       ) : (
         <Panel className="overflow-hidden p-0">
@@ -150,9 +158,9 @@ export function OrganisationFacilities({
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-semibold text-[var(--ink)]">{facility.name}</p>
                       <span className="inline-flex items-center rounded-full border border-[var(--line-strong)] bg-[var(--surface)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                        {FACILITY_TYPE_LABELS[facility.type]}
+                        {labels.FACILITY_TYPE_LABELS[facility.type]}
                       </span>
-                      {!facility.isActive && <CirkaBadge status="disabled" label="Deactivated" />}
+                      {!facility.isActive && <CirkaBadge status="disabled" label={c.deactivated} />}
                     </div>
 
                     <p className="flex items-start gap-1.5 text-[13px] text-[var(--ink-muted)]">
@@ -180,9 +188,9 @@ export function OrganisationFacilities({
 
                     {!canRemove && (
                       <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 pt-0.5">
-                        <Reference label="Batches" value={batchCount} />
-                        <Reference label="Allocations" value={allocationCount} />
-                        <Reference label="Production" value={productionCount} />
+                        <Reference label={t.batches} value={batchCount} />
+                        <Reference label={t.allocations} value={allocationCount} />
+                        <Reference label={t.production} value={productionCount} />
                       </div>
                     )}
                   </div>
@@ -194,7 +202,7 @@ export function OrganisationFacilities({
                       onClick={() => setEditing({ facility })}
                       disabled={rowAction.pending}
                     >
-                      Edit
+                      {c.edit}
                     </Button>
 
                     <Button
@@ -210,7 +218,7 @@ export function OrganisationFacilities({
                         )
                       }
                     >
-                      {facility.isActive ? "Deactivate" : "Activate"}
+                      {facility.isActive ? c.deactivate : c.activate}
                     </Button>
 
                     <Button
@@ -221,11 +229,11 @@ export function OrganisationFacilities({
                       title={
                         canRemove
                           ? undefined
-                          : "Material has moved through this site: deactivate it instead."
+                          : t.cannotRemove
                       }
                       onClick={() => setRemoving(facility)}
                     >
-                      Remove
+                      {t.remove}
                     </Button>
                   </div>
                 </li>
@@ -237,8 +245,8 @@ export function OrganisationFacilities({
 
       {editing && (
         <Modal
-          eyebrow={editing.facility ? "Edit site" : undefined}
-          title={editing.facility?.name ?? "New site"}
+          eyebrow={editing.facility ? c.editSite : undefined}
+          title={editing.facility?.name ?? c.newSite}
           onClose={closeForm}
         >
           <FacilityForm
@@ -255,13 +263,13 @@ export function OrganisationFacilities({
 
       {removing && (
         <ConfirmDialog
-          title={`Remove ${removing.name}?`}
-          confirmLabel="Remove it"
+          title={format(t.removeTitle, { name: removing.name })}
+          confirmLabel={t.removeConfirm}
           error={removal.error}
           pending={removal.pending}
           onCancel={closeRemoval}
           onConfirm={() => handleRemove(removing)}
-          body="This can't be undone."
+          body={t.removeBody}
         />
       )}
     </section>

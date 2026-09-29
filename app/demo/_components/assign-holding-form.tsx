@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import { Button, Field, Input, Select } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
 import type { CustodianStockRow } from "../_mock/selectors-admin";
 import type { Organisation } from "../_mock/types";
-import { formatQuantity } from "../_mock/selectors-shared";
 import type { useAction } from "./use-action";
 import type { useDemoStore } from "../_mock/store";
 import { NoticeBanner } from "./cirka-ui";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 /**
  * The second hop is CIRKA's call: the custodian stores the lot, CIRKA decides
@@ -36,6 +40,9 @@ export function AssignHoldingForm({
   const [makerOrgId, setMakerOrgId] = useState("");
   const [quantity, setQuantity] = useState(String(uncommitted));
   const [notes, setNotes] = useState("");
+  const { assignForm: t } = useMessages(demoAdmin);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const quantityNum = Number(quantity);
   const isOverLimit = quantityNum > uncommitted;
@@ -43,15 +50,15 @@ export function AssignHoldingForm({
   return (
     <div className="space-y-4 border-t border-[var(--line)] bg-[var(--surface)] px-5 py-5">
       {error && (
-        <NoticeBanner tone="blocking" title="That assignment was refused">
+        <NoticeBanner tone="blocking" title={t.refused}>
           {error}
         </NoticeBanner>
       )}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Maker">
+        <Field label={t.maker}>
           <Select value={makerOrgId} onChange={(event) => setMakerOrgId(event.target.value)}>
-            <option value="">Choose a maker</option>
+            <option value="">{t.chooseMaker}</option>
             {makers.map((maker) => (
               <option key={maker._id} value={maker._id}>
                 {maker.name} · {maker.city}
@@ -61,8 +68,8 @@ export function AssignHoldingForm({
         </Field>
 
         <Field
-          label={`Quantity (${batch.unit})`}
-          hint={`Unassigned at ${custodian.name}: ${formatQuantity(uncommitted, batch.unit)}`}
+          label={format(t.quantity, { unit: labels.UNIT_LABELS[batch.unit] })}
+          hint={format(t.unassignedAt, { custodian: custodian.name, quantity: fmt.quantity(uncommitted, batch.unit) })}
         >
           <Input
             type="number"
@@ -74,18 +81,18 @@ export function AssignHoldingForm({
           />
         </Field>
 
-        <Field label="Note for the maker (optional)">
+        <Field label={t.note}>
           <Input
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
-            placeholder="For the lined pouch run"
+            placeholder={t.notePlaceholder}
           />
         </Field>
       </div>
 
       {isOverLimit && (
-        <NoticeBanner tone="warning" title="More than is unassigned">
-          Only {formatQuantity(uncommitted, batch.unit)} of this batch is still unassigned.
+        <NoticeBanner tone="warning" title={t.overLimitTitle}>
+          {format(t.overLimitBody, { quantity: fmt.quantity(uncommitted, batch.unit) })}
         </NoticeBanner>
       )}
 
@@ -107,10 +114,10 @@ export function AssignHoldingForm({
             })
           }
         >
-          Assign to Maker
+          {t.assign}
         </Button>
         <Button variant="secondary" onClick={onDone}>
-          Cancel
+          {t.cancel}
         </Button>
       </div>
     </div>

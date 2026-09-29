@@ -12,10 +12,17 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { Button, Panel } from "@/components/ui";
+import { format, type Locale } from "@/lib/i18n/locale";
+import { useLocale, useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import type { Allocation, ResourceBatch } from "../_mock/types";
-import { formatQuantity, orgName } from "../_mock/selectors-shared";
-import { CirkaBadge, formatDate } from "./cirka-ui";
+import { orgName } from "../_mock/selectors-shared";
+import { CirkaBadge } from "./cirka-ui";
 import { useDemoStore } from "../_mock/store";
+import { useFormat } from "./use-format";
+
+/** One-decimal percentage with the viewer's decimal separator. */
+const pct = (value: string, locale: Locale) => (locale === "en" ? value : value.replace(".", ","));
 
 interface DiscrepancyAnalysisProps {
   allocation: Allocation;
@@ -33,6 +40,9 @@ export function DiscrepancyAnalysisPanel({
   onCloseModal,
 }: DiscrepancyAnalysisProps) {
   const store = useDemoStore();
+  const { discrepancy: t } = useMessages(demoCommon);
+  const { locale } = useLocale();
+  const fmt = useFormat();
 
   const senderName = fromName ?? orgName(store.db, allocation.fromOrgId);
   const receiverName = toName ?? orgName(store.db, allocation.toOrgId);
@@ -47,8 +57,8 @@ export function DiscrepancyAnalysisPanel({
 
   const isResolved = Boolean(allocation.discrepancyResolvedAt || allocation.discrepancyResolution);
   const resolverName = allocation.discrepancyResolvedByUserId
-    ? store.db.users.find((u) => u._id === allocation.discrepancyResolvedByUserId)?.name ?? "CIRKA Admin"
-    : "CIRKA Admin";
+    ? store.db.users.find((u) => u._id === allocation.discrepancyResolvedByUserId)?.name ?? t.cirkaAdmin
+    : t.cirkaAdmin;
 
   return (
     <div className="space-y-5">
@@ -71,12 +81,12 @@ export function DiscrepancyAnalysisPanel({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#545454]">
-                {isResolved ? "Resolved" : "Open"}
+                {isResolved ? t.resolved : t.open}
               </span>
               <CirkaBadge status={allocation.status} />
             </div>
             <p className="text-base font-extrabold tracking-[-0.02em] text-[#2A2A2A]">
-              -{formatQuantity(shortfall, unit)} short ({variancePercent}%)
+              {format(t.short, { quantity: fmt.quantity(shortfall, unit), percent: pct(variancePercent, locale) })}
             </p>
           </div>
         </div>
@@ -86,7 +96,7 @@ export function DiscrepancyAnalysisPanel({
             {senderName} → {receiverName}
           </p>
           <p className="text-[11px] text-[#545454] mt-0.5">
-            Ref: <span className="font-mono font-medium text-[#2A2A2A]">{allocation.reference}</span>
+            {t.ref} <span className="font-mono font-medium text-[#2A2A2A]">{allocation.reference}</span>
           </p>
         </div>
       </div>
@@ -95,40 +105,40 @@ export function DiscrepancyAnalysisPanel({
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5 space-y-1">
           <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--ink-muted)]">
-            <span>Dispatched</span>
+            <span>{t.dispatched}</span>
             <Scale size={13} />
           </div>
           <p className="text-xl font-black text-[var(--ink)] tracking-tight">
-            {formatQuantity(dispatched, unit)}
+            {fmt.quantity(dispatched, unit)}
           </p>
           <p className="text-[10px] text-[var(--ink-muted)] truncate">
-            {senderName} · {formatDate(allocation.dispatchedAt)}
+            {senderName} · {fmt.date(allocation.dispatchedAt)}
           </p>
         </div>
 
         <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5 space-y-1">
           <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.12em] text-[#8CC63F]">
-            <span>Received</span>
+            <span>{t.received}</span>
             <Building2 size={13} />
           </div>
           <p className="text-xl font-black text-[#8CC63F] tracking-tight">
-            {formatQuantity(received, unit)}
+            {fmt.quantity(received, unit)}
           </p>
           <p className="text-[10px] text-[var(--ink-muted)] truncate">
-            {receiverName} · {formatDate(allocation.receivedAt)}
+            {receiverName} · {fmt.date(allocation.receivedAt)}
           </p>
         </div>
 
         <div className="rounded-xl border border-[#FF5C00]/30 bg-[#FFF5F0] p-3.5 space-y-1">
           <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.12em] text-[#FF5C00]">
-            <span>Shortfall</span>
+            <span>{t.shortfall}</span>
             <ShieldAlert size={13} />
           </div>
           <p className="text-xl font-black text-[#FF5C00] tracking-tight">
-            -{formatQuantity(shortfall, unit)}
+            -{fmt.quantity(shortfall, unit)}
           </p>
           <p className="text-[10px] font-semibold text-[#FF5C00] truncate">
-            {variancePercent}% of dispatched
+            {format(t.ofDispatched, { percent: pct(variancePercent, locale) })}
           </p>
         </div>
       </div>
@@ -136,7 +146,7 @@ export function DiscrepancyAnalysisPanel({
       {/* Sleek Visual Reconciliation Bar */}
       <Panel className="p-3.5 space-y-2">
         <p className="text-right text-xs font-bold font-mono text-[var(--ink-muted)]">
-          {receivedPercent}% received · {variancePercent}% short
+          {format(t.split, { received: pct(receivedPercent, locale), short: pct(variancePercent, locale) })}
         </p>
         <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--surface)] p-0.5">
           <div
@@ -155,14 +165,14 @@ export function DiscrepancyAnalysisPanel({
         {/* Receiver Finding */}
         <Panel className="p-4 space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-            Receiver Observation
+            {t.observation}
           </p>
           {allocation.discrepancyReason || allocation.notes ? (
             <p className="text-xs font-semibold text-[var(--ink)] leading-relaxed italic">
               &ldquo;{allocation.discrepancyReason || allocation.notes}&rdquo;
             </p>
           ) : (
-            <p className="text-xs text-[var(--ink-muted)]">No reason given</p>
+            <p className="text-xs text-[var(--ink-muted)]">{t.noReason}</p>
           )}
           {batch && (
             <div className="pt-1">
@@ -170,7 +180,7 @@ export function DiscrepancyAnalysisPanel({
                 href={`/demo/manufacturer/batches/${batch._id}`}
                 className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF5C00] hover:underline"
               >
-                <span>Batch: {batch.name}</span>
+                <span>{format(t.batch, { name: batch.name })}</span>
                 <ArrowUpRight size={12} />
               </Link>
             </div>
@@ -180,20 +190,24 @@ export function DiscrepancyAnalysisPanel({
         {/* Audit Status */}
         <Panel className="p-4 space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-            Status
+            {t.status}
           </p>
           {isResolved ? (
             <div className="space-y-1">
               <span className="inline-flex rounded-full bg-[#8CC63F]/15 px-2.5 py-0.5 text-xs font-bold text-[#8CC63F]">
-                Resolved: {allocation.discrepancyResolution?.replace(/_/g, " ").toUpperCase()}
+                {format(t.resolvedAs, {
+                  resolution: allocation.discrepancyResolution
+                    ? t.resolutions[allocation.discrepancyResolution]
+                    : "",
+                })}
               </span>
               <p className="text-[11px] text-[var(--ink-muted)]">
-                Closed by {resolverName} on {formatDate(allocation.discrepancyResolvedAt)}
+                {format(t.closedBy, { name: resolverName, date: fmt.date(allocation.discrepancyResolvedAt) })}
               </p>
             </div>
           ) : (
             <span className="inline-flex rounded-full bg-[#FF5C00]/15 px-2.5 py-0.5 text-xs font-bold text-[#FF5C00]">
-              Held as unexplained
+              {t.heldUnexplained}
             </span>
           )}
         </Panel>
@@ -210,6 +224,8 @@ export function DiscrepancyModal({
   isOpen,
   onClose,
 }: DiscrepancyAnalysisProps & { isOpen: boolean; onClose: () => void }) {
+  const { discrepancy: t, ui } = useMessages(demoCommon);
+
   if (!isOpen) return null;
 
   return (
@@ -226,12 +242,13 @@ export function DiscrepancyModal({
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-[#FF5C00] shadow-xs" />
             <h3 className="text-sm font-bold tracking-tight text-[var(--ink)]">
-              Discrepancy Audit
+              {t.audit}
             </h3>
             <span className="text-xs font-mono text-[var(--ink-muted)]">({allocation.reference})</span>
           </div>
           <button
             onClick={onClose}
+            aria-label={ui.close}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--ink-muted)] hover:bg-[var(--line)] hover:text-[var(--ink)] transition-colors"
           >
             <X size={16} />
@@ -251,7 +268,7 @@ export function DiscrepancyModal({
         {/* Sticky Footer */}
         <div className="flex items-center justify-end border-t border-[var(--line)] px-5 py-3 bg-[var(--surface)] shrink-0">
           <Button onClick={onClose} variant="secondary" size="sm" className="font-semibold rounded-full px-5">
-            Done
+            {t.done}
           </Button>
         </div>
       </div>

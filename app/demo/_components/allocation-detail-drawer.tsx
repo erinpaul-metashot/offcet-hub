@@ -4,13 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
-import { SUITABILITY_LABELS, SUITABILITY_RATINGS, type SuitabilityRating } from "../_mock/domain";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { demoMaker } from "@/lib/i18n/messages/demo-maker";
+import { SUITABILITY_RATINGS, type SuitabilityRating } from "../_mock/domain";
 import type { MakerAllocation } from "../_mock/selectors-maker";
-import { formatQuantity, projectReferences } from "../_mock/selectors-shared";
+import { projectReferences } from "../_mock/selectors-shared";
 import type { useAction } from "./use-action";
 import type { useDemoStore } from "../_mock/store";
-import { CirkaBadge, DataRow, NoticeBanner, formatDate } from "./cirka-ui";
+import { CirkaBadge, DataRow, NoticeBanner } from "./cirka-ui";
 import { ProjectBriefPack } from "./project-brief-pack";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 interface FeedbackDraft {
   receivedAsDescribed: boolean;
@@ -57,6 +63,10 @@ export function AllocationDetailDrawer({
   const [received, setReceived] = useState(String(dispatched));
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackDraft>(emptyFeedback);
+  const { allocationDrawer: t } = useMessages(demoMaker);
+  const { ui } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -100,13 +110,13 @@ export function AllocationDetailDrawer({
               <CirkaBadge status={allocation.status} />
             </div>
             <p className="text-sm text-[var(--ink-muted)]">
-              {entry.batchReference} · from {entry.fromName}
+              {format(t.fromLine, { reference: entry.batchReference, from: entry.fromName })}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t.close}
             className="shrink-0 rounded-full p-2 text-[var(--ink-muted)] transition-colors duration-200 ease-[var(--ease-out)] hover:bg-[var(--surface)] hover:text-[var(--ink)]"
           >
             <X size={20} />
@@ -115,43 +125,43 @@ export function AllocationDetailDrawer({
 
         <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
           {error && (
-            <NoticeBanner tone="blocking" title="That step was refused">
+            <NoticeBanner tone="blocking" title={ui.stepRefused}>
               {error}
             </NoticeBanner>
           )}
 
           <div className="flex items-baseline justify-between gap-4 rounded-2xl bg-[var(--surface)] px-5 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Quantity allocated
+              {t.quantityAllocated}
             </p>
             <p className="text-2xl font-semibold tabular-nums tracking-[-0.04em] text-[var(--ink)]">
-              {formatQuantity(allocation.quantityAllocated, allocation.unit)}
+              {fmt.quantity(allocation.quantityAllocated, allocation.unit)}
             </p>
           </div>
 
           <dl>
-            <DataRow label="Expected arrival" value={formatDate(allocation.expectedArrivalDate)} />
-            <DataRow label="Received" value={formatDate(allocation.receivedAt)} />
+            <DataRow label={t.expectedArrival} value={fmt.date(allocation.expectedArrivalDate)} />
+            <DataRow label={t.received} value={fmt.date(allocation.receivedAt)} />
             <DataRow
-              label="Suitability feedback"
-              value={entry.hasFeedback ? "Recorded" : "Not yet recorded"}
+              label={t.suitabilityFeedback}
+              value={entry.hasFeedback ? t.recorded : t.notRecorded}
             />
             <DataRow
-              label="Production"
+              label={t.production}
               value={
                 entry.production
                   ? `${entry.production.reference} · ${entry.production.productName}`
-                  : "No production batch yet"
+                  : t.noProduction
               }
             />
-            {allocation.notes && <DataRow label="Note from the custodian" value={allocation.notes} />}
+            {allocation.notes && <DataRow label={t.custodianNote} value={allocation.notes} />}
           </dl>
 
           {project && (
             <section className="space-y-4 rounded-2xl bg-[var(--surface)] p-5">
               <div className="space-y-1">
                 <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  Brief · {project.reference}
+                  {format(t.brief, { reference: project.reference })}
                 </p>
                 <h3 className="text-base font-semibold tracking-[-0.02em] text-[var(--ink)]">
                   {project.title}
@@ -165,7 +175,7 @@ export function AllocationDetailDrawer({
                 href={`/demo/maker/projects/${project._id}`}
                 className="inline-flex text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--brand-primary)] transition-colors duration-200 ease-[var(--ease-out)] hover:text-[var(--ink)]"
               >
-                Open full brief
+                {t.openBrief}
               </Link>
             </section>
           )}
@@ -179,12 +189,12 @@ export function AllocationDetailDrawer({
                     store.respondToAllocation("maker", {
                       allocationId: allocation._id,
                       accept: true,
-                      note: "We can take this into the next run.",
+                      note: t.acceptNote,
                     }),
                   )
                 }
               >
-                Accept
+                {t.accept}
               </Button>
               <Button
                 variant="secondary"
@@ -194,12 +204,12 @@ export function AllocationDetailDrawer({
                     store.respondToAllocation("maker", {
                       allocationId: allocation._id,
                       accept: false,
-                      note: "Not the right weight for our current programme.",
+                      note: t.declineNote,
                     }),
                   )
                 }
               >
-                Decline
+                {t.decline}
               </Button>
             </div>
           )}
@@ -207,8 +217,8 @@ export function AllocationDetailDrawer({
           {allocation.status === "in_transit" && (
             <div className="space-y-4 border-t border-[var(--line)] pt-5">
               <Field
-                label={`Quantity received (${allocation.unit})`}
-                hint={`Hand-over note says ${formatQuantity(dispatched, allocation.unit)}.`}
+                label={format(t.quantityReceived, { unit: labels.UNIT_LABELS[allocation.unit] })}
+                hint={format(t.handOverNote, { quantity: fmt.quantity(dispatched, allocation.unit) })}
               >
                 <Input
                   type="number"
@@ -229,7 +239,7 @@ export function AllocationDetailDrawer({
                   )
                 }
               >
-                Confirm receipt
+                {t.confirmReceipt}
               </Button>
             </div>
           )}
@@ -245,17 +255,17 @@ export function AllocationDetailDrawer({
                     setFeedback(emptyFeedback);
                   }}
                 >
-                  {feedbackOpen ? "Close" : "Record suitability"}
+                  {feedbackOpen ? t.close : t.recordSuitability}
                 </Button>
               )}
               {!entry.production && (
                 <Button as={Link} href="/demo/maker/production/new">
-                  Create production batch
+                  {t.createProduction}
                 </Button>
               )}
               {entry.production && (
                 <Button as={Link} href={`/demo/maker/production/${entry.production._id}`}>
-                  Open production batch
+                  {t.openProduction}
                 </Button>
               )}
             </div>
@@ -264,10 +274,10 @@ export function AllocationDetailDrawer({
           {feedbackOpen && (
             <div className="space-y-4 rounded-2xl bg-[var(--surface)] p-5">
               <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                Material suitability
+                {t.materialSuitability}
               </h3>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Received as described">
+                <Field label={t.receivedAsDescribed}>
                   <Select
                     value={feedback.receivedAsDescribed ? "yes" : "no"}
                     onChange={(event) =>
@@ -277,11 +287,11 @@ export function AllocationDetailDrawer({
                       }))
                     }
                   >
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
+                    <option value="yes">{t.yes}</option>
+                    <option value="no">{t.no}</option>
                   </Select>
                 </Field>
-                <Field label="Suitability">
+                <Field label={t.suitability}>
                   <Select
                     value={feedback.suitability}
                     onChange={(event) =>
@@ -293,14 +303,14 @@ export function AllocationDetailDrawer({
                   >
                     {SUITABILITY_RATINGS.map((value) => (
                       <option key={value} value={value}>
-                        {SUITABILITY_LABELS[value]}
+                        {labels.SUITABILITY_LABELS[value]}
                       </option>
                     ))}
                   </Select>
                 </Field>
               </div>
 
-              <Field label="Quality rating (1-5)">
+              <Field label={t.qualityRating}>
                 <Input
                   type="number"
                   min="1"
@@ -313,16 +323,16 @@ export function AllocationDetailDrawer({
               </Field>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Damage or contamination">
+                <Field label={t.damage}>
                   <Input
                     value={feedback.damageNote}
                     onChange={(event) =>
                       setFeedback((current) => ({ ...current, damageNote: event.target.value }))
                     }
-                    placeholder="Two rolls had crushed edges"
+                    placeholder={t.damagePlaceholder}
                   />
                 </Field>
-                <Field label="Recommended applications">
+                <Field label={t.applications}>
                   <Input
                     value={feedback.recommendedApplications}
                     onChange={(event) =>
@@ -331,22 +341,22 @@ export function AllocationDetailDrawer({
                         recommendedApplications: event.target.value,
                       }))
                     }
-                    placeholder="Panelled bags, pouches"
+                    placeholder={t.applicationsPlaceholder}
                   />
                 </Field>
               </div>
 
-              <Field label="Limitations">
+              <Field label={t.limitations}>
                 <Input
                   value={feedback.limitations}
                   onChange={(event) =>
                     setFeedback((current) => ({ ...current, limitations: event.target.value }))
                   }
-                  placeholder="Piece size rules out single-panel garments"
+                  placeholder={t.limitationsPlaceholder}
                 />
               </Field>
 
-              <Field label="Notes">
+              <Field label={t.notes}>
                 <Textarea
                   value={feedback.notes}
                   onChange={(event) =>
@@ -373,7 +383,7 @@ export function AllocationDetailDrawer({
                   })
                 }
               >
-                Submit assessment
+                {t.submit}
               </Button>
             </div>
           )}
@@ -381,7 +391,7 @@ export function AllocationDetailDrawer({
 
         <div className="flex shrink-0 justify-end border-t border-[var(--line)] px-6 py-5">
           <Button variant="secondary" onClick={onClose}>
-            Close
+            {t.close}
           </Button>
         </div>
       </div>

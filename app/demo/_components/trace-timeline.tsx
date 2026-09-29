@@ -14,12 +14,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Panel } from "@/components/ui";
+import { INTL_LOCALE, format, type Locale } from "@/lib/i18n/locale";
+import { useLocale, useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import { classNames } from "@/lib/utils";
-import { BUCKET_LABELS, type CirkaRole } from "../_mock/domain";
+import type { CirkaRole } from "../_mock/domain";
 import { getRoleTimeline, getThreadTimeline, type EntityRef } from "../_mock/selectors-timeline";
 import { useDemoDatabase, useDemoPersona } from "../_mock/store";
 import { groupByDay, type TimelineEvent, type TimelineTone } from "../_mock/timeline";
-import { BUCKET_COLOUR, formatDate } from "./cirka-ui";
+import { BUCKET_COLOUR } from "./cirka-ui";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 /* The dot is the only colour on the row: tone tells you how to feel about the
    event before you have read it. Sourced from the established status palette. */
@@ -31,8 +36,8 @@ const TONE_DOT: Record<TimelineTone, string> = {
   aborted: "bg-[#D14343]",
 };
 
-function timeOfDay(timestamp: number): string {
-  return new Date(timestamp).toLocaleTimeString("en-GB", {
+function timeOfDay(timestamp: number, locale: Locale): string {
+  return new Date(timestamp).toLocaleTimeString(INTL_LOCALE[locale], {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -41,6 +46,7 @@ function timeOfDay(timestamp: number): string {
 /** "295 kg · In transit → At custodian", with the destination pot's colour. */
 function QuantityChip({ event }: { event: TimelineEvent }) {
   const delta = event.quantityDelta;
+  const labels = useLabels();
 
   if (!delta) {
     return null;
@@ -58,7 +64,7 @@ function QuantityChip({ event }: { event: TimelineEvent }) {
       />
       {delta.quantity} {delta.unit}
       {delta.to && (
-        <span className="text-[var(--ink-muted)]">· {BUCKET_LABELS[delta.to]}</span>
+        <span className="text-[var(--ink-muted)]">· {labels.BUCKET_LABELS[delta.to]}</span>
       )}
     </span>
   );
@@ -116,6 +122,7 @@ function HeadlineWithSubject({
 }
 
 function EventRow({ event }: { event: TimelineEvent }) {
+  const { locale } = useLocale();
   const body = (
     <>
       {/* The rail passes behind the dot; the dot caps it. */}
@@ -143,7 +150,7 @@ function EventRow({ event }: { event: TimelineEvent }) {
 
         <div className="flex flex-wrap items-center gap-2 pt-0.5">
           <span className="text-[11px] tabular-nums text-[var(--ink-muted)]">
-            {timeOfDay(event.occurredAt)}
+            {timeOfDay(event.occurredAt, locale)}
           </span>
           <QuantityChip event={event} />
         </div>
@@ -180,6 +187,8 @@ function EventRow({ event }: { event: TimelineEvent }) {
  * row: custody changes four times in a journey, not forty.
  */
 export function CustodyChain({ chain }: { chain: Array<{ orgId: string; name: string }> }) {
+  const { timeline } = useMessages(demoCommon);
+
   if (chain.length < 2) {
     return null;
   }
@@ -187,7 +196,7 @@ export function CustodyChain({ chain }: { chain: Array<{ orgId: string; name: st
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-[var(--line)] px-5 py-3.5">
       <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-        Custody
+        {timeline.custody}
       </span>
       {chain.map((entry, index) => (
         <span key={`${entry.orgId}-${index}`} className="flex items-center gap-2">
@@ -201,14 +210,17 @@ export function CustodyChain({ chain }: { chain: Array<{ orgId: string; name: st
 
 export function TraceTimeline({
   events,
-  emptyLabel = "Nothing has happened here yet.",
+  emptyLabel,
 }: {
   events: TimelineEvent[];
   emptyLabel?: string;
 }) {
+  const { timeline } = useMessages(demoCommon);
+  const fmt = useFormat();
+
   if (events.length === 0) {
     return (
-      <p className="px-5 py-8 text-center text-[13px] text-[var(--ink-muted)]">{emptyLabel}</p>
+      <p className="px-5 py-8 text-center text-[13px] text-[var(--ink-muted)]">{emptyLabel ?? timeline.nothingYet}</p>
     );
   }
 
@@ -217,7 +229,7 @@ export function TraceTimeline({
       {groupByDay(events).map((day) => (
         <section key={day.key}>
           <p className="sticky top-0 z-20 -mx-5 bg-[var(--paper)] px-5 pb-2 pt-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            {formatDate(day.date)}
+            {fmt.date(day.date)}
           </p>
 
           {/* The rail: one continuous line the dots sit on. */}
@@ -239,7 +251,7 @@ export function TraceTimeline({
 export function ThreadTimelinePanel({
   role,
   anchor,
-  title = "Journey",
+  title,
   collapsible = true,
   defaultExpanded = true,
   plain = false,
@@ -257,6 +269,7 @@ export function ThreadTimelinePanel({
   const { scope } = useDemoPersona(role);
   const thread = getThreadTimeline(db, scope, anchor);
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const { timeline } = useMessages(demoCommon);
 
   const innerTimeline = (
     <>
@@ -266,9 +279,10 @@ export function ThreadTimelinePanel({
           that it exists. A count, never the content. */}
       {thread.hiddenFromBrand && thread.hiddenFromBrand.count > 0 && (
         <p className="border-b border-[var(--line)] bg-[var(--surface)] px-5 py-2.5 text-xs text-[var(--ink-muted)]">
-          {thread.hiddenFromBrand.count} event
-          {thread.hiddenFromBrand.count === 1 ? " is" : "s are"} withheld from{" "}
-          {thread.hiddenFromBrand.orgName}.
+          {format(thread.hiddenFromBrand.count === 1 ? timeline.withheldOne : timeline.withheldMany, {
+            count: thread.hiddenFromBrand.count,
+            org: thread.hiddenFromBrand.orgName,
+          })}
         </p>
       )}
 
@@ -288,10 +302,10 @@ export function ThreadTimelinePanel({
           )}
           onClick={collapsible ? () => setIsExpanded((prev) => !prev) : undefined}
         >
-          <h2 className="min-w-0 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{title}</h2>
+          <h2 className="min-w-0 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{title ?? timeline.journey}</h2>
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              {thread.events.length} events
+              {format(timeline.events, { count: thread.events.length })}
             </span>
             {collapsible && (
               isExpanded ? (
@@ -323,7 +337,7 @@ export function ThreadTimelinePanel({
 export function RoleActivityFeed({
   role,
   limit = 8,
-  title = "Recent activity",
+  title,
 }: {
   role: CirkaRole;
   limit?: number;
@@ -333,6 +347,7 @@ export function RoleActivityFeed({
   const { scope } = useDemoPersona(role);
   const events = getRoleTimeline(db, scope, { limit });
   const [isExpanded, setIsExpanded] = useState(true);
+  const { timeline } = useMessages(demoCommon);
 
   return (
     <Panel className="overflow-hidden">
@@ -342,7 +357,7 @@ export function RoleActivityFeed({
         className="flex w-full items-center justify-between border-b border-[var(--line)] px-5 py-4 text-left transition-colors hover:bg-[var(--surface)] focus:outline-none"
       >
         <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--ink-muted)]">
-          {title}
+          {title ?? timeline.recentActivity}
         </span>
         {isExpanded ? (
           <ChevronUp className="size-4 text-[var(--ink-muted)]" />
@@ -354,7 +369,7 @@ export function RoleActivityFeed({
         <div className="max-h-[22rem] overflow-y-auto">
           <TraceTimeline
             events={events}
-            emptyLabel="No activity yet"
+            emptyLabel={timeline.noActivity}
           />
         </div>
       )}
@@ -367,8 +382,11 @@ export function RoleActivityFeed({
  * no day headings and no links, for when the full thread lives elsewhere.
  */
 export function TimelineStrip({ events, limit = 5 }: { events: TimelineEvent[]; limit?: number }) {
+  const { timeline } = useMessages(demoCommon);
+  const fmt = useFormat();
+
   if (events.length === 0) {
-    return <p className="text-[13px] text-[var(--ink-muted)]">No activity recorded yet.</p>;
+    return <p className="text-[13px] text-[var(--ink-muted)]">{timeline.noActivityRecorded}</p>;
   }
 
   return (
@@ -381,7 +399,7 @@ export function TimelineStrip({ events, limit = 5 }: { events: TimelineEvent[]; 
           <div className="min-w-0 flex-1">
             <p className="text-[13px] leading-snug text-[var(--ink)]">{event.headline}</p>
             <p className="text-[11px] tabular-nums text-[var(--ink-muted)]">
-              {formatDate(event.occurredAt)}
+              {fmt.date(event.occurredAt)}
             </p>
           </div>
         </li>

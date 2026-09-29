@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { Button, Field, Input, Select } from "@/components/ui";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import { classNames } from "@/lib/utils";
-import { FACILITY_TYPES, FACILITY_TYPE_LABELS, type FacilityType } from "../_mock/domain";
+import { FACILITY_TYPES, type FacilityType } from "../_mock/domain";
 import type { FacilityInput } from "../_mock/operations/facilities";
 import type { Facility, Id } from "../_mock/types";
 import { FormSection, NoticeBanner } from "./cirka-ui";
+import { useLabels } from "./use-labels";
 
 /**
  * Every writable column of the `facilities` table (06_DATA_MODEL §facilities).
@@ -66,6 +69,8 @@ export function FacilityForm({
   onCancel: () => void;
 }) {
   const isEdit = facility !== undefined;
+  const { facilityForm: t, ui } = useMessages(demoCommon);
+  const labels = useLabels();
   const [form, setForm] = useState<FacilityFormState>(() =>
     facility
       ? fromFacility(facility)
@@ -128,36 +133,36 @@ export function FacilityForm({
       }}
     >
       {error && (
-        <NoticeBanner tone="blocking" title="That change was refused">
+        <NoticeBanner tone="blocking" title={ui.refused}>
           {error}
         </NoticeBanner>
       )}
 
-      <FormSection title="Site">
-        <Field label="Name" required>
+      <FormSection title={t.site}>
+        <Field label={t.name} required>
           <Input
             value={form.name}
             onChange={(event) => update("name", event.target.value)}
-            placeholder="Malmö cutting plant"
+            placeholder={t.namePlaceholder}
             autoFocus
           />
         </Field>
-        <Field label="Type">
+        <Field label={t.type}>
           <Select
             value={form.type}
             onChange={(event) => update("type", event.target.value as FacilityType)}
           >
             {FACILITY_TYPES.map((type) => (
               <option key={type} value={type}>
-                {FACILITY_TYPE_LABELS[type]}
+                {labels.FACILITY_TYPE_LABELS[type]}
               </option>
             ))}
           </Select>
         </Field>
       </FormSection>
 
-      <FormSection title="Address">
-        <Field label="Street" required>
+      <FormSection title={t.address}>
+        <Field label={t.street} required>
           <Input
             value={form.addressLine}
             onChange={(event) => update("addressLine", event.target.value)}
@@ -165,14 +170,14 @@ export function FacilityForm({
           />
         </Field>
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="City">
+          <Field label={t.city}>
             <Input
               value={form.city}
               onChange={(event) => update("city", event.target.value)}
               placeholder="Malmö"
             />
           </Field>
-          <Field label="Postcode">
+          <Field label={t.postcode}>
             <Input
               value={form.postcode}
               onChange={(event) => update("postcode", event.target.value)}
@@ -180,9 +185,9 @@ export function FacilityForm({
             />
           </Field>
           <Field
-            label="Country"
+            label={t.country}
             required
-            error={countryLooksWrong ? "Two-letter ISO code" : undefined}
+            error={countryLooksWrong ? t.countryError : undefined}
           >
             <Input
               value={form.country}
@@ -195,10 +200,10 @@ export function FacilityForm({
         </div>
       </FormSection>
 
-      <FormSection title="Capacity">
+      <FormSection title={t.capacity}>
         <Field
-          label="Storage capacity (kg)"
-          error={capacityLooksWrong ? "Capacity must be greater than zero." : undefined}
+          label={t.storageCapacity}
+          error={capacityLooksWrong ? t.capacityError : undefined}
         >
           <Input
             type="number"
@@ -206,14 +211,14 @@ export function FacilityForm({
             step="1"
             value={form.storageCapacityKg}
             onChange={(event) => update("storageCapacityKg", event.target.value)}
-            placeholder="No limit"
+            placeholder={t.noLimit}
           />
         </Field>
       </FormSection>
 
-      <FormSection title="Coordinates" hint="Optional">
+      <FormSection title={t.coordinates} hint={t.optional}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Latitude">
+          <Field label={t.latitude}>
             <Input
               type="number"
               step="any"
@@ -224,7 +229,7 @@ export function FacilityForm({
               placeholder="55.6050"
             />
           </Field>
-          <Field label="Longitude">
+          <Field label={t.longitude}>
             <Input
               type="number"
               step="any"
@@ -238,18 +243,18 @@ export function FacilityForm({
         </div>
       </FormSection>
 
-      <FormSection title="Site contact" hint="Protected">
+      <FormSection title={t.siteContact} hint={t.protected}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Contact name">
+          <Field label={t.contactName}>
             <Input
               value={form.contactName}
               onChange={(event) => update("contactName", event.target.value)}
-              placeholder="Site manager"
+              placeholder={t.contactNamePlaceholder}
             />
           </Field>
           <Field
-            label="Contact email"
-            error={emailLooksWrong ? "That is not a valid email address" : undefined}
+            label={t.contactEmail}
+            error={emailLooksWrong ? t.emailError : undefined}
           >
             <Input
               type="email"
@@ -263,10 +268,10 @@ export function FacilityForm({
 
       <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-5">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+          {t.cancel}
         </Button>
         <Button type="submit" disabled={pending || !canSubmit}>
-          {isEdit ? "Save changes" : "Add site"}
+          {isEdit ? t.save : t.add}
         </Button>
       </div>
     </form>

@@ -7,7 +7,13 @@
  * listing's. `stripBatch` already removes commercial value on top of that.
  */
 
-import { ORGANISATION_TYPE_LABELS, type MaterialCategory, type MaterialFormat, type QualityClass } from "./domain";
+import {
+  ORGANISATION_TYPE_LABELS,
+  type MaterialCategory,
+  type MaterialFormat,
+  type OrganisationType,
+  type QualityClass,
+} from "./domain";
 import { isListedLot, listingBlocker } from "./operations/marketplace";
 import { potSlices, type PotSlice } from "./selectors-batches";
 import { findFacility, findOrganisation, orgName } from "./selectors-shared";
@@ -24,6 +30,8 @@ export interface MarketplaceLot {
   supplierLabel: string;
   /** Named only for CIRKA and the owner. */
   supplierName?: string;
+  /** Lets screens rebuild `supplierLabel` in the viewer's language. */
+  supplierType: OrganisationType;
   region?: string;
   /** How many organisations have an open enquiry. Who they are is CIRKA's alone. */
   enquiryCount: number;
@@ -88,6 +96,7 @@ function toLot(db: MockDatabase, viewer: ViewerScope, source: ResourceBatch): Ma
       ? orgName(db, source.ownerOrgId)
       : [ORGANISATION_TYPE_LABELS[owner?.type ?? "manufacturer"], region].filter(Boolean).join(" · "),
     supplierName: privileged ? orgName(db, source.ownerOrgId) : undefined,
+    supplierType: owner?.type ?? "manufacturer",
     region,
     enquiryCount: enquiries.length,
     viewerHasEnquired: enquiries.some((request) => request.requesterOrgId === viewer.orgId),

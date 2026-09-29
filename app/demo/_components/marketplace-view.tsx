@@ -14,32 +14,28 @@ import Link from "next/link";
 import { ArrowRight, RotateCcw, Search } from "lucide-react";
 import { Button, EmptyState, Input, Panel, Select } from "@/components/ui";
 import { classNames } from "@/lib/utils";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import {
-  FORMAT_LABELS,
   MATERIAL_CATEGORIES,
-  MATERIAL_CATEGORY_LABELS,
   MATERIAL_FORMATS,
   QUALITY_CLASSES,
-  QUALITY_CLASS_LABELS,
   type CirkaRole,
 } from "../_mock/domain";
 import {
   MARKETPLACE_SORTS,
-  MARKETPLACE_SORT_LABELS,
   listMarketplaceLots,
   marketplaceCategoryCounts,
   marketplaceCountries,
   type MarketplaceFilters,
   type MarketplaceLot,
 } from "../_mock/selectors-marketplace";
-import { categoryLabel, formatQuantity } from "../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../_mock/store";
-import {
-  SectionHeading,
-  ViewModeToggle,
-  formatDate,
-} from "./cirka-ui";
+import { SectionHeading, ViewModeToggle } from "./cirka-ui";
 import { MaterialSwatch } from "./material-swatch";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 const EMPTY_FILTERS: MarketplaceFilters = {
   category: "",
@@ -72,6 +68,8 @@ function MicroLabel({ children }: { children: React.ReactNode }) {
  */
 function LotQuantity({ lot, dense }: { lot: MarketplaceLot; dense?: boolean }) {
   const { batch } = lot;
+  const { market } = useMessages(demoCommon);
+  const fmt = useFormat();
 
   return (
     <div className="flex items-baseline gap-2">
@@ -81,19 +79,21 @@ function LotQuantity({ lot, dense }: { lot: MarketplaceLot; dense?: boolean }) {
           dense ? "text-[17px]" : "text-[26px]",
         )}
       >
-        {formatQuantity(batch.pots.available, batch.unit)}
+        {fmt.quantity(batch.pots.available, batch.unit)}
       </span>
-      <MicroLabel>available</MicroLabel>
+      <MicroLabel>{market.available}</MicroLabel>
     </div>
   );
 }
 
 /** Only shown when there is something to say — silence beats "no enquiries yet". */
 function EnquiryNote({ lot }: { lot: MarketplaceLot }) {
+  const { market } = useMessages(demoCommon);
+
   if (lot.viewerHasEnquired) {
     return (
       <span className="text-[11px] font-semibold text-[var(--brand-primary)]">
-        Enquired
+        {market.enquired}
       </span>
     );
   }
@@ -102,7 +102,7 @@ function EnquiryNote({ lot }: { lot: MarketplaceLot }) {
 
   return (
     <span className="text-[11px] text-[var(--ink-muted)]">
-      {lot.enquiryCount} open enquir{lot.enquiryCount === 1 ? "y" : "ies"}
+      {format(lot.enquiryCount === 1 ? market.openEnquiryOne : market.openEnquiryMany, { count: lot.enquiryCount })}
     </span>
   );
 }
@@ -114,6 +114,7 @@ function EnquiryNote({ lot }: { lot: MarketplaceLot }) {
  */
 function LotCard({ lot, href }: { lot: MarketplaceLot; href: string }) {
   const { batch } = lot;
+  const labels = useLabels();
 
   return (
     <Panel interactive className="group overflow-hidden p-0">
@@ -127,7 +128,7 @@ function LotCard({ lot, href }: { lot: MarketplaceLot; href: string }) {
         >
           {batch.qualityClass && (
             <span className="absolute right-3 top-3 rounded-full border border-[var(--line-strong)] bg-[var(--paper)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink)]">
-              {QUALITY_CLASS_LABELS[batch.qualityClass]}
+              {labels.QUALITY_CLASS_LABELS[batch.qualityClass]}
             </span>
           )}
           {/* Enquiry state is a condition of the lot, so it sits on the lot. */}
@@ -166,10 +167,11 @@ function LotCard({ lot, href }: { lot: MarketplaceLot; href: string }) {
 /** The dense alternative: same facts, one line each, for comparing many lots. */
 function LotRow({ lot, href }: { lot: MarketplaceLot; href: string }) {
   const { batch } = lot;
+  const labels = useLabels();
   const facts = [
-    categoryLabel(batch.materialCategory),
-    batch.format && FORMAT_LABELS[batch.format],
-    batch.qualityClass && QUALITY_CLASS_LABELS[batch.qualityClass],
+    labels.MATERIAL_CATEGORY_LABELS[batch.materialCategory] ?? batch.materialCategory,
+    batch.format && labels.FORMAT_LABELS[batch.format],
+    batch.qualityClass && labels.QUALITY_CLASS_LABELS[batch.qualityClass],
     batch.colour,
   ].filter(Boolean);
 
@@ -222,11 +224,13 @@ function CategoryChips({
   onSelect: (category: MarketplaceFilters["category"]) => void;
   total: number;
 }) {
+  const { market } = useMessages(demoCommon);
+  const labels = useLabels();
   const options: Array<{ value: MarketplaceFilters["category"]; label: string; count: number }> = [
-    { value: "", label: "Everything", count: total },
+    { value: "", label: market.everything, count: total },
     ...MATERIAL_CATEGORIES.filter((value) => counts[value]).map((value) => ({
       value,
-      label: MATERIAL_CATEGORY_LABELS[value],
+      label: labels.MATERIAL_CATEGORY_LABELS[value],
       count: counts[value] ?? 0,
     })),
   ];
@@ -277,6 +281,9 @@ export function MarketplaceView({
   const { scope } = useDemoPersona(role);
   const [filters, setFilters] = useState<MarketplaceFilters>(EMPTY_FILTERS);
   const [mode, setMode] = useState<"grid" | "list">("grid");
+  const { market } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const allLots = listMarketplaceLots(db, scope);
   const lots = listMarketplaceLots(db, scope, filters);
@@ -299,27 +306,27 @@ export function MarketplaceView({
   if (allLots.length === 0) {
     return (
       <div className="space-y-6">
-        <SectionHeading title="Marketplace" />
-        <EmptyState title="Nothing listed yet" />
+        <SectionHeading title={market.title} />
+        <EmptyState title={market.nothingListed} />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Marketplace" />
+      <SectionHeading title={market.title} />
 
       {/* The pool in one line: what is open to enquiry, and how fresh it is. */}
       <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 rounded-2xl border border-[var(--line)] bg-[var(--paper)] px-5 py-4">
         <p className="text-sm text-[var(--ink)]">
           <span className="text-lg font-semibold tabular-nums tracking-[-0.03em]">
-            {formatQuantity(pool.available, pool.unit)}
+            {fmt.quantity(pool.available, pool.unit)}
           </span>{" "}
-          available
+          {market.available}
         </p>
         {pool.newest > 0 && (
           <p className="text-[11px] text-[var(--ink-muted)]">
-            Last listed {formatDate(pool.newest)}
+            {format(market.lastListed, { date: fmt.date(pool.newest) })}
           </p>
         )}
       </div>
@@ -338,7 +345,7 @@ export function MarketplaceView({
             className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]"
           />
           <Input
-            placeholder="Search lots"
+            placeholder={market.search}
             value={filters.search ?? ""}
             onChange={(event) => set({ search: event.target.value })}
             className="h-10 border-transparent bg-[var(--surface)] pl-10 focus:border-[var(--brand-primary)] focus:bg-[var(--paper)]"
@@ -351,10 +358,10 @@ export function MarketplaceView({
             onChange={(event) => set({ format: event.target.value as MarketplaceFilters["format"] })}
             className="h-10 border-transparent bg-[var(--surface)] px-3 text-xs font-medium"
           >
-            <option value="">All formats</option>
+            <option value="">{market.allFormats}</option>
             {MATERIAL_FORMATS.map((value) => (
               <option key={value} value={value}>
-                {FORMAT_LABELS[value]}
+                {labels.FORMAT_LABELS[value]}
               </option>
             ))}
           </Select>
@@ -365,10 +372,10 @@ export function MarketplaceView({
             }
             className="h-10 border-transparent bg-[var(--surface)] px-3 text-xs font-medium"
           >
-            <option value="">Any grade</option>
+            <option value="">{market.anyGrade}</option>
             {QUALITY_CLASSES.map((value) => (
               <option key={value} value={value}>
-                {QUALITY_CLASS_LABELS[value]}
+                {labels.QUALITY_CLASS_LABELS[value]}
               </option>
             ))}
           </Select>
@@ -377,7 +384,7 @@ export function MarketplaceView({
             onChange={(event) => set({ country: event.target.value })}
             className="h-10 border-transparent bg-[var(--surface)] px-3 text-xs font-medium"
           >
-            <option value="">Anywhere</option>
+            <option value="">{market.anywhere}</option>
             {countries.map((value) => (
               <option key={value} value={value}>
                 {value}
@@ -388,11 +395,11 @@ export function MarketplaceView({
             value={filters.sort}
             onChange={(event) => set({ sort: event.target.value as MarketplaceFilters["sort"] })}
             className="h-10 border-transparent bg-[var(--surface)] px-3 text-xs font-medium"
-            aria-label="Sort listed lots"
+            aria-label={market.sortLabel}
           >
             {MARKETPLACE_SORTS.map((value) => (
               <option key={value} value={value}>
-                {MARKETPLACE_SORT_LABELS[value]}
+                {market.sorts[value]}
               </option>
             ))}
           </Select>
@@ -404,17 +411,17 @@ export function MarketplaceView({
       {narrowed && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs tabular-nums text-[var(--ink-muted)]">
-            {lots.length} of {allLots.length}
+            {format(market.shownOf, { shown: lots.length, total: allLots.length })}
           </p>
           <Button variant="ghost" size="sm" onClick={() => setFilters(EMPTY_FILTERS)}>
             <RotateCcw size={13} className="mr-2" />
-            Clear filters
+            {market.clearFilters}
           </Button>
         </div>
       )}
 
       {lots.length === 0 ? (
-        <EmptyState title="No matches" />
+        <EmptyState title={market.noMatches} />
       ) : mode === "grid" ? (
         <div className="grid animate-stagger-in gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {lots.map((lot) => (

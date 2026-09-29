@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { ExternalLink, Eye, Lock, X } from "lucide-react";
 import { Panel } from "@/components/ui";
-import { FORMAT_LABELS, QUALITY_CLASS_LABELS } from "../_mock/domain";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import type { BatchDetail } from "../_mock/selectors-batches";
-import { categoryLabel, formatCurrency } from "../_mock/selectors-shared";
-import { DataRow, ProvenanceChip, QuantityPotsBar, formatDate } from "./cirka-ui";
+import { DataRow, ProvenanceChip, QuantityPotsBar } from "./cirka-ui";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 const PANEL_TITLE = "text-base font-bold tracking-tight text-[var(--ink)]";
 
@@ -23,13 +26,16 @@ export function BatchOverview({
 }) {
   const { batch } = detail;
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
-  const confidence = batch.compositionConfidence?.replace(/^./, (c) => c.toUpperCase());
+  const { batch: t, lot, ui } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
+  const confidence = batch.compositionConfidence ? lot.confidence[batch.compositionConfidence] : undefined;
 
   return (
     <div className="space-y-6 animate-stagger-in">
       <Panel className="space-y-4 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className={PANEL_TITLE}>Quantity</h3>
+          <h3 className={PANEL_TITLE}>{t.quantity}</h3>
           <ProvenanceChip dataSource={batch.dataSource} assuranceLevel={batch.assuranceLevel} />
         </div>
         <QuantityPotsBar slices={detail.slices} total={batch.quantityOriginal} unit={batch.unit} />
@@ -38,29 +44,29 @@ export function BatchOverview({
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel className="space-y-4 p-6">
           <div className="flex items-center justify-between gap-3">
-            <h3 className={PANEL_TITLE}>Material</h3>
+            <h3 className={PANEL_TITLE}>{t.material}</h3>
             <span className="rounded-full border border-[var(--line)] px-3 py-1 text-[11px] font-bold text-[var(--ink)]">
-              {categoryLabel(batch.materialCategory)}
+              {labels.MATERIAL_CATEGORY_LABELS[batch.materialCategory]}
             </span>
           </div>
           <dl>
-            <DataRow label="Composition" value={batch.composition ?? "-"} hint={confidence} />
-            <DataRow label="Format" value={batch.format ? FORMAT_LABELS[batch.format] : "-"} />
+            <DataRow label={t.composition} value={batch.composition ?? "-"} hint={confidence} />
+            <DataRow label={t.format} value={batch.format ? labels.FORMAT_LABELS[batch.format] : "-"} />
             <DataRow
-              label="Quality"
-              value={batch.qualityClass ? QUALITY_CLASS_LABELS[batch.qualityClass] : "-"}
+              label={t.quality}
+              value={batch.qualityClass ? labels.QUALITY_CLASS_LABELS[batch.qualityClass] : "-"}
             />
-            <DataRow label="Colour" value={batch.colour ?? "-"} />
+            <DataRow label={t.colour} value={batch.colour ?? "-"} />
             <DataRow
-              label="Estimated value"
+              label={t.estimatedValue}
               value={
                 batch.estimatedValue !== undefined ? (
                   <span
                     className="inline-flex items-center gap-1.5"
-                    title="Visible to the owner and CIRKA only"
+                    title={t.ownerOnly}
                   >
-                    <Lock size={12} className="text-[var(--ink-muted)]" aria-label="Protected" />
-                    {formatCurrency(batch.estimatedValue, batch.currency)}
+                    <Lock size={12} className="text-[var(--ink-muted)]" aria-label={t.protected} />
+                    {fmt.currency(batch.estimatedValue, batch.currency)}
                   </span>
                 ) : (
                   "-"
@@ -76,11 +82,11 @@ export function BatchOverview({
                   key={url}
                   type="button"
                   onClick={() => setSelectedPhotoUrl(url)}
-                  aria-label={`View photo ${idx + 1}`}
+                  aria-label={format(t.viewPhoto, { n: idx + 1 })}
                   className="group relative overflow-hidden rounded-xl border border-[var(--line)] transition-transform duration-200 ease-[var(--ease-out)] hover:scale-[1.02]"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={`Reference ${idx + 1}`} className="h-24 w-full object-cover" />
+                  <img src={url} alt={format(t.photoAlt, { n: idx + 1 })} className="h-24 w-full object-cover" />
                   <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     <Eye className="size-4" />
                   </span>
@@ -91,20 +97,20 @@ export function BatchOverview({
         </Panel>
 
         <Panel className="space-y-4 p-6">
-          <h3 className={PANEL_TITLE}>Origin</h3>
+          <h3 className={PANEL_TITLE}>{t.origin}</h3>
           <dl>
-            <DataRow label="Owner" value={detail.ownerName} />
+            <DataRow label={t.owner} value={detail.ownerName} />
             <DataRow
-              label="Source facility"
+              label={t.sourceFacility}
               value={detail.facility?.name ?? "-"}
               hint={batch.locationText}
             />
             <DataRow
-              label="Available"
-              value={`${formatDate(batch.availableFrom)} → ${formatDate(batch.availableUntil)}`}
+              label={t.available}
+              value={`${fmt.date(batch.availableFrom)} → ${fmt.date(batch.availableUntil)}`}
             />
             <DataRow
-              label="External record"
+              label={t.externalRecord}
               value={
                 batch.externalSystemName ? (
                   batch.externalRecordUrl ? (
@@ -127,16 +133,16 @@ export function BatchOverview({
             />
             {detail.importJob && (
               <DataRow
-                label="Imported from"
+                label={t.importedFrom}
                 value={detail.importJob.fileName ?? detail.importJob.source}
-                hint={formatDate(detail.importJob.createdAt)}
+                hint={fmt.date(detail.importJob.createdAt)}
               />
             )}
             <DataRow
-              label="CIRKA review"
+              label={t.cirkaReview}
               value={
                 batch.reviewedAt
-                  ? `${formatDate(batch.reviewedAt)} · ${actorName(batch.reviewedByUserId)}`
+                  ? `${fmt.date(batch.reviewedAt)} · ${actorName(batch.reviewedByUserId)}`
                   : "-"
               }
               hint={batch.reviewNotes}
@@ -156,18 +162,18 @@ export function BatchOverview({
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
-            aria-label="Photo"
+            aria-label={t.photo}
           >
             <button
               type="button"
               onClick={() => setSelectedPhotoUrl(null)}
-              aria-label="Close"
+              aria-label={ui.close}
               className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black"
             >
               <X className="size-5" />
             </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={selectedPhotoUrl} alt="Reference preview" className="max-h-[80vh] w-full object-contain" />
+            <img src={selectedPhotoUrl} alt={t.photoPreview} className="max-h-[80vh] w-full object-contain" />
           </div>
         </div>
       )}

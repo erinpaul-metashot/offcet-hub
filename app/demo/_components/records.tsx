@@ -4,11 +4,21 @@
 
 import { classNames } from "@/lib/utils";
 import { EmptyState } from "@/components/ui";
-import { MOVEMENT_REASON_LABELS, type Unit } from "../_mock/domain";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import type { Unit } from "../_mock/domain";
 import { movementLabel } from "../_mock/ledger";
 import type { AuditEntry, EvidenceItem, QuantityMovement } from "../_mock/types";
-import { formatQuantity } from "../_mock/selectors-shared";
-import { formatDateTime } from "./cirka-ui";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
+
+type RecordsMessages = (typeof demoCommon)["en"]["records"];
+
+/** The ledger's name for a move, in the viewer's language (keyed like `LEGAL_MOVES`). */
+export function moveLabel(records: RecordsMessages, movement: Pick<QuantityMovement, "fromBucket" | "toBucket" | "reason">): string {
+  const key = `${movement.fromBucket ?? "none"}__${movement.toBucket ?? "none"}__${movement.reason}`;
+  return records.moves[key as keyof RecordsMessages["moves"]] ?? movementLabel(movement);
+}
 
 export function MovementTable({
   movements,
@@ -19,9 +29,15 @@ export function MovementTable({
   unit: Unit;
   actorName: (userId?: string) => string;
 }) {
+  const { records } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
+  const bucket = (value?: string | null) =>
+    value ? (labels.BUCKET_LABELS[value as keyof typeof labels.BUCKET_LABELS] ?? value.replace(/_/g, " ")) : "-";
+
   if (movements.length === 0) {
     return (
-      <EmptyState title="No movements yet" />
+      <EmptyState title={records.noMovements} />
     );
   }
 
@@ -30,38 +46,38 @@ export function MovementTable({
       <table className="w-full min-w-[42rem] border-collapse text-sm">
         <thead>
           <tr className="border-b border-[var(--line)] text-left text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            <th className="py-3 pr-4">When</th>
-            <th className="py-3 pr-4">Move</th>
-            <th className="py-3 pr-4 text-right">Quantity</th>
-            <th className="py-3">By</th>
+            <th className="py-3 pr-4">{records.when}</th>
+            <th className="py-3 pr-4">{records.move}</th>
+            <th className="py-3 pr-4 text-right">{records.quantity}</th>
+            <th className="py-3">{records.by}</th>
           </tr>
         </thead>
         <tbody>
           {movements.map((movement) => (
             <tr key={movement._id} className="border-b border-[var(--line)] last:border-b-0 align-top">
               <td className="py-3 pr-4 whitespace-nowrap text-[var(--ink-muted)]">
-                {formatDateTime(movement.occurredAt)}
+                {fmt.dateTime(movement.occurredAt)}
               </td>
               <td className="py-3 pr-4">
                 <p className="font-medium text-[var(--ink)]">
-                  {movementLabel(movement)}
-                  {MOVEMENT_REASON_LABELS[movement.reason] !== movementLabel(movement) && (
+                  {moveLabel(records, movement)}
+                  {labels.MOVEMENT_REASON_LABELS[movement.reason] !== moveLabel(records, movement) && (
                     <span className="font-normal text-[var(--ink-muted)]">
                       {" · "}
-                      {MOVEMENT_REASON_LABELS[movement.reason]}
+                      {labels.MOVEMENT_REASON_LABELS[movement.reason]}
                     </span>
                   )}
                 </p>
                 <p className="text-xs text-[var(--ink-muted)]">
-                  {(movement.fromBucket ?? "-").replace(/_/g, " ")} →{" "}
-                  {(movement.toBucket ?? "-").replace(/_/g, " ")}
+                  {bucket(movement.fromBucket)} →{" "}
+                  {bucket(movement.toBucket)}
                 </p>
                 {movement.notes && (
                   <p className="mt-1 text-xs italic text-[var(--ink-muted)]">{movement.notes}</p>
                 )}
               </td>
               <td className="py-3 pr-4 text-right font-medium tabular-nums text-[var(--ink)]">
-                {formatQuantity(movement.quantity, unit)}
+                {fmt.quantity(movement.quantity, unit)}
               </td>
               <td className="py-3 text-[var(--ink-muted)]">{actorName(movement.performedByUserId)}</td>
             </tr>
@@ -82,9 +98,11 @@ export function AuditTrail({
   limit?: number;
 }) {
   const rows = limit ? entries.slice(0, limit) : entries;
+  const { records } = useMessages(demoCommon);
+  const fmt = useFormat();
 
   if (rows.length === 0) {
-    return <EmptyState title="No history yet" />;
+    return <EmptyState title={records.noHistory} />;
   }
 
   return (
@@ -94,7 +112,9 @@ export function AuditTrail({
           <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[var(--brand-primary)]" />
           <div className="min-w-0 space-y-1">
             <p className="text-sm text-[var(--ink)]">
-              <span className="font-medium capitalize">{entry.action.replace(/_/g, " ")}</span>
+              <span className="font-medium">
+                {records.actions[entry.action as keyof typeof records.actions] ?? entry.action.replace(/_/g, " ")}
+              </span>
               {entry.entityTable !== "resourceBatches" && (
                 <span className="text-[var(--ink-muted)]">
                   {" · "}
@@ -114,8 +134,9 @@ export function AuditTrail({
             )}
             {entry.notes && <p className="text-xs italic text-[var(--ink-muted)]">{entry.notes}</p>}
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              {formatDateTime(entry.occurredAt)} · {actorName(entry.actorUserId)}
-              {entry.actorType !== "user" && ` · ${entry.actorType}`}
+              {fmt.dateTime(entry.occurredAt)} · {actorName(entry.actorUserId)}
+              {entry.actorType !== "user" &&
+                ` · ${records.actors[entry.actorType as keyof typeof records.actors] ?? entry.actorType}`}
             </p>
           </div>
         </li>
@@ -125,9 +146,12 @@ export function AuditTrail({
 }
 
 export function EvidenceGrid({ items }: { items: EvidenceItem[] }) {
+  const { records } = useMessages(demoCommon);
+  const fmt = useFormat();
+
   if (items.length === 0) {
     return (
-      <EmptyState title="No evidence uploaded" />
+      <EmptyState title={records.noEvidence} />
     );
   }
 
@@ -146,11 +170,11 @@ export function EvidenceGrid({ items }: { items: EvidenceItem[] }) {
           />
           <figcaption className="space-y-1 p-4">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-              {item.kind.replace(/_/g, " ")}
+              {records.evidenceKinds[item.kind as keyof typeof records.evidenceKinds] ?? item.kind.replace(/_/g, " ")}
             </p>
             {item.caption && <p className="text-sm text-[var(--ink)]">{item.caption}</p>}
             <p className="text-[11px] text-[var(--ink-muted)]">
-              {item.fileName} · {formatDateTime(item.createdAt)}
+              {item.fileName} · {fmt.dateTime(item.createdAt)}
             </p>
             {item.containsPeople && (
               <p
@@ -159,7 +183,7 @@ export function EvidenceGrid({ items }: { items: EvidenceItem[] }) {
                   "text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]",
                 )}
               >
-                Contains people
+                {records.containsPeople}
               </p>
             )}
           </figcaption>

@@ -8,6 +8,8 @@ import {
   type MilestoneStage,
   type Unit,
 } from "./domain";
+import { INTL_LOCALE, type Locale } from "@/lib/i18n/locale";
+import { labelsFor } from "./domain-labels";
 import { activeQuantity, round } from "./ledger";
 import type {
   Allocation,
@@ -61,30 +63,35 @@ export function categoryLabel(category: MaterialCategory): string {
   return MATERIAL_CATEGORY_LABELS[category] ?? category;
 }
 
-export function formatQuantity(quantity: number, unit: Unit): string {
+export function formatQuantity(quantity: number, unit: Unit, locale: Locale = "en"): string {
   const rounded = round(quantity);
-  const value = Number.isInteger(rounded) ? rounded.toLocaleString("en-GB") : rounded.toString();
-  return `${value} ${UNIT_LABELS[unit]}`;
+  const value =
+    Number.isInteger(rounded) || locale !== "en"
+      ? rounded.toLocaleString(INTL_LOCALE[locale], { maximumFractionDigits: 20 })
+      : rounded.toString();
+  const unitLabel = locale === "en" ? UNIT_LABELS[unit] : labelsFor(locale).UNIT_LABELS[unit];
+  return `${value} ${unitLabel}`;
 }
 
-export function formatNumber(value: number): string {
-  return round(value).toLocaleString("en-GB");
+export function formatNumber(value: number, locale: Locale = "en"): string {
+  return round(value).toLocaleString(INTL_LOCALE[locale]);
 }
 
-export function formatCurrency(value?: number, currency = "SEK"): string {
+export function formatCurrency(value?: number, currency = "SEK", locale: Locale = "en"): string {
   if (value === undefined) {
     return "-";
   }
 
-  return `${Math.round(value).toLocaleString("en-GB")} ${currency}`;
+  return `${Math.round(value).toLocaleString(INTL_LOCALE[locale])} ${currency}`;
 }
 
-export function formatPercent(fraction?: number): string {
+export function formatPercent(fraction?: number, locale: Locale = "en"): string {
   if (fraction === undefined) {
     return "-";
   }
 
-  return `${(fraction * 100).toFixed(1)}%`;
+  const value = (fraction * 100).toFixed(1);
+  return `${locale === "en" ? value : value.replace(".", ",")}%`;
 }
 
 /** Quantity that is still in play: used across the dashboards. */
@@ -207,6 +214,8 @@ export function topCategories(records: Array<{ materialCategory: MaterialCategor
 
   return Object.entries(counts)
     .map(([category, value]) => ({
+      /** Lets screens relabel in the viewer's language. */
+      key: category as MaterialCategory,
       label: categoryLabel(category as MaterialCategory),
       value,
       tone: "accent" as const,

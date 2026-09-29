@@ -3,12 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button, Field, Input, Panel, Select } from "@/components/ui";
-import { DISCREPANCY_RESOLUTIONS, statusLabel, type DiscrepancyResolution } from "../_mock/domain";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { DISCREPANCY_RESOLUTIONS, type DiscrepancyResolution } from "../_mock/domain";
 import type { AllocationDetail } from "../_mock/selectors-admin";
-import { formatQuantity } from "../_mock/selectors-shared";
 import { useDemoStore } from "../_mock/store";
 import { AllocationJourney } from "./allocation-journey";
-import { CirkaBadge, DataRow, NoticeBanner, SectionHeading, formatDate } from "./cirka-ui";
+import { CirkaBadge, DataRow, NoticeBanner, SectionHeading } from "./cirka-ui";
+import { useFormat } from "./use-format";
 import { ThreadTimelinePanel } from "./trace-timeline";
 import { useAction } from "./use-action";
 
@@ -25,12 +29,16 @@ export function AllocationDetailView({
 
   const [resolution, setResolution] = useState<DiscrepancyResolution>("loss_confirmed");
   const [note, setNote] = useState("");
+  const { allocationDetail: t } = useMessages(demoAdmin);
+  const { ui } = useMessages(demoCommon);
+  const fmt = useFormat();
+  const resolutionLabel = (value?: DiscrepancyResolution) => (value ? t.resolutions[value] : undefined);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Button as={Link} href={backHref} variant="ghost" size="sm">
-          ← Back
+          {t.back}
         </Button>
         <CirkaBadge status={allocation.status} />
       </div>
@@ -41,14 +49,14 @@ export function AllocationDetailView({
         action={
           batch ? (
             <Button as={Link} href={`/demo/admin/batches/${batch._id}`} variant="secondary" size="sm">
-              Open batch
+              {t.openBatch}
             </Button>
           ) : undefined
         }
       />
 
       {error && (
-        <NoticeBanner tone="blocking" title="That step was refused">
+        <NoticeBanner tone="blocking" title={ui.stepRefused}>
           {error}
         </NoticeBanner>
       )}
@@ -60,58 +68,58 @@ export function AllocationDetailView({
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel className="p-6">
           <h2 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Quantity
+            {t.quantity}
           </h2>
           <dl>
-            <DataRow label="Allocated" value={formatQuantity(allocation.quantityAllocated, allocation.unit)} />
+            <DataRow label={t.allocated} value={fmt.quantity(allocation.quantityAllocated, allocation.unit)} />
             <DataRow
-              label="Dispatched"
+              label={t.dispatched}
               value={
                 allocation.quantityDispatched !== undefined
-                  ? formatQuantity(allocation.quantityDispatched, allocation.unit)
+                  ? fmt.quantity(allocation.quantityDispatched, allocation.unit)
                   : "-"
               }
-              hint={formatDate(allocation.dispatchedAt)}
+              hint={fmt.date(allocation.dispatchedAt)}
             />
             <DataRow
-              label="Received"
+              label={t.received}
               value={
                 allocation.quantityReceived !== undefined
-                  ? formatQuantity(allocation.quantityReceived, allocation.unit)
+                  ? fmt.quantity(allocation.quantityReceived, allocation.unit)
                   : "-"
               }
-              hint={formatDate(allocation.receivedAt)}
+              hint={fmt.date(allocation.receivedAt)}
             />
             <DataRow
-              label="Discrepancy"
+              label={t.discrepancy}
               value={
                 allocation.quantityDiscrepancy
-                  ? formatQuantity(allocation.quantityDiscrepancy, allocation.unit)
-                  : "None"
+                  ? fmt.quantity(allocation.quantityDiscrepancy, allocation.unit)
+                  : t.none
               }
-              hint={allocation.discrepancyResolution?.replace(/_/g, " ")}
+              hint={resolutionLabel(allocation.discrepancyResolution)}
             />
           </dl>
         </Panel>
 
         <Panel className="p-6">
           <h2 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Route and timing
+            {t.routeAndTiming}
           </h2>
           <dl>
-            <DataRow label="From" value={fromName} hint={fromFacility?.name} />
-            <DataRow label="To" value={toName} hint={toFacility?.name} />
-            <DataRow label="Expected dispatch" value={formatDate(allocation.expectedDispatchDate)} />
-            <DataRow label="Dispatch reference" value={allocation.dispatchReference ?? "-"} />
-            <DataRow label="Expected arrival" value={formatDate(allocation.expectedArrivalDate)} />
+            <DataRow label={t.from} value={fromName} hint={fromFacility?.name} />
+            <DataRow label={t.to} value={toName} hint={toFacility?.name} />
+            <DataRow label={t.expectedDispatch} value={fmt.date(allocation.expectedDispatchDate)} />
+            <DataRow label={t.dispatchReference} value={allocation.dispatchReference ?? "-"} />
+            <DataRow label={t.expectedArrival} value={fmt.date(allocation.expectedArrivalDate)} />
             <DataRow
-              label="Proposed"
-              value={`${formatDate(allocation.createdAt)} · ${detail.proposedByName}`}
+              label={t.proposed}
+              value={`${fmt.date(allocation.createdAt)} · ${detail.proposedByName}`}
             />
             {detail.respondedByName && (
               <DataRow
-                label={allocation.status === "declined" ? "Declined" : "Accepted"}
-                value={`${formatDate(allocation.respondedAt)} · ${detail.respondedByName}`}
+                label={allocation.status === "declined" ? t.declined : t.accepted}
+                value={`${fmt.date(allocation.respondedAt)} · ${detail.respondedByName}`}
                 hint={allocation.responseNote}
               />
             )}
@@ -123,36 +131,32 @@ export function AllocationDetailView({
         <section className="space-y-4 rounded-2xl border border-[#B4531A] bg-[#FBE9DC] p-6">
           <div>
             <p className="text-sm font-semibold text-[#8A3D11]">
-              {formatQuantity(allocation.quantityDiscrepancy ?? 0, allocation.unit)} unexplained
+              {format(t.unexplained, { quantity: fmt.quantity(allocation.quantityDiscrepancy ?? 0, allocation.unit) })}
             </p>
             {allocation.discrepancyReason && (
               <p className="text-sm text-[#8A3D11]">{allocation.discrepancyReason}</p>
             )}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Resolution">
+            <Field label={t.resolution}>
               <Select
                 value={resolution}
                 onChange={(event) => setResolution(event.target.value as DiscrepancyResolution)}
               >
                 {DISCREPANCY_RESOLUTIONS.map((value) => (
                   <option key={value} value={value}>
-                    {`${value.replace(/_/g, " ")}${
-                      value === "loss_confirmed"
-                        ? " → written off"
-                        : value === "count_corrected"
-                          ? " → back to available"
-                          : ""
-                    }`}
+                    {value === "loss_confirmed" || value === "count_corrected"
+                      ? format(t.resolutionEffect[value], { label: t.resolutions[value] })
+                      : t.resolutions[value]}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Note">
+            <Field label={t.note}>
               <Input
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                placeholder="Manufacturer confirmed a damaged bale"
+                placeholder={t.notePlaceholder}
               />
             </Field>
           </div>
@@ -169,14 +173,17 @@ export function AllocationDetailView({
               )
             }
           >
-            Close discrepancy
+            {t.closeDiscrepancy}
           </Button>
         </section>
       )}
 
       {allocation.discrepancyResolvedAt && (
-        <NoticeBanner tone="info" title={`Discrepancy resolved: ${statusLabel(allocation.discrepancyResolution ?? "")}`}>
-          {formatDate(allocation.discrepancyResolvedAt)} · {detail.discrepancyResolvedByName}
+        <NoticeBanner
+          tone="info"
+          title={format(t.resolved, { resolution: resolutionLabel(allocation.discrepancyResolution) ?? "-" })}
+        >
+          {fmt.date(allocation.discrepancyResolvedAt)} · {detail.discrepancyResolvedByName}
         </NoticeBanner>
       )}
 

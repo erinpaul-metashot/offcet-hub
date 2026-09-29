@@ -1,10 +1,15 @@
 "use client";
 
 import { AlertTriangle, Check } from "lucide-react";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import { classNames } from "@/lib/utils";
-import { MILESTONE_LABELS, MILESTONE_STAGES, type MilestoneStage } from "../_mock/domain";
+import { MILESTONE_STAGES, type MilestoneStage } from "../_mock/domain";
+import type { DomainLabels } from "../_mock/domain-labels";
 import type { JourneyRow } from "../_mock/selectors-brand";
-import { formatDate } from "./cirka-ui";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 type StageState = "completed" | "overdue" | "current" | "upcoming";
 
@@ -15,13 +20,14 @@ interface Stage {
   state: StageState;
 }
 
-function buildStages(journey: JourneyRow[]): Stage[] {
+function buildStages(journey: JourneyRow[], labels: DomainLabels): Stage[] {
   const byStage = new Map(journey.map((row) => [row.stage, row]));
   let currentAssigned = false;
 
   return MILESTONE_STAGES.map((stage) => {
     const row = byStage.get(stage);
-    const label = row?.label ?? MILESTONE_LABELS[stage];
+    // The stage key, not the selector's English label, so the stepper follows the viewer's language.
+    const label = labels.MILESTONE_LABELS[stage] ?? row?.label;
 
     if (row?.status === "completed") {
       return { stage, label, row, state: "completed" as const };
@@ -56,6 +62,8 @@ const NODE_CLASS: Record<StageState, string> = {
 function CompactStepper({ stages }: { stages: Stage[] }) {
   const overdue = stages.find((entry) => entry.state === "overdue");
   const current = stages.find((entry) => entry.state === "current");
+  const { journey } = useMessages(demoCommon);
+  const fmt = useFormat();
 
   return (
     <div className="flex items-center gap-3">
@@ -63,7 +71,7 @@ function CompactStepper({ stages }: { stages: Stage[] }) {
         {stages.map((entry, index) => (
           <div key={entry.stage} className="flex items-center">
             <span
-              title={`${entry.label}${entry.row?.actualDate ? ` · ${formatDate(entry.row.actualDate)}` : ""}`}
+              title={`${entry.label}${entry.row?.actualDate ? ` · ${fmt.date(entry.row.actualDate)}` : ""}`}
               className={classNames("h-2.5 w-2.5 shrink-0 rounded-full", DOT_CLASS[entry.state])}
             />
             {index < stages.length - 1 && (
@@ -79,7 +87,7 @@ function CompactStepper({ stages }: { stages: Stage[] }) {
       </div>
       <p className="truncate text-xs text-[var(--ink-muted)]">
         {overdue ? (
-          <span className="font-semibold text-[#8A3D11]">{overdue.label} overdue</span>
+          <span className="font-semibold text-[#8A3D11]">{format(journey.overdueStage, { stage: overdue.label })}</span>
         ) : (
           (current ?? stages[stages.length - 1]).label
         )}
@@ -90,6 +98,9 @@ function CompactStepper({ stages }: { stages: Stage[] }) {
 
 /** Full node-by-node stepper for the project detail page. */
 function FullStepper({ stages }: { stages: Stage[] }) {
+  const { journey } = useMessages(demoCommon);
+  const fmt = useFormat();
+
   return (
     <div className="overflow-x-auto pb-1">
       <div className="flex min-w-[46rem] items-start">
@@ -136,12 +147,12 @@ function FullStepper({ stages }: { stages: Stage[] }) {
             </p>
             <p className="mt-1 text-[11px] text-[var(--ink-muted)]">
               {entry.state === "completed"
-                ? formatDate(entry.row?.actualDate)
+                ? fmt.date(entry.row?.actualDate)
                 : entry.state === "overdue"
-                  ? "Overdue"
+                  ? journey.overdue
                   : entry.row?.plannedDate
-                    ? formatDate(entry.row.plannedDate)
-                    : "Not started"}
+                    ? fmt.date(entry.row.plannedDate)
+                    : journey.notStarted}
             </p>
             {entry.row?.responsible && entry.state !== "upcoming" && (
               <p className="mt-0.5 text-[11px] text-[var(--ink-muted)]">{entry.row.responsible}</p>
@@ -160,6 +171,7 @@ export function ProjectJourneyStepper({
   journey: JourneyRow[];
   compact?: boolean;
 }) {
-  const stages = buildStages(journey);
+  const labels = useLabels();
+  const stages = buildStages(journey, labels);
   return compact ? <CompactStepper stages={stages} /> : <FullStepper stages={stages} />;
 }

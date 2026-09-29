@@ -2,22 +2,28 @@
 
 import Link from "next/link";
 import { EmptyState } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
 import type { ProjectRow } from "../_mock/selectors-admin";
-import { formatQuantity } from "../_mock/selectors-shared";
-import { CirkaBadge, formatDate } from "./cirka-ui";
+import { CirkaBadge } from "./cirka-ui";
 import { ProjectJourneyStepper } from "./project-journey-stepper";
+import { useFormat } from "./use-format";
 
 export function ProjectTable({
   rows,
   hrefPrefix,
-  emptyTitle = "No projects",
+  emptyTitle,
 }: {
   rows: ProjectRow[];
   hrefPrefix: string;
   emptyTitle?: string;
 }) {
+  const { projectTable: t } = useMessages(demoAdmin);
+  const fmt = useFormat();
+
   if (rows.length === 0) {
-    return <EmptyState title={emptyTitle} />;
+    return <EmptyState title={emptyTitle ?? t.empty} />;
   }
 
   return (
@@ -48,10 +54,10 @@ export function ProjectTable({
 
                 <div className="shrink-0 space-y-2 sm:text-right">
                   <p className="text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)]">
-                    {formatQuantity(row.incorporated, row.unit)}
+                    {fmt.quantity(row.incorporated, row.unit)}
                   </p>
                   <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                    into products
+                    {t.intoProducts}
                   </p>
                 </div>
               </div>
@@ -62,12 +68,12 @@ export function ProjectTable({
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  {row.requestCount} request{row.requestCount === 1 ? "" : "s"} ·{" "}
-                  {row.matchCount} match{row.matchCount === 1 ? "" : "es"} ·{" "}
-                  {row.productionCount} production run{row.productionCount === 1 ? "" : "s"}
+                  {format(row.requestCount === 1 ? t.requestsOne : t.requestsMany, { count: row.requestCount })} ·{" "}
+                  {format(row.matchCount === 1 ? t.matchesOne : t.matchesMany, { count: row.matchCount })} ·{" "}
+                  {format(row.productionCount === 1 ? t.runsOne : t.runsMany, { count: row.productionCount })}
                 </p>
                 <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  Target {formatDate(row.project.targetCompletionDate)}
+                  {format(t.target, { date: fmt.date(row.project.targetCompletionDate) })}
                 </p>
               </div>
             </Link>

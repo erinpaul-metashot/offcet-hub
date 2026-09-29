@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 
-function messageFor(error: unknown): string {
+// ponytail: rule-violation messages are the mock backend's English; per-code translation is plan step 2e.
+function messageFor(error: unknown, fallback: string): string {
   if (error instanceof Error) {
     return error.message;
   }
 
-  return "Something went wrong. Try again.";
+  return fallback;
 }
 
 /**
@@ -20,6 +23,7 @@ function messageFor(error: unknown): string {
 export function useAction() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const { ui } = useMessages(demoCommon);
 
   const run = useCallback(async (operation: () => Promise<unknown>) => {
     setError(null);
@@ -29,12 +33,12 @@ export function useAction() {
       await operation();
       return true;
     } catch (caught: unknown) {
-      setError(messageFor(caught));
+      setError(messageFor(caught, ui.somethingWrong));
       return false;
     } finally {
       setPending(false);
     }
-  }, []);
+  }, [ui.somethingWrong]);
 
   const clearError = useCallback(() => {
     setError((prev) => (prev === null ? prev : null));

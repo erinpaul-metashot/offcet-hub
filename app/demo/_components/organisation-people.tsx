@@ -3,14 +3,18 @@
 import { useState } from "react";
 import { Mail, Phone, ShieldCheck } from "lucide-react";
 import { Button, Panel } from "@/components/ui";
-import { ORG_ROLE_LABELS, ROLE_LABELS } from "../_mock/domain";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
 import type { UserInput } from "../_mock/operations/admin";
 import type { OrganisationPerson } from "../_mock/selectors-admin";
 import { useDemoStore } from "../_mock/store";
 import type { Organisation, User } from "../_mock/types";
-import { CirkaBadge, ConfirmDialog, Modal, NoticeBanner, formatDate } from "./cirka-ui";
+import { CirkaBadge, ConfirmDialog, Modal, NoticeBanner } from "./cirka-ui";
 import { PersonForm } from "./person-form";
 import { useAction } from "./use-action";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 /** A short, non-status fact about the person: kept visually below the badge. */
 function Chip({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
@@ -41,6 +45,9 @@ export function OrganisationPeople({
   const rowAction = useAction();
   const form = useAction();
   const removal = useAction();
+  const { orgPeople: t } = useMessages(demoAdmin);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   /** `null` = closed. An entry with no `person` is a new hire. */
   const [editing, setEditing] = useState<{ person?: User } | null>(null);
@@ -87,23 +94,23 @@ export function OrganisationPeople({
     <section className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--line)] pb-2">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-[var(--ink)]">People ({people.length})</h3>
-          {people.length > 0 && ownerCount === 0 && <CirkaBadge status="overdue" label="No owner" />}
+          <h3 className="text-lg font-semibold text-[var(--ink)]">{format(t.title, { count: people.length })}</h3>
+          {people.length > 0 && ownerCount === 0 && <CirkaBadge status="overdue" label={t.noOwner} />}
         </div>
         <Button size="sm" onClick={() => setEditing({})}>
-          Add person
+          {t.addPerson}
         </Button>
       </div>
 
       {rowAction.error && (
-        <NoticeBanner tone="blocking" title="That change was refused">
+        <NoticeBanner tone="blocking" title={t.refused}>
           {rowAction.error}
         </NoticeBanner>
       )}
 
       {people.length === 0 ? (
         <Panel className="p-8 text-center">
-          <p className="text-sm font-semibold text-[var(--ink)]">No people yet</p>
+          <p className="text-sm font-semibold text-[var(--ink)]">{t.empty}</p>
         </Panel>
       ) : (
         <Panel className="overflow-hidden p-0">
@@ -124,15 +131,15 @@ export function OrganisationPeople({
                       <CirkaBadge status={user.status} />
                       {user.orgRole === "owner" && (
                         <Chip icon={<ShieldCheck size={11} />}>
-                          {ORG_ROLE_LABELS[user.orgRole]}
+                          {labels.ORG_ROLE_LABELS[user.orgRole]}
                         </Chip>
                       )}
-                      {isSelf && <Chip>You</Chip>}
-                      {isOnlyOwner && <CirkaBadge status="overdue" label="Only owner" />}
+                      {isSelf && <Chip>{t.you}</Chip>}
+                      {isOnlyOwner && <CirkaBadge status="overdue" label={t.onlyOwner} />}
                     </div>
 
                     <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                      {ROLE_LABELS[user.role]}
+                      {labels.ROLE_LABELS[user.role]}
                     </p>
 
                     <div className="flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-[var(--ink-muted)]">
@@ -149,9 +156,9 @@ export function OrganisationPeople({
                     </div>
 
                     <p className="text-xs text-[var(--ink-muted)]">
-                      Joined {formatDate(user.createdAt)}
-                      {user.lastActiveAt ? ` · last active ${formatDate(user.lastActiveAt)}` : ""}
-                      {reviewerName ? ` · reviewed by ${reviewerName}` : ""}
+                      {format(t.joined, { date: fmt.date(user.createdAt) })}
+                      {user.lastActiveAt ? format(t.lastActive, { date: fmt.date(user.lastActiveAt) }) : ""}
+                      {reviewerName ? format(t.reviewedBy, { name: reviewerName }) : ""}
                     </p>
                   </div>
 
@@ -162,7 +169,7 @@ export function OrganisationPeople({
                       onClick={() => setEditing({ person: user })}
                       disabled={rowAction.pending}
                     >
-                      Edit
+                      {t.edit}
                     </Button>
 
                     {!isCirkaAdmin && (
@@ -172,7 +179,7 @@ export function OrganisationPeople({
                         disabled={rowAction.pending || (isOnlyOwner && !isDisabled)}
                         title={
                           isOnlyOwner && !isDisabled
-                            ? "The organisation would be left without an owner."
+                            ? t.noOwnerLeft
                             : undefined
                         }
                         onClick={() =>
@@ -187,7 +194,7 @@ export function OrganisationPeople({
                           )
                         }
                       >
-                        {isDisabled ? "Enable" : "Disable"}
+                        {isDisabled ? t.enable : t.disable}
                       </Button>
                     )}
 
@@ -199,12 +206,12 @@ export function OrganisationPeople({
                         disabled={rowAction.pending || isOnlyOwner}
                         title={
                           isOnlyOwner
-                            ? "The organisation would be left without an owner."
+                            ? t.noOwnerLeft
                             : undefined
                         }
                         onClick={() => setRemoving(user)}
                       >
-                        Remove
+                        {t.remove}
                       </Button>
                     )}
                   </div>
@@ -217,8 +224,8 @@ export function OrganisationPeople({
 
       {editing && (
         <Modal
-          eyebrow={editing.person ? "Edit person" : undefined}
-          title={editing.person?.name ?? "New person"}
+          eyebrow={editing.person ? t.editEyebrow : undefined}
+          title={editing.person?.name ?? t.newTitle}
           onClose={closeForm}
         >
           <PersonForm
@@ -235,17 +242,13 @@ export function OrganisationPeople({
 
       {removing && (
         <ConfirmDialog
-          title={`Remove ${removing.name}?`}
-          confirmLabel="Remove them"
+          title={format(t.removeTitle, { name: removing.name })}
+          confirmLabel={t.removeConfirm}
           error={removal.error}
           pending={removal.pending}
           onCancel={closeRemoval}
           onConfirm={() => handleRemove(removing)}
-          body={
-            <>
-              Their account closes. Their records stay.
-            </>
-          }
+          body={t.removeBody}
         />
       )}
     </section>

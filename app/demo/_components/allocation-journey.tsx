@@ -4,23 +4,26 @@
 
 import { AlertTriangle, Check, X } from "lucide-react";
 import { classNames } from "@/lib/utils";
+import { statusLabelIn } from "../_mock/domain-labels";
 import type { Allocation } from "../_mock/types";
+import { useLabels } from "./use-labels";
 
 type StepState = "done" | "current" | "warn" | "aborted" | "pending";
 
 interface JourneyStep {
   key: string;
+  /** A `STATUS_LABELS` key, rendered in the viewer's language. */
   label: string;
   state: StepState;
 }
 
 const STAGES: { key: string; label: string }[] = [
-  { key: "proposed", label: "Proposed" },
-  { key: "accepted", label: "Accepted" },
-  { key: "awaiting_dispatch", label: "Awaiting dispatch" },
-  { key: "in_transit", label: "In transit" },
-  { key: "received", label: "Received" },
-  { key: "completed", label: "Completed" },
+  { key: "proposed", label: "proposed" },
+  { key: "accepted", label: "accepted" },
+  { key: "awaiting_dispatch", label: "awaiting_dispatch" },
+  { key: "in_transit", label: "in_transit" },
+  { key: "received", label: "received" },
+  { key: "completed", label: "completed" },
 ];
 
 /** How far the allocation has actually travelled, independent of its current status. */
@@ -38,7 +41,7 @@ export function buildJourneySteps(allocation: Allocation): JourneyStep[] {
   if (allocation.status === "declined") {
     return STAGES.map((stage, index) => {
       if (index === 0) return { ...stage, state: "done" };
-      if (index === 1) return { key: stage.key, label: "Declined", state: "aborted" };
+      if (index === 1) return { key: stage.key, label: "declined", state: "aborted" };
       return { ...stage, state: "pending" };
     });
   }
@@ -46,7 +49,7 @@ export function buildJourneySteps(allocation: Allocation): JourneyStep[] {
   if (allocation.status === "cancelled") {
     const abortedAt = Math.min(reached + 1, STAGES.length - 1);
     return STAGES.map((stage, index) => {
-      if (index === abortedAt) return { key: stage.key, label: "Cancelled", state: "aborted" };
+      if (index === abortedAt) return { key: stage.key, label: "cancelled", state: "aborted" };
       if (index < abortedAt) return { ...stage, state: "done" };
       return { ...stage, state: "pending" };
     });
@@ -55,7 +58,7 @@ export function buildJourneySteps(allocation: Allocation): JourneyStep[] {
   if (allocation.status === "returned") {
     return STAGES.map((stage, index) => {
       if (index <= 4) return { ...stage, state: "done" };
-      return { key: stage.key, label: "Returned", state: "aborted" };
+      return { key: stage.key, label: "returned", state: "aborted" };
     });
   }
 
@@ -96,6 +99,7 @@ function StepIcon({ state }: { state: StepState }) {
 
 export function AllocationJourney({ allocation }: { allocation: Allocation }) {
   const steps = buildJourneySteps(allocation);
+  const labels = useLabels();
 
   return (
     <ol className="flex flex-col gap-0 sm:flex-row sm:items-start sm:gap-0">
@@ -126,7 +130,7 @@ export function AllocationJourney({ allocation }: { allocation: Allocation }) {
               LABEL_STYLES[step.state],
             )}
           >
-            {step.label}
+            {statusLabelIn(labels, step.label)}
           </p>
         </li>
       ))}

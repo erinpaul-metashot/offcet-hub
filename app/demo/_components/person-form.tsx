@@ -2,17 +2,13 @@
 
 import { useState } from "react";
 import { Button, Field, Input, Select } from "@/components/ui";
-import {
-  CIRKA_ROLES,
-  ORG_ROLES,
-  ORG_ROLE_LABELS,
-  ROLE_LABELS,
-  type CirkaRole,
-  type OrgRole,
-} from "../_mock/domain";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
+import { CIRKA_ROLES, ORG_ROLES, type CirkaRole, type OrgRole } from "../_mock/domain";
 import type { UserInput } from "../_mock/operations/admin";
 import type { Id, Organisation, User } from "../_mock/types";
 import { FormSection, NoticeBanner } from "./cirka-ui";
+import { useLabels } from "./use-labels";
 
 /** Every writable column of the `users` table (06_DATA_MODEL §users). */
 interface PersonFormState {
@@ -58,6 +54,8 @@ export function PersonForm({
   onCancel: () => void;
 }) {
   const isEdit = person !== undefined;
+  const { personForm: t } = useMessages(demoAdmin);
+  const labels = useLabels();
   const [form, setForm] = useState<PersonFormState>(() =>
     person
       ? fromUser(person)
@@ -95,28 +93,28 @@ export function PersonForm({
       }}
     >
       {error && (
-        <NoticeBanner tone="blocking" title="That change was refused">
+        <NoticeBanner tone="blocking" title={t.refused}>
           {error}
         </NoticeBanner>
       )}
 
-      <Field label="Name" required>
+      <Field label={t.name} required>
           <Input
             value={form.name}
             onChange={(event) => update("name", event.target.value)}
-            placeholder="Full name"
+            placeholder={t.namePlaceholder}
             autoFocus
           />
         </Field>
 
       <FormSection
-        title="Contact"
-        hint="Protected"
+        title={t.contact}
+        hint={t.protected}
       >
         <Field
-          label="Login email"
+          label={t.email}
           required
-          error={emailLooksWrong ? "That is not a valid email address" : undefined}
+          error={emailLooksWrong ? t.emailError : undefined}
         >
           <Input
             type="email"
@@ -125,7 +123,7 @@ export function PersonForm({
             placeholder="name@company.com"
           />
         </Field>
-        <Field label="Phone">
+        <Field label={t.phone}>
           <Input
             type="tel"
             value={form.phone}
@@ -135,27 +133,27 @@ export function PersonForm({
         </Field>
       </FormSection>
 
-      <FormSection title="Access">
-        <Field label="CIRKA role">
+      <FormSection title={t.access}>
+        <Field label={t.cirkaRole}>
           <Select
             value={form.role}
             onChange={(event) => update("role", event.target.value as CirkaRole)}
           >
             {CIRKA_ROLES.map((role) => (
               <option key={role} value={role}>
-                {ROLE_LABELS[role]}
+                {labels.ROLE_LABELS[role]}
               </option>
             ))}
           </Select>
         </Field>
-        <Field label="Organisation role">
+        <Field label={t.orgRole}>
           <Select
             value={form.orgRole}
             onChange={(event) => update("orgRole", event.target.value as OrgRole)}
           >
             {ORG_ROLES.map((orgRole) => (
               <option key={orgRole} value={orgRole}>
-                {ORG_ROLE_LABELS[orgRole]}
+                {labels.ORG_ROLE_LABELS[orgRole]}
               </option>
             ))}
           </Select>
@@ -164,10 +162,10 @@ export function PersonForm({
 
       <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-5">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+          {t.cancel}
         </Button>
         <Button type="submit" disabled={pending || !canSubmit}>
-          {isEdit ? "Save changes" : "Add person"}
+          {isEdit ? t.save : t.add}
         </Button>
       </div>
     </form>

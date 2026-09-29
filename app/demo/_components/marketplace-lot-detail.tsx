@@ -13,9 +13,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Users } from "lucide-react";
 import { Button, Field, Input, Panel, Select, Textarea } from "@/components/ui";
-import { FORMAT_LABELS, QUALITY_CLASS_LABELS, statusLabel, type CirkaRole } from "../_mock/domain";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import type { CirkaRole } from "../_mock/domain";
 import { getMarketplaceLot } from "../_mock/selectors-marketplace";
-import { categoryLabel, formatQuantity } from "../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../_mock/store";
 import type { Project } from "../_mock/types";
 import {
@@ -24,10 +26,11 @@ import {
   NoticeBanner,
   ProvenanceChip,
   SectionHeading,
-  formatDate,
 } from "./cirka-ui";
 import { MaterialSwatch } from "./material-swatch";
 import { useAction } from "./use-action";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 function toTimestamp(value: string): number | undefined {
   if (!value) {
@@ -58,12 +61,15 @@ export function MarketplaceLotDetail({
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitted, setSubmitted] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const { lot: t, market } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const lot = getMarketplaceLot(store.db, scope, batchId);
 
   if (!lot) {
     return (
-      <NoticeBanner tone="blocking" title="That lot does not exist" />
+      <NoticeBanner tone="blocking" title={t.notFound} />
     );
   }
 
@@ -103,17 +109,20 @@ export function MarketplaceLotDetail({
           size={14}
           className="transition-transform duration-150 ease-[var(--ease-out)] group-hover:-translate-x-0.5"
         />
-        Marketplace
+        {market.title}
       </Link>
 
       <SectionHeading
-        eyebrow={lot.supplierLabel}
+        eyebrow={
+          lot.supplierName ??
+          [labels.ORGANISATION_TYPE_LABELS[lot.supplierType], lot.region].filter(Boolean).join(" · ")
+        }
         title={batch.name}
         action={<CirkaBadge status={batch.status} />}
       />
 
       {lot.blocker && (
-        <NoticeBanner tone="warning" title="This lot is not open to enquiry">
+        <NoticeBanner tone="warning" title={t.notOpen}>
           {lot.blocker}
         </NoticeBanner>
       )}
@@ -131,7 +140,7 @@ export function MarketplaceLotDetail({
             >
               {batch.qualityClass && (
                 <span className="absolute right-4 top-4 rounded-full border border-[var(--line-strong)] bg-[var(--paper)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink)] shadow-sm">
-                  {QUALITY_CLASS_LABELS[batch.qualityClass]}
+                  {labels.QUALITY_CLASS_LABELS[batch.qualityClass]}
                 </span>
               )}
             </MaterialSwatch>
@@ -149,7 +158,7 @@ export function MarketplaceLotDetail({
                         : "border-[var(--line)] opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <img src={url} alt={`Photo ${idx + 1}`} className="h-full w-full object-cover" />
+                    <img src={url} alt={format(t.photo, { n: idx + 1 })} className="h-full w-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -160,10 +169,10 @@ export function MarketplaceLotDetail({
             <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
               <div className="space-y-1.5">
                 <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  Available
+                  {t.available}
                 </span>
                 <p className="text-[42px] font-semibold leading-none tracking-[-0.05em] tabular-nums text-[var(--ink)]">
-                  {formatQuantity(batch.pots.available, batch.unit)}
+                  {fmt.quantity(batch.pots.available, batch.unit)}
                 </p>
               </div>
               <ProvenanceChip dataSource={batch.dataSource} assuranceLevel={batch.assuranceLevel} />
@@ -173,40 +182,43 @@ export function MarketplaceLotDetail({
           <Panel className="space-y-4 p-6">
           <p className="text-sm leading-relaxed text-[var(--ink)]">{batch.description}</p>
           <dl>
-            <DataRow label="Reference" value={batch.reference} />
-            <DataRow label="Category" value={categoryLabel(batch.materialCategory)} />
+            <DataRow label={t.reference} value={batch.reference} />
+            <DataRow
+              label={t.category}
+              value={labels.MATERIAL_CATEGORY_LABELS[batch.materialCategory] ?? batch.materialCategory}
+            />
             {batch.composition && (
               <DataRow
-                label="Composition"
+                label={t.composition}
                 value={batch.composition}
                 hint={
                   batch.compositionConfidence
-                    ? `${statusLabel(batch.compositionConfidence)} by the manufacturer`
+                    ? format(t.confidenceHint, { confidence: t.confidence[batch.compositionConfidence] })
                     : undefined
                 }
               />
             )}
-            {batch.format && <DataRow label="Format" value={FORMAT_LABELS[batch.format]} />}
+            {batch.format && <DataRow label={t.format} value={labels.FORMAT_LABELS[batch.format]} />}
             {batch.qualityClass && (
-              <DataRow label="Grade" value={QUALITY_CLASS_LABELS[batch.qualityClass]} />
+              <DataRow label={t.grade} value={labels.QUALITY_CLASS_LABELS[batch.qualityClass]} />
             )}
-            {batch.colour && <DataRow label="Colour" value={batch.colour} />}
+            {batch.colour && <DataRow label={t.colour} value={batch.colour} />}
             {batch.weightPerUnit && (
-              <DataRow label="Weight per unit" value={`${batch.weightPerUnit} g/m²`} />
+              <DataRow label={t.weightPerUnit} value={`${batch.weightPerUnit} g/m²`} />
             )}
-            <DataRow label="Origin" value={lot.region ?? "Not recorded"} />
-            {lot.facilityName && <DataRow label="Held at" value={lot.facilityName} />}
-            {batch.locationText && <DataRow label="Location" value={batch.locationText} />}
+            <DataRow label={t.origin} value={lot.region ?? t.notRecorded} />
+            {lot.facilityName && <DataRow label={t.heldAt} value={lot.facilityName} />}
+            {batch.locationText && <DataRow label={t.location} value={batch.locationText} />}
             <DataRow
-              label="Available"
+              label={t.available}
               value={
                 batch.availableFrom || batch.availableUntil
-                  ? `${formatDate(batch.availableFrom)} – ${formatDate(batch.availableUntil)}`
-                  : "No stated window"
+                  ? `${fmt.date(batch.availableFrom)} – ${fmt.date(batch.availableUntil)}`
+                  : t.noWindow
               }
             />
-            <DataRow label="Reviewed by CIRKA" value={formatDate(batch.reviewedAt)} />
-            <DataRow label="Listed" value={formatDate(batch.releasedAt)} />
+            <DataRow label={t.reviewedByCirka} value={fmt.date(batch.reviewedAt)} />
+            <DataRow label={t.listed} value={fmt.date(batch.releasedAt)} />
             </dl>
           </Panel>
         </div>
@@ -217,7 +229,7 @@ export function MarketplaceLotDetail({
           <Panel className="space-y-3 p-5">
             <p className="flex items-center gap-2.5 text-sm font-medium text-[var(--ink)]">
               <Users size={15} className="text-[var(--ink-muted)]" />
-              {lot.enquiryCount} open enquir{lot.enquiryCount === 1 ? "y" : "ies"}
+              {format(lot.enquiryCount === 1 ? market.openEnquiryOne : market.openEnquiryMany, { count: lot.enquiryCount })}
             </p>
 
             {lot.allEnquiries && lot.allEnquiries.length > 0 && (
@@ -229,7 +241,7 @@ export function MarketplaceLotDetail({
                       className="group flex items-center justify-between gap-3 text-xs text-[var(--ink-muted)] transition-colors duration-150 ease-[var(--ease-out)] hover:text-[var(--brand-primary)]"
                     >
                       <span className="truncate">
-                        {requesterName} · {formatQuantity(request.quantityNeeded, request.unit)}
+                        {requesterName} · {fmt.quantity(request.quantityNeeded, request.unit)}
                       </span>
                       <CirkaBadge status={request.status} />
                     </Link>
@@ -243,7 +255,7 @@ export function MarketplaceLotDetail({
           {canEnquire && !(lot.blocker && !openEnquiry && !submitted) && (
             <Panel className="space-y-4 p-5">
               {error && (
-                <NoticeBanner tone="blocking" title="The enquiry was not sent">
+                <NoticeBanner tone="blocking" title={t.notSent}>
                   {error}
                 </NoticeBanner>
               )}
@@ -257,20 +269,20 @@ export function MarketplaceLotDetail({
                     <CirkaBadge status={openEnquiry.status} />
                   </div>
                   <p className="text-sm tabular-nums text-[var(--ink-muted)]">
-                    {formatQuantity(openEnquiry.quantityNeeded, openEnquiry.unit)} ·{" "}
-                    {formatDate(openEnquiry.createdAt)}
+                    {fmt.quantity(openEnquiry.quantityNeeded, openEnquiry.unit)} ·{" "}
+                    {fmt.date(openEnquiry.createdAt)}
                   </p>
                 </div>
               ) : submitted ? (
                 <p className="text-sm leading-relaxed text-[var(--ink-muted)]">
-                  Sent
+                  {t.sent}
                 </p>
               ) : lot.blocker ? null : (
                 <form onSubmit={submit} className="space-y-4">
                   <Field
-                    label="Quantity"
+                    label={t.quantity}
                     required
-                    hint={`Up to ${formatQuantity(batch.pots.available, batch.unit)} is available`}
+                    hint={format(t.upTo, { quantity: fmt.quantity(batch.pots.available, batch.unit) })}
                   >
                     <Input
                       type="number"
@@ -282,7 +294,7 @@ export function MarketplaceLotDetail({
                   </Field>
 
                   <Field
-                    label="What you will make"
+                    label={t.intendedUse}
                     required
                   >
                     <Textarea
@@ -292,12 +304,12 @@ export function MarketplaceLotDetail({
                   </Field>
 
                   {projects.length > 0 && (
-                    <Field label="Project">
+                    <Field label={t.project}>
                       <Select
                         value={form.projectId}
                         onChange={(event) => setForm({ ...form, projectId: event.target.value })}
                       >
-                        <option value="">Not part of a project</option>
+                        <option value="">{t.noProject}</option>
                         {projects.map((project) => (
                           <option key={project._id} value={project._id}>
                             {project.title}
@@ -307,7 +319,7 @@ export function MarketplaceLotDetail({
                     </Field>
                   )}
 
-                  <Field label="Needed by">
+                  <Field label={t.neededBy}>
                     <Input
                       type="date"
                       value={form.neededBy}
@@ -315,7 +327,7 @@ export function MarketplaceLotDetail({
                     />
                   </Field>
 
-                  <Field label="Note">
+                  <Field label={t.note}>
                     <Textarea
                       value={form.note}
                       onChange={(event) => setForm({ ...form, note: event.target.value })}
@@ -323,7 +335,7 @@ export function MarketplaceLotDetail({
                   </Field>
 
                   <Button type="submit" disabled={pending} className="w-full">
-                    {pending ? "Sending…" : "Request lot"}
+                    {pending ? t.sending : t.request}
                   </Button>
                 </form>
               )}

@@ -3,9 +3,14 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoMaker } from "@/lib/i18n/messages/demo-maker";
 import type { Match, ResourceRequest } from "../_mock/types";
-import { categoryLabel, formatQuantity, isOverdue } from "../_mock/selectors-shared";
-import { CirkaBadge, DataRow, FlowBar, formatDate } from "./cirka-ui";
+import { isOverdue } from "../_mock/selectors-shared";
+import { CirkaBadge, DataRow, FlowBar } from "./cirka-ui";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 export function RequestDetailDrawer({
   request,
@@ -16,6 +21,10 @@ export function RequestDetailDrawer({
   matches: Match[];
   onClose: () => void;
 }) {
+  const { requestDrawer: t } = useMessages(demoMaker);
+  const labels = useLabels();
+  const fmt = useFormat();
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -64,7 +73,7 @@ export function RequestDetailDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t.close}
             className="shrink-0 rounded-full p-2 text-[var(--ink-muted)] transition-colors duration-200 ease-[var(--ease-out)] hover:bg-[var(--surface)] hover:text-[var(--ink)]"
           >
             <X size={20} />
@@ -74,13 +83,13 @@ export function RequestDetailDrawer({
         <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
           <div className="space-y-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Quantity
+              {t.quantity}
             </p>
             <FlowBar
               segments={[
                 {
                   key: "matched",
-                  label: "Matched",
+                  label: t.matched,
                   value: request.quantityMatched,
                   colourClass: "bg-[var(--brand-secondary)]",
                 },
@@ -89,30 +98,30 @@ export function RequestDetailDrawer({
               unit={request.unit}
             />
             <p className="text-sm text-[var(--ink-muted)]">
-              of {formatQuantity(request.quantityNeeded, request.unit)} needed
+              {format(t.ofNeeded, { quantity: fmt.quantity(request.quantityNeeded, request.unit) })}
             </p>
           </div>
 
           <dl>
-            <DataRow label="Category" value={categoryLabel(request.materialCategory)} />
+            <DataRow label={t.category} value={labels.MATERIAL_CATEGORY_LABELS[request.materialCategory]} />
             {request.intendedProduct && (
-              <DataRow label="Intended product" value={request.intendedProduct} />
+              <DataRow label={t.intendedProduct} value={request.intendedProduct} />
             )}
             {request.productionLocationPreference && (
-              <DataRow label="Production location" value={request.productionLocationPreference} />
+              <DataRow label={t.productionLocation} value={request.productionLocationPreference} />
             )}
             <DataRow
-              label="Needed by"
-              value={formatDate(request.neededBy)}
-              hint={overdue ? "Overdue" : undefined}
+              label={t.neededBy}
+              value={fmt.date(request.neededBy)}
+              hint={overdue ? t.overdue : undefined}
             />
-            <DataRow label="Submitted" value={formatDate(request.submittedAt)} />
+            <DataRow label={t.submitted} value={fmt.date(request.submittedAt)} />
           </dl>
 
           {request.materialDescription && (
             <div className="space-y-2">
               <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                What you need
+                {t.whatYouNeed}
               </p>
               <p className="text-sm leading-relaxed text-[var(--ink-muted)]">
                 {request.materialDescription}
@@ -122,17 +131,17 @@ export function RequestDetailDrawer({
 
           <div className="space-y-3">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Matching
+              {t.matching}
             </p>
             {activeMatches.length === 0 ? (
-              <p className="text-sm text-[var(--ink-muted)]">No matches yet</p>
+              <p className="text-sm text-[var(--ink-muted)]">{t.noMatches}</p>
             ) : (
               <div className="space-y-3">
                 {activeMatches.map((match) => (
                   <div key={match._id} className="rounded-2xl bg-[var(--surface)] p-4">
                     <div className="mb-1 flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-[var(--ink)]">
-                        {formatQuantity(match.quantityProposed, match.unit)} proposed
+                        {format(t.proposed, { quantity: fmt.quantity(match.quantityProposed, match.unit) })}
                       </p>
                       <CirkaBadge status={match.status} />
                     </div>
@@ -148,7 +157,7 @@ export function RequestDetailDrawer({
 
         <div className="flex shrink-0 justify-end border-t border-[var(--line)] px-6 py-5">
           <Button variant="secondary" onClick={onClose}>
-            Close
+            {t.close}
           </Button>
         </div>
       </div>

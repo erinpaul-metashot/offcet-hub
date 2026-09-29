@@ -2,24 +2,24 @@
 
 import { useState } from "react";
 import { Button, Field, Input, Panel, Select, Textarea } from "@/components/ui";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import {
   COMPOSITION_CONFIDENCES,
-  FORMAT_LABELS,
   MATERIAL_CATEGORIES,
   MATERIAL_FORMATS,
   QUALITY_CLASSES,
-  QUALITY_CLASS_LABELS,
   type CirkaRole,
   type CompositionConfidence,
   type MaterialCategory,
   type MaterialFormat,
   type QualityClass,
 } from "../_mock/domain";
-import { categoryLabel } from "../_mock/selectors-shared";
 import { useDemoStore } from "../_mock/store";
 import type { ResourceBatch } from "../_mock/types";
 import { NoticeBanner } from "./cirka-ui";
 import { useAction } from "./use-action";
+import { useLabels } from "./use-labels";
 
 function toDateInput(timestamp?: number): string {
   return timestamp ? new Date(timestamp).toISOString().slice(0, 10) : "";
@@ -51,17 +51,19 @@ export function BatchEditForm({
 }) {
   const store = useDemoStore();
   const { run, error, pending } = useAction();
+  const { batchEdit: t, lot } = useMessages(demoCommon);
+  const labels = useLabels();
 
   const PHOTO_CHOICES = [
-    { url: "/cirka_batch_jersey_offcuts.png", label: "Jersey offcuts" },
-    { url: "/cirka_batch_denim_rolls.png", label: "Denim rolls" },
-    { url: "/cirka_batch_merino_knit.png", label: "Merino knit" },
-    { url: "/cirka_batch_cotton_twill.png", label: "Cotton twill" },
-    { url: "/cirka_batch_flax_linen.png", label: "Flax linen" },
-    { url: "/cirka_batch_fleece_trimmings.png", label: "Fleece trimmings" },
-    { url: "/cirka_batch_melton_wool.png", label: "Melton wool" },
-    { url: "/cirka_pattern_maker.png", label: "Cutting table" },
-    { url: "/cirka_sewing_machine.png", label: "Sewing line" },
+    { url: "/cirka_batch_jersey_offcuts.png", label: t.photoChoices.jersey },
+    { url: "/cirka_batch_denim_rolls.png", label: t.photoChoices.denim },
+    { url: "/cirka_batch_merino_knit.png", label: t.photoChoices.merino },
+    { url: "/cirka_batch_cotton_twill.png", label: t.photoChoices.twill },
+    { url: "/cirka_batch_flax_linen.png", label: t.photoChoices.linen },
+    { url: "/cirka_batch_fleece_trimmings.png", label: t.photoChoices.fleece },
+    { url: "/cirka_batch_melton_wool.png", label: t.photoChoices.melton },
+    { url: "/cirka_pattern_maker.png", label: t.photoChoices.cutting },
+    { url: "/cirka_sewing_machine.png", label: t.photoChoices.sewing },
   ];
 
   const [form, setForm] = useState({
@@ -88,30 +90,30 @@ export function BatchEditForm({
   return (
     <Panel className="space-y-5 p-6">
       <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-        Edit batch details
+        {t.title}
       </h2>
 
-      {error && <NoticeBanner tone="blocking" title="The change was refused">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={t.refused}>{error}</NoticeBanner>}
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Name">
+        <Field label={t.name}>
           <Input value={form.name} onChange={(event) => update("name", event.target.value)} />
         </Field>
-        <Field label="Material category">
+        <Field label={t.materialCategory}>
           <Select
             value={form.materialCategory}
             onChange={(event) => update("materialCategory", event.target.value as MaterialCategory)}
           >
             {MATERIAL_CATEGORIES.map((value) => (
               <option key={value} value={value}>
-                {categoryLabel(value)}
+                {labels.MATERIAL_CATEGORY_LABELS[value]}
               </option>
             ))}
           </Select>
         </Field>
       </div>
 
-      <Field label="Description">
+      <Field label={t.description}>
         <Textarea
           value={form.description}
           onChange={(event) => update("description", event.target.value)}
@@ -119,13 +121,13 @@ export function BatchEditForm({
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="Composition">
+        <Field label={t.composition}>
           <Input
             value={form.composition}
             onChange={(event) => update("composition", event.target.value)}
           />
         </Field>
-        <Field label="Composition confidence">
+        <Field label={t.confidenceLabel}>
           <Select
             value={form.compositionConfidence}
             onChange={(event) =>
@@ -134,31 +136,31 @@ export function BatchEditForm({
           >
             {COMPOSITION_CONFIDENCES.map((value) => (
               <option key={value} value={value}>
-                {value}
+                {lot.confidence[value]}
               </option>
             ))}
           </Select>
         </Field>
-        <Field label="Format">
+        <Field label={t.format}>
           <Select
             value={form.format}
             onChange={(event) => update("format", event.target.value as MaterialFormat)}
           >
             {MATERIAL_FORMATS.map((value) => (
               <option key={value} value={value}>
-                {FORMAT_LABELS[value]}
+                {labels.FORMAT_LABELS[value]}
               </option>
             ))}
           </Select>
         </Field>
-        <Field label="Quality">
+        <Field label={t.quality}>
           <Select
             value={form.qualityClass}
             onChange={(event) => update("qualityClass", event.target.value as QualityClass)}
           >
             {QUALITY_CLASSES.map((value) => (
               <option key={value} value={value}>
-                {QUALITY_CLASS_LABELS[value]}
+                {labels.QUALITY_CLASS_LABELS[value]}
               </option>
             ))}
           </Select>
@@ -166,15 +168,15 @@ export function BatchEditForm({
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="Colour">
+        <Field label={t.colour}>
           <Input value={form.colour} onChange={(event) => update("colour", event.target.value)} />
         </Field>
-        <Field label="Source facility">
+        <Field label={t.sourceFacility}>
           <Select
             value={form.sourceFacilityId}
             onChange={(event) => update("sourceFacilityId", event.target.value)}
           >
-            <option value="">Not recorded</option>
+            <option value="">{t.notRecorded}</option>
             {facilityOptions.map((facility) => (
               <option key={facility._id} value={facility._id}>
                 {facility.name}
@@ -182,14 +184,14 @@ export function BatchEditForm({
             ))}
           </Select>
         </Field>
-        <Field label="Available from">
+        <Field label={t.availableFrom}>
           <Input
             type="date"
             value={form.availableFrom}
             onChange={(event) => update("availableFrom", event.target.value)}
           />
         </Field>
-        <Field label="Available until">
+        <Field label={t.availableUntil}>
           <Input
             type="date"
             value={form.availableUntil}
@@ -199,13 +201,13 @@ export function BatchEditForm({
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Location">
+        <Field label={t.location}>
           <Input
             value={form.locationText}
             onChange={(event) => update("locationText", event.target.value)}
           />
         </Field>
-        <Field label="Estimated value (SEK)" hint="Protected">
+        <Field label={t.estimatedValue} hint={t.protected}>
           <Input
             type="number"
             min="0"
@@ -216,7 +218,7 @@ export function BatchEditForm({
       </div>
 
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-[var(--ink)]">Reference photos</p>
+        <p className="text-sm font-semibold text-[var(--ink)]">{t.photos}</p>
         <div className="grid gap-4 sm:grid-cols-4">
           {PHOTO_CHOICES.map((photo) => {
             const selected = images.includes(photo.url);
@@ -276,10 +278,10 @@ export function BatchEditForm({
             })
           }
         >
-          Save changes
+          {t.save}
         </Button>
         <Button size="sm" variant="ghost" onClick={onDone}>
-          Cancel
+          {t.cancel}
         </Button>
       </div>
     </Panel>

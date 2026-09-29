@@ -21,16 +21,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Panel } from "@/components/ui";
+import { INTL_LOCALE, format, type Locale } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import { classNames } from "@/lib/utils";
-import {
-  ASSURANCE_LABELS,
-  DATA_SOURCE_LABELS,
-  statusLabel,
-  type AssuranceLevel,
-  type DataSource,
-} from "../_mock/domain";
+import type { AssuranceLevel, DataSource } from "../_mock/domain";
 import type { PotSlice } from "../_mock/selectors-batches";
-import { formatQuantity } from "../_mock/selectors-shared";
+import { statusLabelIn } from "../_mock/domain-labels";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 import type { Unit } from "../_mock/domain";
 
 type Tone = "neutral" | "progress" | "positive" | "confirmed" | "warning" | "terminal" | "muted";
@@ -126,6 +125,8 @@ export function GapNote({ children }: { children: React.ReactNode }) {
 }
 
 export function CirkaBadge({ status, label }: { status: string; label?: string }) {
+  const labels = useLabels();
+
   return (
     <span
       className={classNames(
@@ -133,7 +134,7 @@ export function CirkaBadge({ status, label }: { status: string; label?: string }
         TONE_CLASS[STATUS_TONE[status] ?? "neutral"],
       )}
     >
-      {label ?? statusLabel(status)}
+      {label ?? statusLabelIn(labels, status)}
     </span>
   );
 }
@@ -148,9 +149,10 @@ export function ViewModeToggle({
   value: "grid" | "list";
   onChange: (mode: "grid" | "list") => void;
 }) {
+  const { ui } = useMessages(demoCommon);
   const options: { mode: "grid" | "list"; label: string; icon: typeof LayoutGrid }[] = [
-    { mode: "grid", label: "Grid view", icon: LayoutGrid },
-    { mode: "list", label: "List view", icon: List },
+    { mode: "grid", label: ui.gridView, icon: LayoutGrid },
+    { mode: "list", label: ui.listView, icon: List },
   ];
 
   return (
@@ -187,10 +189,12 @@ export function ProvenanceChip({
   dataSource: DataSource;
   assuranceLevel: AssuranceLevel;
 }) {
+  const labels = useLabels();
+
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
       <span className="rounded-full border border-[var(--line)] px-2.5 py-1">
-        {DATA_SOURCE_LABELS[dataSource]}
+        {labels.DATA_SOURCE_LABELS[dataSource]}
       </span>
       <span
         className={classNames(
@@ -200,7 +204,7 @@ export function ProvenanceChip({
             : "border border-[var(--brand-secondary)] bg-[var(--brand-secondary-muted)] text-[var(--brand-secondary)]",
         )}
       >
-        {ASSURANCE_LABELS[assuranceLevel]}
+        {labels.ASSURANCE_LABELS[assuranceLevel]}
       </span>
     </span>
   );
@@ -231,7 +235,7 @@ export function QuantityPotsBar({
   total,
   unit,
   compact = false,
-  totalLabel = "Recorded",
+  totalLabel,
 }: {
   slices: Array<Omit<PotSlice, "bucket" | "terminal"> & { bucket: string }>;
   total: number;
@@ -239,6 +243,12 @@ export function QuantityPotsBar({
   compact?: boolean;
   totalLabel?: string;
 }) {
+  const { ui } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
+  const labelOf = (slice: { bucket: string; label: string }) =>
+    labels.BUCKET_LABELS[slice.bucket as keyof typeof labels.BUCKET_LABELS] ?? slice.label;
+
   return (
     <div className="space-y-3">
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--surface)]">
@@ -247,7 +257,7 @@ export function QuantityPotsBar({
             key={slice.bucket}
             className={classNames(BUCKET_COLOUR[slice.bucket] ?? "bg-[var(--line-strong)]")}
             style={{ width: `${Math.max(slice.share * 100, 1.5)}%` }}
-            title={`${slice.label}: ${formatQuantity(slice.quantity, unit)}`}
+            title={`${labelOf(slice)}: ${fmt.quantity(slice.quantity, unit)}`}
           />
         ))}
       </div>
@@ -263,19 +273,19 @@ export function QuantityPotsBar({
                 )}
               />
               <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                {slice.label}
+                {labelOf(slice)}
               </dt>
               <dd className="text-sm font-medium text-[var(--ink)]">
-                {formatQuantity(slice.quantity, unit)}
+                {fmt.quantity(slice.quantity, unit)}
               </dd>
             </div>
           ))}
           <div className="flex items-center gap-2">
             <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-              {totalLabel}
+              {totalLabel ?? ui.recorded}
             </dt>
             <dd className="text-sm font-semibold text-[var(--ink)]">
-              {formatQuantity(total, unit)}
+              {fmt.quantity(total, unit)}
             </dd>
           </div>
         </dl>
@@ -364,6 +374,11 @@ export function FlowBar({
   max: number;
   unit: Unit;
 }) {
+  const { ui } = useMessages(demoCommon);
+  const fmt = useFormat();
+  const labelOf = (segment: FlowSegment) =>
+    ui.materialFlow[segment.key as keyof typeof ui.materialFlow] ?? segment.label;
+
   return (
     <div className="space-y-2">
       <div className="flex h-2 w-full overflow-hidden rounded-full bg-[var(--surface)]">
@@ -372,7 +387,7 @@ export function FlowBar({
             key={segment.key}
             className={segment.colourClass}
             style={{ width: `${max > 0 ? Math.max((segment.value / max) * 100, 1.5) : 0}%` }}
-            title={`${segment.label}: ${formatQuantity(segment.value, unit)}`}
+            title={`${labelOf(segment)}: ${fmt.quantity(segment.value, unit)}`}
           />
         ))}
       </div>
@@ -381,10 +396,10 @@ export function FlowBar({
           <div key={segment.key} className="flex items-center gap-1.5">
             <span className={classNames("h-2 w-2 shrink-0 rounded-full", segment.colourClass)} />
             <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-muted)]">
-              {segment.label}
+              {labelOf(segment)}
             </span>
             <span className="text-[11px] font-medium text-[var(--ink)]">
-              {formatQuantity(segment.value, unit)}
+              {fmt.quantity(segment.value, unit)}
             </span>
           </div>
         ))}
@@ -440,13 +455,15 @@ const LIFECYCLE_STATUSES = [
  * and render as an exception band instead of a false stage position.
  */
 export function ProductionLadder({ status }: { status: string }) {
+  const { ui } = useMessages(demoCommon);
+  const labels = useLabels();
   const index = LIFECYCLE_STATUSES.indexOf(status as (typeof LIFECYCLE_STATUSES)[number]);
 
   if (index === -1) {
     return (
       <div className="space-y-1.5">
         <div className="h-1.5 w-full rounded-full bg-[#FBE9DC]" />
-        <p className="text-[11px] font-medium text-[#8A3D11]">{statusLabel(status)}</p>
+        <p className="text-[11px] font-medium text-[#8A3D11]">{statusLabelIn(labels, status)}</p>
       </div>
     );
   }
@@ -469,9 +486,9 @@ export function ProductionLadder({ status }: { status: string }) {
         ))}
       </div>
       <p className="text-[11px] font-medium text-[var(--ink-muted)]">
-        <span className="font-semibold text-[var(--ink)]">{statusLabel(status)}</span>
-        {" · stage "}
-        {index + 1} of {LIFECYCLE_STATUSES.length}
+        <span className="font-semibold text-[var(--ink)]">{statusLabelIn(labels, status)}</span>
+        {` · ${ui.stage} `}
+        {format(ui.stageOf, { current: index + 1, total: LIFECYCLE_STATUSES.length })}
       </p>
     </div>
   );
@@ -618,6 +635,8 @@ export function Modal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const { ui } = useMessages(demoCommon);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -665,7 +684,7 @@ export function Modal({
             type="button"
             onClick={onClose}
             className="shrink-0 rounded-full p-2 text-[var(--ink-muted)] transition-colors duration-200 ease-[var(--ease-out)] hover:bg-[var(--surface)] hover:text-[var(--ink)]"
-            aria-label="Close"
+            aria-label={ui.close}
           >
             <X size={20} />
           </button>
@@ -701,11 +720,13 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { ui } = useMessages(demoCommon);
+
   return (
     <Modal eyebrow={eyebrow} title={title} width="md" onClose={onCancel}>
       <div className="space-y-5">
         {error && (
-          <NoticeBanner tone="blocking" title="That change was refused">
+          <NoticeBanner tone="blocking" title={ui.refused}>
             {error}
           </NoticeBanner>
         )}
@@ -718,7 +739,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             className="inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--paper)] px-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--ink)] transition-colors duration-200 ease-[var(--ease-out)] hover:bg-[var(--surface)]"
           >
-            Cancel
+            {ui.cancel}
           </button>
           <button
             type="button"
@@ -765,12 +786,12 @@ export function tileHref<T>(items: readonly T[], listHref: string, itemHref: (it
   return items.length === 1 ? itemHref(items[0]) : listHref;
 }
 
-export function formatDate(timestamp?: number): string {
+export function formatDate(timestamp?: number, locale: Locale = "en"): string {
   if (!timestamp) {
     return "-";
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -778,12 +799,12 @@ export function formatDate(timestamp?: number): string {
   }).format(timestamp);
 }
 
-export function formatDateTime(timestamp?: number): string {
+export function formatDateTime(timestamp?: number, locale: Locale = "en"): string {
   if (!timestamp) {
     return "-";
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
     day: "numeric",
     month: "short",
     hour: "2-digit",

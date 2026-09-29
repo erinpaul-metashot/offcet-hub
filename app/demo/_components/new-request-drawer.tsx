@@ -3,15 +3,16 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoMaker } from "@/lib/i18n/messages/demo-maker";
 import {
   MATERIAL_CATEGORIES,
   UNITS,
-  UNIT_LABELS,
   type MaterialCategory,
   type Unit,
 } from "../_mock/domain";
-import { categoryLabel } from "../_mock/selectors-shared";
 import { NoticeBanner } from "./cirka-ui";
+import { useLabels } from "./use-labels";
 
 export interface NewRequestValues {
   title: string;
@@ -39,6 +40,9 @@ export function NewRequestDrawer({
   onSubmit: (event: React.FormEvent) => void;
   onClose: () => void;
 }) {
+  const { newRequest: t } = useMessages(demoMaker);
+  const labels = useLabels();
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -68,14 +72,14 @@ export function NewRequestDrawer({
         onClick={(event: React.MouseEvent) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="New request"
+        aria-label={t.title}
       >
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--line)] px-6 py-5">
-          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">New request</h2>
+          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{t.title}</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t.close}
             className="shrink-0 rounded-full p-2 text-[var(--ink-muted)] transition-colors duration-200 ease-[var(--ease-out)] hover:bg-[var(--surface)] hover:text-[var(--ink)]"
           >
             <X size={20} />
@@ -84,31 +88,31 @@ export function NewRequestDrawer({
 
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
           {error && (
-            <NoticeBanner tone="blocking" title="The request was not submitted">
+            <NoticeBanner tone="blocking" title={t.notSubmitted}>
               {error}
             </NoticeBanner>
           )}
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Title">
+            <Field label={t.fieldTitle}>
               <Input
                 required
                 value={values.title}
                 onChange={(event) => onChange({ ...values, title: event.target.value })}
-                placeholder="Linen for a small shirting run"
+                placeholder={t.titlePlaceholder}
               />
             </Field>
-            <Field label="Intended product">
+            <Field label={t.intendedProduct}>
               <Input
                 value={values.intendedProduct}
                 onChange={(event) => onChange({ ...values, intendedProduct: event.target.value })}
-                placeholder="Overshirts"
+                placeholder={t.intendedProductPlaceholder}
               />
             </Field>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Material category">
+            <Field label={t.materialCategory}>
               <Select
                 value={values.materialCategory}
                 onChange={(event) =>
@@ -117,19 +121,19 @@ export function NewRequestDrawer({
               >
                 {MATERIAL_CATEGORIES.map((value) => (
                   <option key={value} value={value}>
-                    {categoryLabel(value)}
+                    {labels.MATERIAL_CATEGORY_LABELS[value]}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Needed by">
+            <Field label={t.neededBy}>
               <Input
                 type="date"
                 value={values.neededBy}
                 onChange={(event) => onChange({ ...values, neededBy: event.target.value })}
               />
             </Field>
-            <Field label="Quantity needed">
+            <Field label={t.quantityNeeded}>
               <Input
                 required
                 type="number"
@@ -139,21 +143,21 @@ export function NewRequestDrawer({
                 onChange={(event) => onChange({ ...values, quantityNeeded: event.target.value })}
               />
             </Field>
-            <Field label="Unit">
+            <Field label={t.unit}>
               <Select
                 value={values.unit}
                 onChange={(event) => onChange({ ...values, unit: event.target.value as Unit })}
               >
                 {UNITS.map((value) => (
                   <option key={value} value={value}>
-                    {UNIT_LABELS[value]}
+                    {labels.UNIT_LABELS[value]}
                   </option>
                 ))}
               </Select>
             </Field>
           </div>
 
-          <Field label="Production location preference">
+          <Field label={t.locationPreference}>
             <Input
               value={values.productionLocationPreference}
               onChange={(event) =>
@@ -163,21 +167,21 @@ export function NewRequestDrawer({
             />
           </Field>
 
-          <Field label="What you need">
+          <Field label={t.whatYouNeed}>
             <Textarea
               value={values.materialDescription}
               onChange={(event) => onChange({ ...values, materialDescription: event.target.value })}
-              placeholder="Shirting weight, natural or undyed, minimum 1.5 m usable lengths."
+              placeholder={t.whatYouNeedPlaceholder}
             />
           </Field>
         </div>
 
         <div className="flex shrink-0 justify-end gap-3 border-t border-[var(--line)] px-6 py-5">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
+            {t.cancel}
           </Button>
           <Button type="submit" disabled={pending}>
-            Submit request
+            {t.submit}
           </Button>
         </div>
       </form>

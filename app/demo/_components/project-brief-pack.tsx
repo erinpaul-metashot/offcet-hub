@@ -9,17 +9,15 @@
 import { useState } from "react";
 import { FileText } from "lucide-react";
 import { Button, EmptyState, Field, Input } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import type { EvidenceItem, Id } from "../_mock/types";
 import type { ProjectReferenceInput } from "../_mock/operations/demand";
 import { useDemoStore } from "../_mock/store";
-import { NoticeBanner, formatDate } from "./cirka-ui";
+import { NoticeBanner } from "./cirka-ui";
 import { useAction } from "./use-action";
-
-export const BRIEF_KIND_LABELS: Record<string, string> = {
-  design_reference: "Reference",
-  technical_drawing: "Drawing",
-  document: "Spec",
-};
+import { useFormat } from "./use-format";
 
 function fileSize(bytes: number): string {
   return bytes >= 1_000_000
@@ -28,9 +26,11 @@ function fileSize(bytes: number): string {
 }
 
 function KindTag({ kind }: { kind: string }) {
+  const { briefPack } = useMessages(demoCommon);
+
   return (
     <span className="inline-flex shrink-0 rounded-full bg-[var(--brand-primary-muted)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--brand-primary)]">
-      {BRIEF_KIND_LABELS[kind] ?? kind.replace(/_/g, " ")}
+      {briefPack.kinds[kind as keyof typeof briefPack.kinds] ?? kind.replace(/_/g, " ")}
     </span>
   );
 }
@@ -42,21 +42,18 @@ function KindTag({ kind }: { kind: string }) {
 const BRIEF_UPLOADS = [
   {
     kind: "design_reference" as const,
-    label: "Reference image",
     fileUrl: "/cirka_batch_cotton_twill.png",
     fileName: "design-reference.png",
     mimeType: "image/png",
   },
   {
     kind: "technical_drawing" as const,
-    label: "Drawing",
     fileUrl: "/cirka_pattern_maker.png",
     fileName: "construction-drawing.png",
     mimeType: "image/png",
   },
   {
     kind: "document" as const,
-    label: "Spec document",
     fileUrl: "",
     fileName: "specification.pdf",
     mimeType: "application/pdf",
@@ -78,14 +75,15 @@ export function BriefResourcePicker({
   pending?: boolean;
 }) {
   const [caption, setCaption] = useState("");
+  const { briefPack } = useMessages(demoCommon);
 
   return (
     <div className="space-y-3">
-      <Field label="Note for makers">
+      <Field label={briefPack.noteForMakers}>
         <Input
           value={caption}
           onChange={(event) => setCaption(event.target.value)}
-          placeholder="Nest the side panels across the shade break, not around it."
+          placeholder={briefPack.notePlaceholder}
         />
       </Field>
 
@@ -111,7 +109,7 @@ export function BriefResourcePicker({
               }
             }}
           >
-            Attach {upload.label.toLowerCase()}
+            {briefPack.attach[upload.kind]}
           </Button>
         ))}
       </div>
@@ -123,6 +121,7 @@ export function BriefResourcePicker({
 export function AddBriefResource({ projectId }: { projectId: Id }) {
   const store = useDemoStore();
   const { run, error, pending } = useAction();
+  const { briefPack } = useMessages(demoCommon);
 
   return (
     <div className="space-y-3">
@@ -132,7 +131,7 @@ export function AddBriefResource({ projectId }: { projectId: Id }) {
       />
 
       {error && (
-        <NoticeBanner tone="blocking" title="That resource was refused">
+        <NoticeBanner tone="blocking" title={briefPack.refused}>
           {error}
         </NoticeBanner>
       )}
@@ -148,6 +147,8 @@ export function BriefResourceDraftList({
   drafts: BriefResourceDraft[];
   onRemove: (index: number) => void;
 }) {
+  const { briefPack } = useMessages(demoCommon);
+
   if (drafts.length === 0) {
     return null;
   }
@@ -175,7 +176,7 @@ export function BriefResourceDraftList({
             onClick={() => onRemove(index)}
             className="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] transition-colors duration-200 ease-[var(--ease-out)] hover:text-[var(--brand-primary)]"
           >
-            Remove
+            {briefPack.remove}
           </button>
         </li>
       ))}
@@ -184,8 +185,11 @@ export function BriefResourceDraftList({
 }
 
 export function ProjectBriefPack({ items }: { items: EvidenceItem[] }) {
+  const { briefPack } = useMessages(demoCommon);
+  const fmt = useFormat();
+
   if (items.length === 0) {
-    return <EmptyState title="No files yet" />;
+    return <EmptyState title={briefPack.noFiles} />;
   }
 
   const visuals = items.filter((item) => item.mimeType.startsWith("image/"));
@@ -217,7 +221,7 @@ export function ProjectBriefPack({ items }: { items: EvidenceItem[] }) {
                   <p className="text-sm leading-relaxed text-[var(--ink)]">{item.caption}</p>
                 )}
                 <p className="text-[11px] text-[var(--ink-muted)]">
-                  Added {formatDate(item.createdAt)} · {fileSize(item.sizeBytes)}
+                  {format(briefPack.added, { date: fmt.date(item.createdAt), size: fileSize(item.sizeBytes) })}
                 </p>
               </figcaption>
             </figure>
@@ -242,7 +246,7 @@ export function ProjectBriefPack({ items }: { items: EvidenceItem[] }) {
                   <p className="text-xs leading-relaxed text-[var(--ink-muted)]">{item.caption}</p>
                 )}
                 <p className="text-[11px] text-[var(--ink-muted)]">
-                  Added {formatDate(item.createdAt)} · {fileSize(item.sizeBytes)}
+                  {format(briefPack.added, { date: fmt.date(item.createdAt), size: fileSize(item.sizeBytes) })}
                 </p>
               </div>
             </div>

@@ -4,19 +4,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { Button, Field, Input, Panel, Select, Textarea } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import {
-  ASSURANCE_LABELS,
   ASSURANCE_LEVELS,
   BATCH_EXCEPTIONS,
-  statusLabel,
   type AssuranceLevel,
   type BatchException,
   type CirkaRole,
 } from "../_mock/domain";
 import { isListedLot } from "../_mock/operations/marketplace";
 import type { BatchDetail } from "../_mock/selectors-batches";
+import { statusLabelIn } from "../_mock/domain-labels";
 import { enquiriesForBatch } from "../_mock/selectors-marketplace";
-import { formatQuantity } from "../_mock/selectors-shared";
 import { useDemoStore } from "../_mock/store";
 import { BatchEditForm } from "./batch-edit-form";
 import { BatchOverview } from "./batch-overview";
@@ -25,11 +26,12 @@ import {
   LinkRow,
   NoticeBanner,
   SectionHeading,
-  formatDate,
 } from "./cirka-ui";
 import { AuditTrail, EvidenceGrid, MovementTable } from "./records";
 import { ThreadTimelinePanel } from "./trace-timeline";
 import { useAction } from "./use-action";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 import { DiscrepancyAnalysisPanel } from "./discrepancy-analysis";
 
 type BatchTab = "overview" | "activity" | "discrepancies" | "admin";
@@ -46,6 +48,9 @@ export function BatchDetailView({
   const store = useDemoStore();
   const { run, error, pending } = useAction();
   const { batch } = detail;
+  const { batchDetail: t, ui } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const [activeTab, setActiveTab] = useState<BatchTab>("overview");
   const [ledgerSubView, setLedgerSubView] = useState<"journey" | "movements" | "audit">("journey");
@@ -64,7 +69,7 @@ export function BatchDetailView({
     note: batch.exceptionNote ?? "",
   });
   const actorName = (userId?: string) =>
-    store.db.users.find((user) => user._id === userId)?.name ?? "System";
+    store.db.users.find((user) => user._id === userId)?.name ?? t.system;
 
   const isOwner = role === "manufacturer";
   const isAdmin = role === "admin";
@@ -80,24 +85,24 @@ export function BatchDetailView({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Button as={Link} href={backHref} variant="ghost" size="sm">
-          ← Back
+          {t.back}
         </Button>
         <CirkaBadge status={batch.status} />
         {!batch.releasedAt && (
           <span
             className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]"
-            title={`Only ${detail.ownerName} can see it until it is released`}
+            title={format(t.privateHint, { owner: detail.ownerName })}
           >
-            <Lock size={12} /> Private
+            <Lock size={12} /> {t.private}
           </span>
         )}
         {/* Listed is derived, never stored: released, reviewed, clean, and with
             quantity left. Enquiries are demand: none of them holds anything. */}
         {isListedLot(batch) && (
           <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--brand-secondary)]">
-            Listed · {formatQuantity(batch.pots.available, batch.unit)} open
+            {format(t.listed, { quantity: fmt.quantity(batch.pots.available, batch.unit) })}
             {enquiries.length > 0 &&
-              ` · ${enquiries.length} enquir${enquiries.length === 1 ? "y" : "ies"}`}
+              format(enquiries.length === 1 ? t.enquiryOne : t.enquiryMany, { count: enquiries.length })}
           </span>
         )}
       </div>
@@ -113,7 +118,7 @@ export function BatchDetailView({
                 variant="secondary"
                 onClick={() => setEditing((current) => !current)}
               >
-                {isEditing ? "Close editor" : "Edit details"}
+                {isEditing ? t.closeEditor : t.editDetails}
               </Button>
               {isOwner && !batch.releasedAt && (
                 <Button
@@ -123,7 +128,7 @@ export function BatchDetailView({
                     run(() => store.releaseBatchForMatching(role, { batchId: batch._id }))
                   }
                 >
-                  Release for matching
+                  {t.release}
                 </Button>
               )}
             </div>
@@ -131,10 +136,10 @@ export function BatchDetailView({
         }
       />
 
-      {error && <NoticeBanner tone="blocking" title="That change was refused">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={ui.refused}>{error}</NoticeBanner>}
 
       {batch.exceptionStatus && (
-        <NoticeBanner tone="warning" title={statusLabel(batch.exceptionStatus)}>
+        <NoticeBanner tone="warning" title={statusLabelIn(labels, batch.exceptionStatus)}>
           {batch.exceptionNote}
         </NoticeBanner>
       )}
@@ -160,7 +165,7 @@ export function BatchDetailView({
               : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
           }`}
         >
-          Overview
+          {t.tabOverview}
         </button>
         <button
           onClick={() => setActiveTab("activity")}
@@ -170,7 +175,7 @@ export function BatchDetailView({
               : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
           }`}
         >
-          Activity & Ledger ({detail.movements.length})
+          {format(t.tabActivity, { count: detail.movements.length })}
         </button>
         {detail.allocations.some(
           (entry) => entry.allocation.status === "discrepancy" || Boolean(entry.allocation.quantityDiscrepancy),
@@ -183,7 +188,7 @@ export function BatchDetailView({
                 : "text-[var(--ink-muted)] hover:text-[#FF5C00]"
             }`}
           >
-            <span>Discrepancies</span>
+            <span>{t.tabDiscrepancies}</span>
             <span className="rounded-full bg-[#FF5C00] px-2 py-0.5 text-[10px] font-extrabold text-white">
               {
                 detail.allocations.filter(
@@ -202,7 +207,7 @@ export function BatchDetailView({
                 : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
             }`}
           >
-            Manage
+            {t.tabManage}
           </button>
         )}
       </div>
@@ -230,7 +235,7 @@ export function BatchDetailView({
                         : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
                     }`}
                   >
-                    Timeline
+                    {t.timeline}
                   </button>
                   <button
                     type="button"
@@ -241,7 +246,7 @@ export function BatchDetailView({
                         : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
                     }`}
                   >
-                    Movements ({detail.movements.length})
+                    {format(t.movements, { count: detail.movements.length })}
                   </button>
                   <button
                     type="button"
@@ -252,7 +257,7 @@ export function BatchDetailView({
                         : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
                     }`}
                   >
-                    Audit Log ({detail.audit.length})
+                    {format(t.auditLog, { count: detail.audit.length })}
                   </button>
                 </div>
 
@@ -264,8 +269,8 @@ export function BatchDetailView({
                     setIsLedgerExpanded((prev) => !prev);
                   }}
                   className="flex items-center justify-center p-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-white transition-colors"
-                  aria-label={isLedgerExpanded ? "Collapse ledger" : "Expand ledger"}
-                  title={isLedgerExpanded ? "Collapse ledger" : "Expand ledger"}
+                  aria-label={isLedgerExpanded ? t.collapseLedger : t.expandLedger}
+                  title={isLedgerExpanded ? t.collapseLedger : t.expandLedger}
                 >
                   {isLedgerExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                 </button>
@@ -310,7 +315,7 @@ export function BatchDetailView({
               >
                 <div>
                   <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                    Linked records
+                    {t.linkedRecords}
                   </h2>
                 </div>
 
@@ -321,8 +326,8 @@ export function BatchDetailView({
                     setIsConnectedOperationsExpanded((prev) => !prev);
                   }}
                   className="flex items-center justify-center p-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-white transition-colors"
-                  aria-label={isConnectedOperationsExpanded ? "Collapse connected operations" : "Expand connected operations"}
-                  title={isConnectedOperationsExpanded ? "Collapse connected operations" : "Expand connected operations"}
+                  aria-label={isConnectedOperationsExpanded ? t.collapseLinked : t.expandLinked}
+                  title={isConnectedOperationsExpanded ? t.collapseLinked : t.expandLinked}
                 >
                   {isConnectedOperationsExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                 </button>
@@ -337,7 +342,7 @@ export function BatchDetailView({
                         <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)]/30 overflow-hidden">
                           <div className="border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3">
                             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              Matching Proposals ({detail.matches.length})
+                              {format(t.matchingProposals, { count: detail.matches.length })}
                             </h3>
                           </div>
                           <div className="divide-y divide-[var(--line)] bg-white">
@@ -345,14 +350,16 @@ export function BatchDetailView({
                               <div key={match._id} className="space-y-2 p-4">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                   <p className="font-medium text-[var(--ink)] text-sm">
-                                    {formatQuantity(match.quantityProposed, match.unit)} for{" "}
-                                    {request?.reference ?? "a request"}
+                                    {format(t.matchFor, {
+                                      quantity: fmt.quantity(match.quantityProposed, match.unit),
+                                      request: request?.reference ?? t.aRequest,
+                                    })}
                                   </p>
                                   <CirkaBadge status={match.status} />
                                 </div>
                                 <p className="text-xs leading-relaxed text-[var(--ink-muted)]">{match.rationale}</p>
                                 <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                                  Proposed {formatDate(match.proposedAt)} by {actorName(match.proposedByUserId)}
+                                  {format(t.proposedBy, { date: fmt.date(match.proposedAt), actor: actorName(match.proposedByUserId) })}
                                 </p>
                               </div>
                             ))}
@@ -364,7 +371,7 @@ export function BatchDetailView({
                         <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)]/30 overflow-hidden">
                           <div className="border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3">
                             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              Allocations ({detail.allocations.length})
+                              {format(t.allocations, { count: detail.allocations.length })}
                             </h3>
                           </div>
                           <div className="divide-y divide-[var(--line)] bg-white">
@@ -374,9 +381,9 @@ export function BatchDetailView({
                                 href={isAdmin ? "/demo/admin/allocations" : "/demo/manufacturer/dispatch"}
                                 title={`${allocation.reference} · ${fromName} → ${toName}`}
                                 tags={[
-                                  { label: "Allocated", value: formatQuantity(allocation.quantityAllocated, allocation.unit) },
+                                  { label: t.allocated, value: fmt.quantity(allocation.quantityAllocated, allocation.unit) },
                                   ...(allocation.quantityReceived !== undefined
-                                    ? [{ label: "Received", value: formatQuantity(allocation.quantityReceived, allocation.unit) }]
+                                    ? [{ label: t.received, value: fmt.quantity(allocation.quantityReceived, allocation.unit) }]
                                     : []),
                                 ]}
                                 right={<CirkaBadge status={allocation.status} />}
@@ -393,7 +400,7 @@ export function BatchDetailView({
                         <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)]/30 overflow-hidden">
                           <div className="border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3">
                             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              Production ({detail.production.length})
+                              {format(t.production, { count: detail.production.length })}
                             </h3>
                           </div>
                           <div className="divide-y divide-[var(--line)] bg-white">
@@ -407,8 +414,8 @@ export function BatchDetailView({
                                 }
                                 title={`${production.reference} · ${production.productName}`}
                                 tags={[
-                                  { label: "Units", value: String(production.actualQuantity ?? production.plannedQuantity) },
-                                  { label: "Used", value: production.qtyUsed ? formatQuantity(production.qtyUsed, production.unit) : "Pending" },
+                                  { label: t.units, value: String(production.actualQuantity ?? production.plannedQuantity) },
+                                  { label: t.used, value: production.qtyUsed ? fmt.quantity(production.qtyUsed, production.unit) : t.pending },
                                 ]}
                                 right={<CirkaBadge status={production.status} />}
                               />
@@ -421,7 +428,7 @@ export function BatchDetailView({
                         <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)]/30 overflow-hidden">
                           <div className="border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3">
                             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              Integration Transfers ({detail.transfers.length})
+                              {format(t.transfers, { count: detail.transfers.length })}
                             </h3>
                           </div>
                           <div className="divide-y divide-[var(--line)] bg-white">
@@ -429,7 +436,7 @@ export function BatchDetailView({
                               <div key={transfer._id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                                 <div>
                                   <p className="text-xs font-medium text-[var(--ink)]">
-                                    {transfer.direction === "inbound" ? "From" : "To"} {transfer.externalSystemName}
+                                    {format(transfer.direction === "inbound" ? t.from : t.to, { system: transfer.externalSystemName })}
                                   </p>
                                   <p className="text-[11px] text-[var(--ink-muted)]">
                                     {transfer.errorMessage ?? transfer.payloadSummary}
@@ -457,7 +464,7 @@ export function BatchDetailView({
               >
                 <div>
                   <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                    Evidence ({detail.evidence.length})
+                    {format(t.evidence, { count: detail.evidence.length })}
                   </h2>
                 </div>
 
@@ -468,8 +475,8 @@ export function BatchDetailView({
                     setIsEvidenceExpanded((prev) => !prev);
                   }}
                   className="flex items-center justify-center p-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-white transition-colors"
-                  aria-label={isEvidenceExpanded ? "Collapse evidence" : "Expand evidence"}
-                  title={isEvidenceExpanded ? "Collapse evidence" : "Expand evidence"}
+                  aria-label={isEvidenceExpanded ? t.collapseEvidence : t.expandEvidence}
+                  title={isEvidenceExpanded ? t.collapseEvidence : t.expandEvidence}
                 >
                   {isEvidenceExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                 </button>
@@ -509,9 +516,9 @@ export function BatchDetailView({
             {isAdmin && (
               <Panel className="space-y-4 p-6">
                 <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                  CIRKA review & assurance
+                  {t.reviewTitle}
                 </h2>
-                <Field label="Assurance level">
+                <Field label={t.assuranceLevel}>
                   <Select
                     value={review.assuranceLevel}
                     onChange={(event) =>
@@ -523,12 +530,12 @@ export function BatchDetailView({
                   >
                     {ASSURANCE_LEVELS.map((value) => (
                       <option key={value} value={value}>
-                        {ASSURANCE_LABELS[value]}
+                        {labels.ASSURANCE_LABELS[value]}
                       </option>
                     ))}
                   </Select>
                 </Field>
-                <Field label="Review notes">
+                <Field label={t.reviewNotes}>
                   <Textarea
                     value={review.notes}
                     onChange={(event) =>
@@ -549,7 +556,7 @@ export function BatchDetailView({
                     )
                   }
                 >
-                  Save review
+                  {t.saveReview}
                 </Button>
               </Panel>
             )}
@@ -559,12 +566,12 @@ export function BatchDetailView({
             {isAdmin && (
               <Panel className="space-y-4 p-6">
                 <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                  Send to a custodian
+                  {t.sendToCustodian}
                 </h2>
                 <p className="text-sm text-[var(--ink-muted)]">
-                  {formatQuantity(batch.pots.available, batch.unit)} unallocated
+                  {format(t.unallocated, { quantity: fmt.quantity(batch.pots.available, batch.unit) })}
                 </p>
-                <Field label="Custodian">
+                <Field label={t.custodian}>
                   <Select
                     value={placement.custodianOrgId}
                     onChange={(event) =>
@@ -574,7 +581,7 @@ export function BatchDetailView({
                       }))
                     }
                   >
-                    <option value="">Choose a custodian</option>
+                    <option value="">{t.chooseCustodian}</option>
                     {custodians.map((org) => (
                       <option key={org._id} value={org._id}>
                         {org.name}
@@ -583,7 +590,7 @@ export function BatchDetailView({
                   </Select>
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label={`Quantity (${batch.unit})`}>
+                  <Field label={format(t.quantityUnit, { unit: labels.UNIT_LABELS[batch.unit] })}>
                     <Input
                       type="number"
                       min="0"
@@ -594,19 +601,19 @@ export function BatchDetailView({
                       }
                     />
                   </Field>
-                  <Field label="Note to the custodian">
+                  <Field label={t.noteToCustodian}>
                     <Input
                       value={placement.notes}
                       onChange={(event) =>
                         setPlacement((current) => ({ ...current, notes: event.target.value }))
                       }
-                      placeholder="Hold for the Nordic spring line"
+                      placeholder={t.notePlaceholder}
                     />
                   </Field>
                 </div>
                 <Button
                   size="sm"
-                  title={batch.reviewedAt ? undefined : "Review this batch first"}
+                  title={batch.reviewedAt ? undefined : t.reviewFirst}
                   disabled={
                     pending ||
                     !batch.reviewedAt ||
@@ -625,17 +632,17 @@ export function BatchDetailView({
                     })
                   }
                 >
-                  Propose allocation
+                  {t.proposeAllocation}
                 </Button>
               </Panel>
             )}
 
             <Panel className="space-y-4 p-6">
               <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                Write off
+                {t.writeOff}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={`Quantity (${batch.unit})`}>
+                <Field label={format(t.quantityUnit, { unit: labels.UNIT_LABELS[batch.unit] })}>
                   <Input
                     type="number"
                     min="0"
@@ -646,13 +653,13 @@ export function BatchDetailView({
                     }
                   />
                 </Field>
-                <Field label="Reason">
+                <Field label={t.reason}>
                   <Input
                     value={writeOff.reason}
                     onChange={(event) =>
                       setWriteOff((current) => ({ ...current, reason: event.target.value }))
                     }
-                    placeholder="Water damage in storage"
+                    placeholder={t.reasonPlaceholder}
                   />
                 </Field>
               </div>
@@ -671,11 +678,11 @@ export function BatchDetailView({
                   })
                 }
               >
-                Write off
+                {t.writeOff}
               </Button>
 
               <div className="space-y-4 border-t border-[var(--line)] pt-4">
-                <Field label="Exception status">
+                <Field label={t.exceptionStatus}>
                   <Select
                     value={exception.status}
                     onChange={(event) =>
@@ -685,15 +692,15 @@ export function BatchDetailView({
                       }))
                     }
                   >
-                    <option value="">No exception</option>
+                    <option value="">{t.noException}</option>
                     {BATCH_EXCEPTIONS.map((value) => (
                       <option key={value} value={value}>
-                        {statusLabel(value)}
+                        {statusLabelIn(labels, value)}
                       </option>
                     ))}
                   </Select>
                 </Field>
-                <Field label="Note">
+                <Field label={t.note}>
                   <Input
                     value={exception.note}
                     onChange={(event) =>
@@ -715,7 +722,7 @@ export function BatchDetailView({
                     )
                   }
                 >
-                  Update exception
+                  {t.updateException}
                 </Button>
               </div>
             </Panel>

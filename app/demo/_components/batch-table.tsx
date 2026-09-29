@@ -3,16 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import type { BatchRow } from "../_mock/selectors-batches";
-import { categoryLabel, formatQuantity } from "../_mock/selectors-shared";
-import { CirkaBadge, ProvenanceChip, QuantityPotsBar, ViewModeToggle, formatDate } from "./cirka-ui";
+import { CirkaBadge, ProvenanceChip, QuantityPotsBar, ViewModeToggle } from "./cirka-ui";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 import { classNames } from "@/lib/utils";
 
 export function BatchTable({
   rows,
   hrefPrefix,
   showOwner = false,
-  emptyTitle = "No resource batches",
+  emptyTitle,
 }: {
   rows: BatchRow[];
   hrefPrefix: string;
@@ -20,9 +24,12 @@ export function BatchTable({
   emptyTitle?: string;
 }) {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const { batchTable: t } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   if (rows.length === 0) {
-    return <EmptyState title={emptyTitle} />;
+    return <EmptyState title={emptyTitle ?? t.empty} />;
   }
 
   return (
@@ -30,7 +37,7 @@ export function BatchTable({
       {/* Header bar with count and view mode toggle */}
       <div className="flex items-center justify-between px-1 text-xs text-[var(--ink-muted)]">
         <span className="font-semibold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-          {rows.length} {rows.length === 1 ? "Batch" : "Batches"}
+          {format(rows.length === 1 ? t.countOne : t.countMany, { count: rows.length })}
         </span>
         <ViewModeToggle value={viewMode} onChange={setViewMode} />
       </div>
@@ -70,13 +77,13 @@ export function BatchTable({
                     {/* Quantity Display - Locked to top right */}
                     <div className="flex items-center gap-1.5 shrink-0 rounded-lg bg-[var(--surface)] px-2.5 py-1 border border-[var(--line)] text-xs self-start">
                       <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--brand-primary)]">
-                        Available:
+                        {t.available}
                       </span>
                       <span className="font-bold text-[var(--ink)] tabular-nums">
-                        {formatQuantity(row.batch.pots.available, row.batch.unit)}
+                        {fmt.quantity(row.batch.pots.available, row.batch.unit)}
                       </span>
                       <span className="text-[11px] font-medium text-[var(--ink-muted)] tabular-nums">
-                        / {formatQuantity(row.batch.quantityOriginal, row.batch.unit)}
+                        / {fmt.quantity(row.batch.quantityOriginal, row.batch.unit)}
                       </span>
                     </div>
                   </div>
@@ -91,12 +98,12 @@ export function BatchTable({
                     <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                       <span className="font-semibold text-[var(--ink)]">{row.batch.reference}</span>
                       <span className="text-[var(--line-strong)]">•</span>
-                      <span className="font-semibold text-[var(--ink)]">{categoryLabel(row.batch.materialCategory)}</span>
+                      <span className="font-semibold text-[var(--ink)]">{labels.MATERIAL_CATEGORY_LABELS[row.batch.materialCategory]}</span>
                       {showOwner && (
                         <>
                           <span className="text-[var(--line-strong)]">•</span>
                           <span>
-                            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] mr-1">Owner:</span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] mr-1">{t.owner}</span>
                             <span className="font-semibold text-[var(--ink)]">{row.ownerName}</span>
                           </span>
                         </>
@@ -109,7 +116,7 @@ export function BatchTable({
                         assuranceLevel={row.batch.assuranceLevel}
                       />
                       <span className="text-[11px] font-medium text-[var(--ink-muted)] truncate min-w-0">
-                        {row.batch.locationText ?? "Location not recorded"} · {formatDate(row.batch.createdAt)}
+                        {row.batch.locationText ?? t.noLocation} · {fmt.date(row.batch.createdAt)}
                       </span>
                     </div>
                   </div>

@@ -10,11 +10,14 @@
  */
 
 import { ChevronRight } from "lucide-react";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
 import { classNames } from "@/lib/utils";
-import { BUCKET_LABELS, type QuantityBucket, type Unit } from "../_mock/domain";
-import { formatQuantity } from "../_mock/selectors-shared";
+import type { QuantityBucket, Unit } from "../_mock/domain";
 import type { PotSlice } from "../_mock/selectors-batches";
 import { BUCKET_COLOUR } from "./cirka-ui";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 /** The main chain, in the order material actually travels it. */
 const FLOW: readonly QuantityBucket[] = [
@@ -55,6 +58,8 @@ interface NodeData {
 
 function LedgerNode({ node, unit }: { node: NodeData; unit: Unit }) {
   const empty = node.quantity === 0;
+  const labels = useLabels();
+  const fmt = useFormat();
 
   return (
     <div
@@ -71,7 +76,7 @@ function LedgerNode({ node, unit }: { node: NodeData; unit: Unit }) {
           empty ? "text-[var(--line-strong)]" : "text-[var(--ink-muted)]",
         )}
       >
-        {BUCKET_LABELS[node.bucket]}
+        {labels.BUCKET_LABELS[node.bucket]}
       </p>
       <div className="flex shrink-0 items-baseline gap-2 lg:mt-1.5 lg:block">
         <p
@@ -80,7 +85,7 @@ function LedgerNode({ node, unit }: { node: NodeData; unit: Unit }) {
             empty ? "text-[var(--line-strong)]" : "text-[var(--ink)]",
           )}
         >
-          {empty ? "—" : formatQuantity(node.quantity, unit)}
+          {empty ? "—" : fmt.quantity(node.quantity, unit)}
         </p>
         {!empty && (
           <p className="text-[11px] tabular-nums text-[var(--ink-muted)] lg:mt-1">
@@ -106,6 +111,9 @@ function Connector() {
 
 export function NetworkLedgerNodes({ slices, unit }: { slices: PotSlice[]; unit: Unit }) {
   const byBucket = new Map(slices.map((slice) => [slice.bucket, slice]));
+  const { ledgerNodes: t } = useMessages(demoAdmin);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const nodeFor = (bucket: QuantityBucket): NodeData => ({
     bucket,
@@ -129,7 +137,7 @@ export function NetworkLedgerNodes({ slices, unit }: { slices: PotSlice[]; unit:
       {offFlow.length > 0 && (
         <div className="flex flex-wrap items-baseline gap-x-8 gap-y-2 border-t border-dashed border-[var(--line)] pt-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-            Left the flow
+            {t.leftTheFlow}
           </p>
           {offFlow.map((node) => (
             <p key={node.bucket} className="flex items-baseline gap-2 text-sm">
@@ -139,14 +147,14 @@ export function NetworkLedgerNodes({ slices, unit }: { slices: PotSlice[]; unit:
                   BUCKET_COLOUR[node.bucket],
                 )}
               />
-              <span className="text-[var(--ink-muted)]">{BUCKET_LABELS[node.bucket]}</span>
+              <span className="text-[var(--ink-muted)]">{labels.BUCKET_LABELS[node.bucket]}</span>
               <span
                 className={classNames(
                   "font-semibold tabular-nums",
                   node.bucket === "unexplained" ? "text-[#D14343]" : "text-[var(--ink)]",
                 )}
               >
-                {formatQuantity(node.quantity, unit)}
+                {fmt.quantity(node.quantity, unit)}
               </span>
             </p>
           ))}

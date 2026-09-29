@@ -2,11 +2,15 @@
 
 import { useState, type KeyboardEvent } from "react";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
 import { classNames } from "@/lib/utils";
-import { ORGANISATION_TYPES, ORGANISATION_TYPE_LABELS, type OrganisationType } from "../_mock/domain";
+import { ORGANISATION_TYPES, type OrganisationType } from "../_mock/domain";
 import type { OrganisationInput } from "../_mock/operations/admin";
 import type { Organisation } from "../_mock/types";
 import { FormSection, NoticeBanner } from "./cirka-ui";
+import { useLabels } from "./use-labels";
 
 /**
  * Every writable column of the `organisations` table (06_DATA_MODEL). The form
@@ -99,6 +103,7 @@ function TagInput({
   onChange: (next: string[]) => void;
 }) {
   const [draft, setDraft] = useState("");
+  const { orgForm: t } = useMessages(demoAdmin);
 
   const commit = () => {
     const tag = draft.trim().toLowerCase();
@@ -129,7 +134,7 @@ function TagInput({
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={commit}
-        placeholder="cutting, sewing, cold storage…"
+        placeholder={t.tagsPlaceholder}
       />
       {tags.length > 0 && (
         <ul className="flex flex-wrap gap-2">
@@ -139,7 +144,7 @@ function TagInput({
                 type="button"
                 onClick={() => onChange(tags.filter((entry) => entry !== tag))}
                 className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--line-strong)] bg-[var(--surface)] py-1 pl-3 pr-2 text-xs text-[var(--ink)] transition-colors duration-200 ease-[var(--ease-out)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
-                aria-label={`Remove ${tag}`}
+                aria-label={format(t.removeTag, { tag })}
               >
                 {tag}
                 <svg
@@ -177,6 +182,8 @@ export function OrganisationForm({
   onCancel: () => void;
 }) {
   const isEdit = organisation !== undefined;
+  const { orgForm: t } = useMessages(demoAdmin);
+  const labels = useLabels();
   const [form, setForm] = useState<OrganisationFormState>(() =>
     organisation ? fromOrganisation(organisation) : EMPTY,
   );
@@ -198,35 +205,35 @@ export function OrganisationForm({
       }}
     >
       {error && (
-        <NoticeBanner tone="blocking" title="That change was refused">
+        <NoticeBanner tone="blocking" title={t.refused}>
           {error}
         </NoticeBanner>
       )}
 
-      <FormSection title="Identity">
-        <Field label="Name" required>
+      <FormSection title={t.identity}>
+        <Field label={t.name} required>
           <Input
             value={form.name}
             onChange={(event) => update("name", event.target.value)}
-            placeholder="Legal or trading name"
+            placeholder={t.namePlaceholder}
             autoFocus
           />
         </Field>
-        <Field label="Type">
+        <Field label={t.type}>
           <Select
-            title={isEdit ? "Fixed at registration" : undefined}
+            title={isEdit ? t.typeFixed : undefined}
             value={form.type}
             onChange={(event) => update("type", event.target.value as OrganisationType)}
             disabled={isEdit}
           >
             {ORGANISATION_TYPES.map((type) => (
               <option key={type} value={type}>
-                {ORGANISATION_TYPE_LABELS[type]}
+                {labels.ORGANISATION_TYPE_LABELS[type]}
               </option>
             ))}
           </Select>
         </Field>
-        <Field label="Description">
+        <Field label={t.description}>
           <Textarea
             value={form.description}
             onChange={(event) => update("description", event.target.value)}
@@ -235,18 +242,18 @@ export function OrganisationForm({
       </FormSection>
 
       <FormSection
-        title="Registration"
-        hint="Protected"
+        title={t.registration}
+        hint={t.protected}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Company number">
+          <Field label={t.companyNumber}>
             <Input
               value={form.registrationNumber}
               onChange={(event) => update("registrationNumber", event.target.value)}
               placeholder="556812-4497"
             />
           </Field>
-          <Field label="Tax / VAT reference">
+          <Field label={t.taxReference}>
             <Input
               value={form.taxId}
               onChange={(event) => update("taxId", event.target.value)}
@@ -256,8 +263,8 @@ export function OrganisationForm({
         </div>
       </FormSection>
 
-      <FormSection title="Registered address">
-        <Field label="Address">
+      <FormSection title={t.registeredAddress}>
+        <Field label={t.address}>
           <Input
             value={form.addressLine}
             onChange={(event) => update("addressLine", event.target.value)}
@@ -265,14 +272,14 @@ export function OrganisationForm({
           />
         </Field>
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="City">
+          <Field label={t.city}>
             <Input
               value={form.city}
               onChange={(event) => update("city", event.target.value)}
               placeholder="Norrköping"
             />
           </Field>
-          <Field label="Postcode">
+          <Field label={t.postcode}>
             <Input
               value={form.postcode}
               onChange={(event) => update("postcode", event.target.value)}
@@ -280,9 +287,9 @@ export function OrganisationForm({
             />
           </Field>
           <Field
-            label="Country"
+            label={t.country}
             required
-            error={countryLooksWrong ? "Two-letter ISO code" : undefined}
+            error={countryLooksWrong ? t.countryError : undefined}
           >
             <Input
               value={form.country}
@@ -296,11 +303,11 @@ export function OrganisationForm({
       </FormSection>
 
       <FormSection
-        title="Coordinates"
-        hint="Optional"
+        title={t.coordinates}
+        hint={t.optional}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Latitude">
+          <Field label={t.latitude}>
             <Input
               type="number"
               step="any"
@@ -311,7 +318,7 @@ export function OrganisationForm({
               placeholder="58.5877"
             />
           </Field>
-          <Field label="Longitude">
+          <Field label={t.longitude}>
             <Input
               type="number"
               step="any"
@@ -325,8 +332,8 @@ export function OrganisationForm({
         </div>
       </FormSection>
 
-      <FormSection title="Profile">
-        <Field label="Website">
+      <FormSection title={t.profile}>
+        <Field label={t.website}>
           <Input
             value={form.websiteUrl}
             onChange={(event) => update("websiteUrl", event.target.value)}
@@ -334,8 +341,8 @@ export function OrganisationForm({
           />
         </Field>
         <Field
-          label="Capability tags"
-          hint="Enter to add"
+          label={t.capabilityTags}
+          hint={t.tagsHint}
         >
           <TagInput tags={form.capabilityTags} onChange={(next) => update("capabilityTags", next)} />
         </Field>
@@ -343,10 +350,10 @@ export function OrganisationForm({
 
       <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-5">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+          {t.cancel}
         </Button>
         <Button type="submit" disabled={pending || !canSubmit}>
-          {isEdit ? "Save changes" : "Create organisation"}
+          {isEdit ? t.save : t.create}
         </Button>
       </div>
     </form>

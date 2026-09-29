@@ -3,8 +3,13 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import type { Unit } from "../_mock/domain";
 import { NoticeBanner } from "./cirka-ui";
+import { useLabels } from "./use-labels";
 
 interface ProposeDrawerOrg {
   _id: string;
@@ -43,6 +48,10 @@ export function ProposeDrawer({
   onSubmit: () => void;
   onClose: () => void;
 }) {
+  const { propose: t } = useMessages(demoAdmin);
+  const { ui } = useMessages(demoCommon);
+  const labels = useLabels();
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -71,12 +80,12 @@ export function ProposeDrawer({
         onClick={(event: React.MouseEvent) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label={`Propose ${batchName}`}
+        aria-label={format(t.ariaLabel, { batch: batchName })}
       >
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--line)] px-6 py-5">
           <div className="space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Propose match
+              {t.eyebrow}
             </p>
             <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
               {batchName}
@@ -85,7 +94,7 @@ export function ProposeDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t.close}
             className="shrink-0 rounded-full p-2 text-[var(--ink-muted)] transition-colors duration-200 ease-[var(--ease-out)] hover:bg-[var(--surface)] hover:text-[var(--ink)]"
           >
             <X size={20} />
@@ -94,13 +103,13 @@ export function ProposeDrawer({
 
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
           {error && (
-            <NoticeBanner tone="blocking" title="That step was refused">
+            <NoticeBanner tone="blocking" title={ui.stepRefused}>
               {error}
             </NoticeBanner>
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={`Quantity (${batchUnit})`}>
+            <Field label={format(t.quantity, { unit: labels.UNIT_LABELS[batchUnit] })}>
               <Input
                 type="number"
                 min="0"
@@ -109,12 +118,12 @@ export function ProposeDrawer({
                 onChange={(event) => onChange({ ...values, quantity: event.target.value })}
               />
             </Field>
-            <Field label="Proposed custodian">
+            <Field label={t.custodian}>
               <Select
                 value={values.custodianOrgId}
                 onChange={(event) => onChange({ ...values, custodianOrgId: event.target.value })}
               >
-                <option value="">Choose a custodian</option>
+                <option value="">{t.chooseCustodian}</option>
                 {custodians.map((org) => (
                   <option key={org._id} value={org._id}>
                     {org.name} · {org.city}
@@ -122,12 +131,12 @@ export function ProposeDrawer({
                 ))}
               </Select>
             </Field>
-            <Field label="Proposed maker">
+            <Field label={t.maker}>
               <Select
                 value={values.makerOrgId}
                 onChange={(event) => onChange({ ...values, makerOrgId: event.target.value })}
               >
-                <option value="">Choose a maker</option>
+                <option value="">{t.chooseMaker}</option>
                 {makers.map((org) => (
                   <option key={org._id} value={org._id}>
                     {org.name} · {org.city}
@@ -135,7 +144,7 @@ export function ProposeDrawer({
                 ))}
               </Select>
             </Field>
-            <Field label="Category fit note">
+            <Field label={t.categoryFitNote}>
               <Input
                 value={values.categoryFitNote}
                 onChange={(event) => onChange({ ...values, categoryFitNote: event.target.value })}
@@ -143,21 +152,21 @@ export function ProposeDrawer({
             </Field>
           </div>
 
-          <Field label="Rationale" required hint="Visible to the brand">
+          <Field label={t.rationale} required hint={t.rationaleHint}>
             <Textarea
               value={values.rationale}
               onChange={(event) => onChange({ ...values, rationale: event.target.value })}
-              placeholder="Why this match"
+              placeholder={t.rationalePlaceholder}
             />
           </Field>
         </div>
 
         <div className="flex shrink-0 justify-end gap-3 border-t border-[var(--line)] px-6 py-5">
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t.cancel}
           </Button>
           <Button disabled={pending} onClick={onSubmit}>
-            Propose match
+            {t.submit}
           </Button>
         </div>
       </div>
