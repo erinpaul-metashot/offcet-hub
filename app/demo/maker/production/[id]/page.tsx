@@ -5,23 +5,21 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { Button, EmptyState, Field, Input, Panel, Select, Textarea } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { demoMaker } from "@/lib/i18n/messages/demo-maker";
 import {
   INPUT_TYPES,
-  INPUT_TYPE_LABELS,
   PRODUCT_CATEGORIES,
-  PRODUCT_CATEGORY_LABELS,
   SOURCING_CATEGORIES,
-  SOURCING_CATEGORY_LABELS,
-  SUITABILITY_LABELS,
   TIME_ACTIVITIES,
-  TIME_ACTIVITY_LABELS,
   type InputType,
   type ProductCategory,
   type SourcingCategory,
   type TimeActivity,
 } from "../../../_mock/domain";
 import { getProductionDetail } from "../../../_mock/selectors-maker";
-import { formatCurrency, formatNumber, formatPercent } from "../../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../../_mock/store";
 import {
   CirkaBadge,
@@ -29,12 +27,14 @@ import {
   Modal,
   NoticeBanner,
   SectionHeading,
-  formatDate,
 } from "../../../_components/cirka-ui";
 import { EvidenceGrid } from "../../../_components/records";
 import { ThreadTimelinePanel } from "../../../_components/trace-timeline";
 import { useAction } from "../../../_components/use-action";
+import { useFormat } from "../../../_components/use-format";
+import { useLabels } from "../../../_components/use-labels";
 
+/** `label` is stored as the evidence caption (record data); button text comes from `productionDetail.addEvidence`. */
 const EVIDENCE_CHOICES = [
   { kind: "wip_photo" as const, url: "/cirka_sewing_machine.png", label: "Work in progress" },
   { kind: "finished_product" as const, url: "/cirka_shopping_bags.png", label: "Finished product" },
@@ -46,6 +46,10 @@ export default function MakerProductionDetailPage() {
   const store = useDemoStore();
   const { scope } = useDemoPersona("maker");
   const { run, error, pending } = useAction();
+  const { productionDetail: t } = useMessages(demoMaker);
+  const { ui } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const detail = getProductionDetail(store.db, scope, params.id);
 
@@ -81,7 +85,7 @@ export default function MakerProductionDetailPage() {
   const [isOutputModalOpen, setIsOutputModalOpen] = useState(false);
 
   if (!detail) {
-    return <EmptyState title="Production batch not found" />;
+    return <EmptyState title={t.notFound} />;
   }
 
   const { production, balance, costs } = detail;
@@ -96,7 +100,7 @@ export default function MakerProductionDetailPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Button as={Link} href="/demo/maker/production" variant="ghost" size="sm">
-          ← All production
+          {t.allProduction}
         </Button>
         <CirkaBadge status={production.status} />
         <CirkaBadge status={production.evidenceStatus} />
@@ -107,10 +111,10 @@ export default function MakerProductionDetailPage() {
         title={production.productName}
       />
 
-      {error && <NoticeBanner tone="blocking" title="That step was refused">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={ui.stepRefused}>{error}</NoticeBanner>}
 
       {production.reviewNotes && production.evidenceStatus !== "cirka_reviewed" && (
-        <NoticeBanner tone="warning" title="CIRKA sent this back for more detail">
+        <NoticeBanner tone="warning" title={t.sentBack}>
           {production.reviewNotes}
         </NoticeBanner>
       )}
@@ -118,48 +122,48 @@ export default function MakerProductionDetailPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel className="p-6">
           <h2 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            The run
+            {t.theRun}
           </h2>
           <dl>
             <DataRow
-              label="Resource batch"
+              label={t.resourceBatch}
               value={`${detail.batch?.name ?? "-"} · ${detail.batch?.reference ?? ""}`}
             />
-            <DataRow label="Allocation" value={detail.allocation?.reference ?? "-"} />
-            <DataRow label="Project" value={detail.project?.title ?? "Standalone"} />
-            <DataRow label="Production site" value={detail.facility?.name ?? "-"} />
+            <DataRow label={t.allocation} value={detail.allocation?.reference ?? "-"} />
+            <DataRow label={t.project} value={detail.project?.title ?? t.standalone} />
+            <DataRow label={t.productionSite} value={detail.facility?.name ?? "-"} />
             <DataRow
-              label="Category"
-              value={PRODUCT_CATEGORY_LABELS[production.productCategory]}
+              label={t.category}
+              value={labels.PRODUCT_CATEGORY_LABELS[production.productCategory]}
             />
             <DataRow
-              label="Planned"
-              value={`${production.plannedQuantity} units`}
+              label={t.planned}
+              value={format(t.units, { count: fmt.number(production.plannedQuantity) })}
               hint={
                 production.plannedCompletionDate
-                  ? `Due ${formatDate(production.plannedCompletionDate)}`
+                  ? format(t.due, { date: fmt.date(production.plannedCompletionDate) })
                   : undefined
               }
             />
             <DataRow
-              label="Actual"
+              label={t.actual}
               value={
                 production.actualQuantity !== undefined
-                  ? `${production.actualQuantity} units`
-                  : "Not completed"
+                  ? format(t.units, { count: fmt.number(production.actualQuantity) })
+                  : t.notCompleted
               }
               hint={
                 production.actualCompletionDate
-                  ? `Completed ${formatDate(production.actualCompletionDate)}`
+                  ? format(t.completed, { date: fmt.date(production.actualCompletionDate) })
                   : undefined
               }
             />
             <DataRow
-              label="Material yield"
+              label={t.materialYield}
               value={
                 production.materialYield !== undefined
-                  ? formatPercent(production.materialYield)
-                  : "Not calculated yet"
+                  ? fmt.percent(production.materialYield)
+                  : t.notCalculated
               }
             />
           </dl>
@@ -181,7 +185,7 @@ export default function MakerProductionDetailPage() {
                     )
                   }
                 >
-                  Start production
+                  {t.startProduction}
                 </Button>
               )}
             </div>
@@ -202,7 +206,7 @@ export default function MakerProductionDetailPage() {
                   )
                 }
               >
-                Move to quality review
+                {t.moveToQuality}
               </Button>
             </div>
           )}
@@ -210,21 +214,24 @@ export default function MakerProductionDetailPage() {
 
         <Panel className="space-y-4 p-6">
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Material use
+            {t.materialUse}
           </h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {[
-              ["qtyReceived", "Received", production.qtyReceived],
-              ["qtyUsed", "Used", production.qtyUsed],
-              ["qtyIncorporated", "Into finished products", production.qtyIncorporated],
-              ["qtyPrototypes", "Into prototypes", production.qtyPrototypes],
-              ["qtyOffcuts", "Reusable offcuts", production.qtyOffcuts],
-              ["qtyLoss", "Unusable loss", production.qtyLoss],
-              ["qtyReusableRemaining", "Reusable remaining", production.qtyReusableRemaining],
-              ["qtyReturned", "Returned", production.qtyReturned],
+              ["qtyReceived", t.material.qtyReceived, production.qtyReceived],
+              ["qtyUsed", t.material.qtyUsed, production.qtyUsed],
+              ["qtyIncorporated", t.material.qtyIncorporated, production.qtyIncorporated],
+              ["qtyPrototypes", t.material.qtyPrototypes, production.qtyPrototypes],
+              ["qtyOffcuts", t.material.qtyOffcuts, production.qtyOffcuts],
+              ["qtyLoss", t.material.qtyLoss, production.qtyLoss],
+              ["qtyReusableRemaining", t.material.qtyReusableRemaining, production.qtyReusableRemaining],
+              ["qtyReturned", t.material.qtyReturned, production.qtyReturned],
             ].map(([field, label, current]) => (
-              <Field key={field as string} label={`${label} (${unit})`}>
+              <Field
+                key={field as string}
+                label={format(t.materialField, { label: label as string, unit: labels.UNIT_LABELS[unit] })}
+              >
                 <Input
                   type="number"
                   min="0"
@@ -242,7 +249,7 @@ export default function MakerProductionDetailPage() {
           </div>
 
           {!balance.balanced && (
-            <NoticeBanner tone="warning" title="The material numbers do not balance yet">
+            <NoticeBanner tone="warning" title={t.notBalanced}>
               {balance.problems.map((problem) => (
                 <p key={problem}>{problem}</p>
               ))}
@@ -278,7 +285,7 @@ export default function MakerProductionDetailPage() {
                 )
               }
             >
-              Save material use
+              {t.saveMaterial}
             </Button>
 
             {production.status === "quality_review" && (
@@ -291,7 +298,7 @@ export default function MakerProductionDetailPage() {
                   )
                 }
               >
-                Complete production
+                {t.completeProduction}
               </Button>
             )}
           </div>
@@ -302,20 +309,20 @@ export default function MakerProductionDetailPage() {
         <Panel className="space-y-4 p-6">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Other production inputs
+              {t.otherInputs}
             </h2>
             <Button
               size="sm"
               variant="primary"
               onClick={() => setIsInputModalOpen(true)}
             >
-              + Add input
+              {t.addInput}
             </Button>
           </div>
 
           {detail.inputs.length === 0 ? (
             <p className="text-sm text-[var(--ink-muted)]">
-              No inputs yet
+              {t.noInputs}
             </p>
           ) : (
             <ul className="divide-y divide-[var(--line)]">
@@ -323,13 +330,13 @@ export default function MakerProductionDetailPage() {
                 <li key={input._id} className="flex items-start justify-between gap-4 py-3">
                   <div>
                     <p className="text-sm font-medium text-[var(--ink)]">
-                      {INPUT_TYPE_LABELS[input.inputType]} · {input.description}
+                      {labels.INPUT_TYPE_LABELS[input.inputType]} · {input.description}
                     </p>
                     <p className="text-xs text-[var(--ink-muted)]">
-                      {formatNumber(input.quantity)} {input.unit} ·{" "}
-                      {SOURCING_CATEGORY_LABELS[input.sourcingCategory]}
+                      {fmt.number(input.quantity)} {input.unit} ·{" "}
+                      {labels.SOURCING_CATEGORY_LABELS[input.sourcingCategory]}
                       {input.supplierName ? ` · ${input.supplierName}` : ""}
-                      {input.cost !== undefined ? ` · ${formatCurrency(input.cost)}` : ""}
+                      {input.cost !== undefined ? ` · ${fmt.currency(input.cost)}` : ""}
                     </p>
                   </div>
                   <Button
@@ -340,7 +347,7 @@ export default function MakerProductionDetailPage() {
                       run(() => store.removeProductionInput("maker", { inputId: input._id }))
                     }
                   >
-                    Remove
+                    {t.remove}
                   </Button>
                 </li>
               ))}
@@ -351,30 +358,31 @@ export default function MakerProductionDetailPage() {
         <Panel className="space-y-4 p-6">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Production time
+              {t.productionTime}
             </h2>
             <Button
               size="sm"
               variant="primary"
               onClick={() => setIsTimeModalOpen(true)}
             >
-              + Add time entry
+              {t.addTimeEntry}
             </Button>
           </div>
 
           {detail.timeEntries.length === 0 ? (
-            <p className="text-sm text-[var(--ink-muted)]">No time recorded yet.</p>
+            <p className="text-sm text-[var(--ink-muted)]">{t.noTime}</p>
           ) : (
             <ul className="divide-y divide-[var(--line)]">
               {detail.timeEntries.map((entry) => (
                 <li key={entry._id} className="flex items-start justify-between gap-4 py-3">
                   <div>
                     <p className="text-sm font-medium text-[var(--ink)]">
-                      {TIME_ACTIVITY_LABELS[entry.activity]} · {entry.hours} h
+                      {labels.TIME_ACTIVITY_LABELS[entry.activity]} ·{" "}
+                      {format(t.hoursShort, { count: fmt.number(entry.hours) })}
                     </p>
                     <p className="text-xs text-[var(--ink-muted)]">
-                      {entry.peopleInvolved ? `${entry.peopleInvolved} people · ` : ""}
-                      {entry.isEstimated ? "estimated" : "actual"}
+                      {entry.peopleInvolved ? format(t.peopleDot, { count: entry.peopleInvolved }) : ""}
+                      {entry.isEstimated ? t.estimated : t.actualLower}
                       {entry.notes ? ` · ${entry.notes}` : ""}
                     </p>
                   </div>
@@ -386,7 +394,7 @@ export default function MakerProductionDetailPage() {
                       run(() => store.removeTimeEntry("maker", { timeEntryId: entry._id }))
                     }
                   >
-                    Remove
+                    {t.remove}
                   </Button>
                 </li>
               ))}
@@ -395,43 +403,43 @@ export default function MakerProductionDetailPage() {
 
           <dl className="border-t border-[var(--line)] pt-4">
             <DataRow
-              label="Total labour hours"
-              value={production.totalLabourHours ?? 0}
+              label={t.totalLabour}
+              value={fmt.number(production.totalLabourHours ?? 0)}
               hint={
                 production.hoursPerSaleableUnit
-                  ? `${production.hoursPerSaleableUnit} h per saleable unit`
+                  ? format(t.perSaleable, { count: fmt.number(production.hoursPerSaleableUnit) })
                   : undefined
               }
             />
-            <DataRow label="People involved" value={production.peopleInvolved ?? "-"} />
+            <DataRow label={t.peopleInvolved} value={production.peopleInvolved ?? "-"} />
           </dl>
         </Panel>
       </div>
 
       <Panel className="space-y-4 p-6">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Outputs</h2>
+          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{t.outputs}</h2>
           <Button
             size="sm"
             variant="primary"
             onClick={() => setIsOutputModalOpen(true)}
           >
-            + Add output line
+            {t.addOutputLine}
           </Button>
         </div>
 
         {detail.outputs.length === 0 ? (
-          <p className="text-sm text-[var(--ink-muted)]">No finished products recorded yet.</p>
+          <p className="text-sm text-[var(--ink-muted)]">{t.noOutputs}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[36rem] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-[var(--line)] text-left text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  <th className="py-3 pr-4">Product</th>
-                  <th className="py-3 pr-4 text-right">Planned</th>
-                  <th className="py-3 pr-4 text-right">Completed</th>
-                  <th className="py-3 pr-4 text-right">Rejected</th>
-                  <th className="py-3 text-right">Rework</th>
+                  <th className="py-3 pr-4">{t.colProduct}</th>
+                  <th className="py-3 pr-4 text-right">{t.colPlanned}</th>
+                  <th className="py-3 pr-4 text-right">{t.colCompleted}</th>
+                  <th className="py-3 pr-4 text-right">{t.colRejected}</th>
+                  <th className="py-3 text-right">{t.colRework}</th>
                 </tr>
               </thead>
               <tbody>
@@ -440,8 +448,8 @@ export default function MakerProductionDetailPage() {
                     <td className="py-3 pr-4">
                       <p className="font-medium text-[var(--ink)]">{output.productName}</p>
                       <p className="text-xs text-[var(--ink-muted)]">
-                        {PRODUCT_CATEGORY_LABELS[output.productCategory]}
-                        {output.unitWeight ? ` · ${output.unitWeight} kg each` : ""}
+                        {labels.PRODUCT_CATEGORY_LABELS[output.productCategory]}
+                        {output.unitWeight ? format(t.kgEach, { weight: fmt.number(output.unitWeight) }) : ""}
                       </p>
                     </td>
                     <td className="py-3 pr-4 text-right tabular-nums">{output.numberPlanned}</td>
@@ -465,12 +473,12 @@ export default function MakerProductionDetailPage() {
       {/* Modals for adding entries */}
       {isInputModalOpen && (
         <Modal
-          title="Add production input"
+          title={t.inputModalTitle}
           width="lg"
           onClose={() => setIsInputModalOpen(false)}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Input type">
+            <Field label={t.inputType}>
               <Select
                 value={inputDraft.inputType}
                 onChange={(event) =>
@@ -482,21 +490,21 @@ export default function MakerProductionDetailPage() {
               >
                 {INPUT_TYPES.map((value) => (
                   <option key={value} value={value}>
-                    {INPUT_TYPE_LABELS[value]}
+                    {labels.INPUT_TYPE_LABELS[value]}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Description">
+            <Field label={t.description}>
               <Input
                 value={inputDraft.description}
                 onChange={(event) =>
                   setInputDraft((current) => ({ ...current, description: event.target.value }))
                 }
-                placeholder="Recycled polyester thread, ecru"
+                placeholder={t.descriptionPlaceholder}
               />
             </Field>
-            <Field label="Quantity">
+            <Field label={t.quantity}>
               <Input
                 type="number"
                 min="0"
@@ -507,7 +515,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="Unit">
+            <Field label={t.unit}>
               <Input
                 value={inputDraft.unit}
                 onChange={(event) =>
@@ -515,7 +523,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="Supplier" hint="Protected">
+            <Field label={t.supplier} hint={t.protected}>
               <Input
                 value={inputDraft.supplierName}
                 onChange={(event) =>
@@ -523,7 +531,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="Cost (SEK)" hint="Protected">
+            <Field label={t.costSek} hint={t.protected}>
               <Input
                 type="number"
                 min="0"
@@ -533,7 +541,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="Sourcing">
+            <Field label={t.sourcing}>
               <Select
                 value={inputDraft.sourcingCategory}
                 onChange={(event) =>
@@ -545,7 +553,7 @@ export default function MakerProductionDetailPage() {
               >
                 {SOURCING_CATEGORIES.map((value) => (
                   <option key={value} value={value}>
-                    {SOURCING_CATEGORY_LABELS[value]}
+                    {labels.SOURCING_CATEGORY_LABELS[value]}
                   </option>
                 ))}
               </Select>
@@ -554,7 +562,7 @@ export default function MakerProductionDetailPage() {
 
           <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-4">
             <Button variant="ghost" onClick={() => setIsInputModalOpen(false)}>
-              Cancel
+              {t.cancel}
             </Button>
             <Button
               variant="primary"
@@ -576,7 +584,7 @@ export default function MakerProductionDetailPage() {
                 })
               }
             >
-              Add input
+              {t.addInputSubmit}
             </Button>
           </div>
         </Modal>
@@ -584,12 +592,12 @@ export default function MakerProductionDetailPage() {
 
       {isTimeModalOpen && (
         <Modal
-          title="Add production time"
+          title={t.timeModalTitle}
           width="lg"
           onClose={() => setIsTimeModalOpen(false)}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Activity">
+            <Field label={t.activity}>
               <Select
                 value={timeDraft.activity}
                 onChange={(event) =>
@@ -601,12 +609,12 @@ export default function MakerProductionDetailPage() {
               >
                 {TIME_ACTIVITIES.map((value) => (
                   <option key={value} value={value}>
-                    {TIME_ACTIVITY_LABELS[value]}
+                    {labels.TIME_ACTIVITY_LABELS[value]}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Hours">
+            <Field label={t.hours}>
               <Input
                 type="number"
                 min="0"
@@ -617,7 +625,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="People involved">
+            <Field label={t.peopleInvolved}>
               <Input
                 type="number"
                 min="0"
@@ -627,7 +635,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="Estimated or actual">
+            <Field label={t.estimatedOrActual}>
               <Select
                 value={timeDraft.isEstimated ? "estimated" : "actual"}
                 onChange={(event) =>
@@ -637,12 +645,12 @@ export default function MakerProductionDetailPage() {
                   }))
                 }
               >
-                <option value="actual">Actual</option>
-                <option value="estimated">Estimated</option>
+                <option value="actual">{t.optionActual}</option>
+                <option value="estimated">{t.optionEstimated}</option>
               </Select>
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Notes">
+              <Field label={t.notes}>
                 <Input
                   value={timeDraft.notes}
                   onChange={(event) =>
@@ -655,7 +663,7 @@ export default function MakerProductionDetailPage() {
 
           <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-4">
             <Button variant="ghost" onClick={() => setIsTimeModalOpen(false)}>
-              Cancel
+              {t.cancel}
             </Button>
             <Button
               variant="primary"
@@ -677,7 +685,7 @@ export default function MakerProductionDetailPage() {
                 })
               }
             >
-              Add time entry
+              {t.addTimeSubmit}
             </Button>
           </div>
         </Modal>
@@ -685,12 +693,12 @@ export default function MakerProductionDetailPage() {
 
       {isOutputModalOpen && (
         <Modal
-          title="Add output line"
+          title={t.outputModalTitle}
           width="lg"
           onClose={() => setIsOutputModalOpen(false)}
         >
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Product name">
+            <Field label={t.productName}>
               <Input
                 value={outputDraft.productName}
                 onChange={(event) =>
@@ -698,7 +706,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="Category">
+            <Field label={t.category}>
               <Select
                 value={outputDraft.productCategory}
                 onChange={(event) =>
@@ -710,12 +718,12 @@ export default function MakerProductionDetailPage() {
               >
                 {PRODUCT_CATEGORIES.map((value) => (
                   <option key={value} value={value}>
-                    {PRODUCT_CATEGORY_LABELS[value]}
+                    {labels.PRODUCT_CATEGORY_LABELS[value]}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Planned">
+            <Field label={t.planned}>
               <Input
                 type="number"
                 min="0"
@@ -725,7 +733,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="Completed">
+            <Field label={t.colCompleted}>
               <Input
                 type="number"
                 min="0"
@@ -735,7 +743,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="Rejected">
+            <Field label={t.rejected}>
               <Input
                 type="number"
                 min="0"
@@ -745,7 +753,7 @@ export default function MakerProductionDetailPage() {
                 }
               />
             </Field>
-            <Field label="Rework">
+            <Field label={t.rework}>
               <Input
                 type="number"
                 min="0"
@@ -762,7 +770,7 @@ export default function MakerProductionDetailPage() {
 
           <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-4">
             <Button variant="ghost" onClick={() => setIsOutputModalOpen(false)}>
-              Cancel
+              {t.cancel}
             </Button>
             <Button
               variant="primary"
@@ -796,7 +804,7 @@ export default function MakerProductionDetailPage() {
                 })
               }
             >
-              Add output line
+              {t.addOutputSubmit}
             </Button>
           </div>
         </Modal>
@@ -804,32 +812,32 @@ export default function MakerProductionDetailPage() {
 
       <Panel className="space-y-4 p-6">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Costs</h2>
+          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{t.costs}</h2>
           <span
             className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]"
-            title="Only you and CIRKA see these"
+            title={t.privateHint}
           >
-            <Lock size={12} /> Private
+            <Lock size={12} /> {t.private}
           </span>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {[
-            ["resourceCost", "Resource cost"],
-            ["additionalInputCost", "Additional inputs"],
-            ["labourCost", "Labour"],
-            ["treatmentCost", "Treatment / cleaning"],
-            ["packagingCost", "Packaging"],
-            ["transportCost", "Transport"],
-            ["custodianFees", "Custodian fees"],
-            ["otherCosts", "Other"],
-            ["saleableUnits", "Saleable units"],
-            ["intendedWholesalePrice", "Intended wholesale"],
-            ["intendedRetailPrice", "Intended retail"],
-            ["actualSellingPrice", "Actual selling price"],
-            ["unitsSold", "Units sold"],
-          ].map(([field, label]) => (
-            <Field key={field} label={label}>
+          {([
+            "resourceCost",
+            "additionalInputCost",
+            "labourCost",
+            "treatmentCost",
+            "packagingCost",
+            "transportCost",
+            "custodianFees",
+            "otherCosts",
+            "saleableUnits",
+            "intendedWholesalePrice",
+            "intendedRetailPrice",
+            "actualSellingPrice",
+            "unitsSold",
+          ] as const).map((field) => (
+            <Field key={field} label={t.cost[field]}>
               <Input
                 type="number"
                 min="0"
@@ -847,16 +855,16 @@ export default function MakerProductionDetailPage() {
 
         {costs && (
           <dl className="border-t border-[var(--line)] pt-4">
-            <DataRow label="Total batch cost" value={formatCurrency(costs.totalBatchCost)} />
+            <DataRow label={t.totalBatchCost} value={fmt.currency(costs.totalBatchCost)} />
             <DataRow
-              label="Base cost per unit"
-              value={formatCurrency(costs.baseCostPerUnit)}
-              hint="Total batch cost / saleable units"
+              label={t.baseCostPerUnit}
+              value={fmt.currency(costs.baseCostPerUnit)}
+              hint={t.baseCostHint}
             />
-            <DataRow label="Revenue generated" value={formatCurrency(costs.revenueGenerated)} />
+            <DataRow label={t.revenue} value={fmt.currency(costs.revenueGenerated)} />
             <DataRow
-              label="Shared with brand"
-              value={costs.shareCostPerUnitWithBrand ? "Cost per unit" : "-"}
+              label={t.sharedWithBrand}
+              value={costs.shareCostPerUnitWithBrand ? t.costPerUnit : "-"}
             />
           </dl>
         )}
@@ -879,7 +887,7 @@ export default function MakerProductionDetailPage() {
               )
             }
           >
-            Save costs
+            {t.saveCosts}
           </Button>
           {costs && (
             <Button
@@ -896,8 +904,8 @@ export default function MakerProductionDetailPage() {
               }
             >
               {costs.shareCostPerUnitWithBrand
-                ? "Stop sharing"
-                : "Share cost per unit"}
+                ? t.stopSharing
+                : t.shareCost}
             </Button>
           )}
         </div>
@@ -905,7 +913,7 @@ export default function MakerProductionDetailPage() {
 
       <Panel className="space-y-4 p-6">
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Evidence</h2>
+          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{t.evidence}</h2>
         </div>
 
         <EvidenceGrid items={detail.evidence} />
@@ -931,18 +939,18 @@ export default function MakerProductionDetailPage() {
                 )
               }
             >
-              Add {choice.label.toLowerCase()}
+              {t.addEvidence[choice.kind]}
             </Button>
           ))}
         </div>
 
         {production.status === "completed" && (
           <div className="space-y-4 border-t border-[var(--line)] pt-4">
-            <Field label="Notes for CIRKA">
+            <Field label={t.notesForCirka}>
               <Textarea
                 value={makerNotes}
                 onChange={(event) => setMakerNotes(event.target.value)}
-                placeholder="Anything the reviewer should know: rework cycles, material behaviour, delays."
+                placeholder={t.notesPlaceholder}
               />
             </Field>
             <Button
@@ -957,7 +965,7 @@ export default function MakerProductionDetailPage() {
                 )
               }
             >
-              Submit for review
+              {t.submitReview}
             </Button>
           </div>
         )}
@@ -966,25 +974,25 @@ export default function MakerProductionDetailPage() {
       {detail.suitability && (
         <Panel className="p-6">
           <h2 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Suitability
+            {t.suitability}
           </h2>
           <dl>
             <DataRow
-              label="Assessment"
-              value={SUITABILITY_LABELS[detail.suitability.suitability]}
+              label={t.assessment}
+              value={labels.SUITABILITY_LABELS[detail.suitability.suitability]}
               hint={
                 detail.suitability.qualityRating
-                  ? `Quality ${detail.suitability.qualityRating}/5`
+                  ? format(t.quality, { rating: detail.suitability.qualityRating })
                   : undefined
               }
             />
             <DataRow
-              label="Received as described"
-              value={detail.suitability.receivedAsDescribed ? "Yes" : "No"}
+              label={t.receivedAsDescribed}
+              value={detail.suitability.receivedAsDescribed ? t.yes : t.no}
             />
-            <DataRow label="Recommended for" value={detail.suitability.recommendedApplications ?? "-"} />
-            <DataRow label="Limitations" value={detail.suitability.limitations ?? "-"} />
-            <DataRow label="Notes" value={detail.suitability.notes ?? "-"} />
+            <DataRow label={t.recommendedFor} value={detail.suitability.recommendedApplications ?? "-"} />
+            <DataRow label={t.limitations} value={detail.suitability.limitations ?? "-"} />
+            <DataRow label={t.notes} value={detail.suitability.notes ?? "-"} />
           </dl>
         </Panel>
       )}

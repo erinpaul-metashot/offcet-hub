@@ -8,20 +8,24 @@ import {
   DashboardHero,
   DashboardSection,
 } from "@/components/dashboard-widgets";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoMaker } from "@/lib/i18n/messages/demo-maker";
 import { getMakerDashboard } from "../../_mock/selectors-maker";
-import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import {
   ACTION_URGENCY_CLASS,
   CirkaBadge,
   LinkRow,
-  formatDate,
   tileHref,
 } from "../../_components/cirka-ui";
+import { useFormat } from "../../_components/use-format";
 import { RoleActivityFeed } from "../../_components/trace-timeline";
 import { classNames } from "@/lib/utils";
 
 type MakerDashboardView = ReturnType<typeof getMakerDashboard>;
+type DashboardMessages = (typeof demoMaker)["en"]["dashboard"];
+type Formatters = ReturnType<typeof useFormat>;
 
 const MICRO_LABEL = "text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]";
 const NEUTRAL_CARD_CLASS = "border-[var(--line)] text-[var(--ink)]";
@@ -33,8 +37,8 @@ interface ActionCardProps {
   toneClass: string;
 }
 
-function moreSuffix(count: number): string {
-  return count > 1 ? ` · +${count - 1} more` : "";
+function moreSuffix(count: number, t: DashboardMessages): string {
+  return count > 1 ? format(t.more, { count: count - 1 }) : "";
 }
 
 function ZoneHeader({ icon, label }: { icon: ReactNode; label: string }) {
@@ -74,7 +78,7 @@ function ActionCard({ href, title, context, toneClass }: ActionCardProps) {
   );
 }
 
-function actionCardsFor(view: MakerDashboardView): ActionCardProps[] {
+function actionCardsFor(view: MakerDashboardView, t: DashboardMessages, fmt: Formatters): ActionCardProps[] {
   const proposed = view.allocations.filter((entry) => entry.allocation.status === "proposed");
   const overdueRows = view.production.filter((row) => row.overdue);
   const [firstProposed] = proposed;
@@ -90,11 +94,11 @@ function actionCardsFor(view: MakerDashboardView): ActionCardProps[] {
               "/demo/maker/allocations?tab=needs-you",
               (entry) => `/demo/maker/allocations?id=${entry.allocation._id}`,
             ),
-            title: `${proposed.length} awaiting response`,
-            context: `${firstProposed.batchName} · ${formatQuantity(
+            title: format(t.awaitingResponse, { count: proposed.length }),
+            context: `${firstProposed.batchName} · ${fmt.quantity(
               firstProposed.allocation.quantityAllocated,
               firstProposed.allocation.unit,
-            )}${moreSuffix(proposed.length)}`,
+            )}${moreSuffix(proposed.length, t)}`,
             toneClass: ACTION_URGENCY_CLASS.waiting,
           },
         ]
@@ -107,10 +111,10 @@ function actionCardsFor(view: MakerDashboardView): ActionCardProps[] {
               "/demo/maker/production",
               (row) => `/demo/maker/production/${row.production._id}`,
             ),
-            title: `${overdueRows.length} production overdue`,
-            context: `${firstOverdue.production.productName} · ${
-              firstOverdue.production.plannedQuantity
-            } units${moreSuffix(overdueRows.length)}`,
+            title: format(t.productionOverdue, { count: overdueRows.length }),
+            context: `${firstOverdue.production.productName} · ${format(t.units, {
+              count: firstOverdue.production.plannedQuantity,
+            })}${moreSuffix(overdueRows.length, t)}`,
             toneClass: ACTION_URGENCY_CLASS.late,
           },
         ]
@@ -123,8 +127,8 @@ function actionCardsFor(view: MakerDashboardView): ActionCardProps[] {
               "/demo/maker/allocations?tab=needs-you",
               (entry) => `/demo/maker/allocations?id=${entry.allocation._id}`,
             ),
-            title: `${view.feedbackDue.length} suitability due`,
-            context: `${firstFeedback.batchName}${moreSuffix(view.feedbackDue.length)}`,
+            title: format(t.suitabilityDue, { count: view.feedbackDue.length }),
+            context: `${firstFeedback.batchName}${moreSuffix(view.feedbackDue.length, t)}`,
             toneClass: ACTION_URGENCY_CLASS.waiting,
           },
         ]
@@ -133,14 +137,16 @@ function actionCardsFor(view: MakerDashboardView): ActionCardProps[] {
 }
 
 function ActionZone({ view }: { view: MakerDashboardView }) {
-  const cards = actionCardsFor(view);
+  const { dashboard: t } = useMessages(demoMaker);
+  const fmt = useFormat();
+  const cards = actionCardsFor(view, t, fmt);
   const active = view.metrics.activeProduction;
 
   return (
-    <section className="space-y-3" aria-label="Needs you now">
+    <section className="space-y-3" aria-label={t.needsYou}>
       <ZoneHeader
         icon={<Zap size={14} aria-hidden className="text-[var(--brand-primary)]" />}
-        label="Needs you now"
+        label={t.needsYou}
       />
       {cards.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -152,13 +158,13 @@ function ActionZone({ view }: { view: MakerDashboardView }) {
         <div className="grid gap-3 sm:grid-cols-2">
           <ActionCard
             href="/demo/maker/production"
-            title={`${active} in production · on schedule`}
-            context="Nothing overdue"
+            title={format(t.onSchedule, { count: active })}
+            context={t.nothingOverdue}
             toneClass={NEUTRAL_CARD_CLASS}
           />
         </div>
       ) : (
-        <p className="text-sm text-[var(--ink-muted)]">Nothing waiting on you.</p>
+        <p className="text-sm text-[var(--ink-muted)]">{t.nothingWaiting}</p>
       )}
     </section>
   );
@@ -168,6 +174,8 @@ function MaterialSplitBar({ held, transformed }: { held: number; transformed: nu
   const total = held + transformed;
   const transformedPct = total > 0 ? Math.round((transformed / total) * 100) : 0;
   const heldPct = total > 0 ? 100 - transformedPct : 0;
+  const { dashboard: t } = useMessages(demoMaker);
+  const fmt = useFormat();
 
   return (
     <div className="space-y-2.5">
@@ -176,25 +184,25 @@ function MaterialSplitBar({ held, transformed }: { held: number; transformed: nu
           <div
             className="h-full bg-[var(--brand-secondary)]"
             style={{ width: `${transformedPct}%` }}
-            title={`Into products: ${formatQuantity(transformed, "kg")} (${transformedPct}%)`}
+            title={format(t.barTitle, { label: t.intoProducts, quantity: fmt.quantity(transformed, "kg"), percent: transformedPct })}
           />
         )}
         {held > 0 && (
           <div
             className="h-full border-l border-[var(--paper)] bg-[var(--charcoal)]"
             style={{ width: `${heldPct}%` }}
-            title={`Held by you: ${formatQuantity(held, "kg")} (${heldPct}%)`}
+            title={format(t.barTitle, { label: t.heldByYou, quantity: fmt.quantity(held, "kg"), percent: heldPct })}
           />
         )}
       </div>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12px] font-medium text-[var(--ink-muted)] tabular-nums">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-[var(--brand-secondary)]" />
-          Into products · {formatQuantity(transformed, "kg")} · {transformedPct}%
+          {t.intoProducts} · {fmt.quantity(transformed, "kg")} · {transformedPct}%
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-[var(--charcoal)]" />
-          In your workshop · {formatQuantity(held, "kg")} · {heldPct}%
+          {t.inWorkshop} · {fmt.quantity(held, "kg")} · {heldPct}%
         </span>
       </div>
     </div>
@@ -203,10 +211,12 @@ function MaterialSplitBar({ held, transformed }: { held: number; transformed: nu
 
 function MetricsZone({ view }: { view: MakerDashboardView }) {
   const { held, transformed, unitsMade, hours, yieldRate } = view.metrics;
+  const { dashboard: t } = useMessages(demoMaker);
+  const fmt = useFormat();
   const tiles = [
-    { label: "Labour hours", value: `${hours}h` },
-    { label: "Units made", value: String(unitsMade) },
-    { label: "Yield rate", value: yieldRate === null ? "—" : `${Math.round(yieldRate * 100)}%` },
+    { label: t.labourHours, value: format(t.hours, { count: fmt.number(hours) }) },
+    { label: t.unitsMade, value: fmt.number(unitsMade) },
+    { label: t.yieldRate, value: yieldRate === null ? "—" : `${Math.round(yieldRate * 100)}%` },
   ];
 
   return (
@@ -234,20 +244,22 @@ export default function MakerDashboardPage() {
   const { scope, organisation } = useDemoPersona("maker");
   const view = getMakerDashboard(db, scope);
   const awaitingReview = view.metrics.awaitingReview;
+  const { dashboard: t } = useMessages(demoMaker);
+  const fmt = useFormat();
 
   return (
     <div className="space-y-6">
-      <DashboardHero title={organisation?.name ?? "Dashboard"} />
+      <DashboardHero title={organisation?.name ?? t.title} />
 
       <ActionZone view={view} />
       <MetricsZone view={view} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <DashboardSection
-          title="Allocations"
+          title={t.allocations}
           action={
             <Button as={Link} href="/demo/maker/allocations" variant="secondary" size="sm">
-              Open allocations
+              {t.openAllocations}
             </Button>
           }
         >
@@ -257,28 +269,28 @@ export default function MakerDashboardPage() {
                 key={entry.allocation._id}
                 href="/demo/maker/allocations"
                 title={`${entry.allocation.reference} · ${entry.batchName}`}
-                meta={`${entry.fromName} · ${formatQuantity(entry.allocation.quantityAllocated, entry.allocation.unit)}${
-                  entry.hasFeedback ? " · feedback recorded" : ""
+                meta={`${entry.fromName} · ${fmt.quantity(entry.allocation.quantityAllocated, entry.allocation.unit)}${
+                  entry.hasFeedback ? t.feedbackRecorded : ""
                 }`}
                 right={<CirkaBadge status={entry.allocation.status} />}
               />
             ))}
             {view.allocations.length === 0 && (
               <p className="px-6 pb-6 text-sm text-[var(--ink-muted)]">
-                Nothing allocated to you yet.
+                {t.nothingAllocated}
               </p>
             )}
           </div>
         </DashboardSection>
 
         <DashboardSection
-          title="Production"
+          title={t.production}
           description={
-            awaitingReview > 0 ? `${awaitingReview} awaiting CIRKA review` : undefined
+            awaitingReview > 0 ? format(t.awaitingReview, { count: awaitingReview }) : undefined
           }
           action={
             <Button as={Link} href="/demo/maker/production" variant="secondary" size="sm">
-              Open production
+              {t.openProduction}
             </Button>
           }
         >
@@ -288,17 +300,17 @@ export default function MakerDashboardPage() {
                 key={entry.production._id}
                 href={`/demo/maker/production/${entry.production._id}`}
                 title={`${entry.production.reference} · ${entry.production.productName}`}
-                meta={`${entry.production.actualQuantity ?? entry.production.plannedQuantity} units${
+                meta={`${format(t.units, { count: entry.production.actualQuantity ?? entry.production.plannedQuantity })}${
                   entry.production.plannedCompletionDate
-                    ? ` · due ${formatDate(entry.production.plannedCompletionDate)}`
+                    ? format(t.due, { date: fmt.date(entry.production.plannedCompletionDate) })
                     : ""
-                }${entry.overdue ? " · overdue" : ""}`}
+                }${entry.overdue ? t.overdue : ""}`}
                 right={<CirkaBadge status={entry.production.status} />}
               />
             ))}
             {view.production.length === 0 && (
               <p className="px-6 pb-6 text-sm text-[var(--ink-muted)]">
-                No production batches yet.
+                {t.noProduction}
               </p>
             )}
           </div>

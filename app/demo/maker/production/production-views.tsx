@@ -5,16 +5,18 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import { Button, Panel } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoMaker } from "@/lib/i18n/messages/demo-maker";
 import type { ProductionBatch, ProductionOutput } from "../../_mock/types";
-import { formatPercent, formatQuantity } from "../../_mock/selectors-shared";
 import {
   CirkaBadge,
   DataRow,
   FlowBar,
   ProductionLadder,
-  formatDate,
   materialFlowSegments,
 } from "../../_components/cirka-ui";
+import { useFormat } from "../../_components/use-format";
 
 function buildFlowSegments(production: ProductionBatch) {
   return materialFlowSegments({
@@ -36,7 +38,12 @@ interface ProductionRowProps {
 
 /** Variant A: one row per batch, the 8-stage lifecycle ladder standing in for a status badge. */
 export function ProductionListRow({ href, production, batchReference, outputs, overdue }: ProductionRowProps) {
-  const unitsSummary = `${production.actualQuantity ?? 0} / ${production.plannedQuantity} units`;
+  const { production: t } = useMessages(demoMaker);
+  const fmt = useFormat();
+  const unitsSummary = format(t.unitsSummary, {
+    actual: production.actualQuantity ?? 0,
+    planned: production.plannedQuantity,
+  });
 
   return (
     <Link
@@ -47,7 +54,7 @@ export function ProductionListRow({ href, production, batchReference, outputs, o
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <p className="truncate text-sm font-medium text-[var(--ink)]">{production.productName}</p>
           <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-            {production.reference} · from {batchReference}
+            {format(t.fromBatch, { reference: production.reference, batch: batchReference })}
           </p>
         </div>
         <div className="max-w-md">
@@ -56,7 +63,7 @@ export function ProductionListRow({ href, production, batchReference, outputs, o
         {overdue && (
           <p className="flex items-center gap-1.5 text-[11px] font-medium text-[#8A3D11]">
             <AlertTriangle size={12} />
-            Overdue: planned for {formatDate(production.plannedCompletionDate)}
+            {format(t.overdue, { date: fmt.date(production.plannedCompletionDate) })}
           </p>
         )}
       </div>
@@ -66,7 +73,7 @@ export function ProductionListRow({ href, production, batchReference, outputs, o
           {unitsSummary}
           {outputs.length > 0 && (
             <span className="block text-right">
-              {outputs.length} output line{outputs.length === 1 ? "" : "s"}
+              {format(outputs.length === 1 ? t.outputLinesOne : t.outputLinesMany, { count: outputs.length })}
             </span>
           )}
         </span>
@@ -81,6 +88,8 @@ export function ProductionListRow({ href, production, batchReference, outputs, o
 
 /** Variant B: one card per batch, material yield as the headline and a flow bar for where the material went. */
 export function ProductionGridCard({ href, production, batchReference, outputs, overdue }: ProductionRowProps) {
+  const { production: t } = useMessages(demoMaker);
+  const fmt = useFormat();
   const segments = buildFlowSegments(production);
   const flowMax = production.qtyUsed ?? segments.reduce((total, segment) => total + segment.value, 0);
 
@@ -93,7 +102,7 @@ export function ProductionGridCard({ href, production, batchReference, outputs, 
               {production.productName}
             </h2>
             <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              {production.reference} · from {batchReference}
+              {format(t.fromBatch, { reference: production.reference, batch: batchReference })}
             </p>
           </div>
           <div className="flex flex-wrap justify-end gap-2">
@@ -105,56 +114,57 @@ export function ProductionGridCard({ href, production, batchReference, outputs, 
         {production.materialYield !== undefined ? (
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-semibold tracking-[-0.02em] text-[var(--ink)]">
-              {formatPercent(production.materialYield)}
+              {fmt.percent(production.materialYield)}
             </span>
             <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              material yield
+              {t.materialYield}
             </span>
           </div>
         ) : (
-          <p className="text-sm text-[var(--ink-muted)]">Yield –</p>
+          <p className="text-sm text-[var(--ink-muted)]">{t.yieldNone}</p>
         )}
 
         {segments.length > 0 ? (
           <FlowBar segments={segments} max={flowMax} unit={production.unit} />
         ) : (
           <p className="text-sm text-[var(--ink-muted)]">
-            {formatQuantity(production.qtyReceived ?? 0, production.unit)} received · use not recorded
+            {format(t.receivedNoUse, { quantity: fmt.quantity(production.qtyReceived ?? 0, production.unit) })}
           </p>
         )}
       </div>
 
       <dl className="border-t border-[var(--line)] pt-1">
         <DataRow
-          label="Units"
-          value={`${production.actualQuantity ?? 0} of ${production.plannedQuantity} planned`}
+          label={t.units}
+          value={format(t.unitsOf, { actual: production.actualQuantity ?? 0, planned: production.plannedQuantity })}
           hint={
-            outputs.length > 0 ? `${outputs.length} output line${outputs.length === 1 ? "" : "s"}` : undefined
-          }
-        />
-        <DataRow
-          label="Completion"
-          value={formatDate(production.plannedCompletionDate)}
-          hint={
-            production.actualCompletionDate
-              ? `Completed ${formatDate(production.actualCompletionDate)}`
+            outputs.length > 0
+              ? format(outputs.length === 1 ? t.outputLinesOne : t.outputLinesMany, { count: outputs.length })
               : undefined
           }
         />
         <DataRow
-          label="Labour"
+          label={t.completion}
+          value={fmt.date(production.plannedCompletionDate)}
+          hint={
+            production.actualCompletionDate
+              ? format(t.completed, { date: fmt.date(production.actualCompletionDate) })
+              : undefined
+          }
+        />
+        <DataRow
+          label={t.labour}
           value={
             production.totalLabourHours !== undefined
-              ? `${production.totalLabourHours} hrs${
-                  production.peopleInvolved ? ` · ${production.peopleInvolved} people` : ""
-                }`
-              : "Not recorded"
+              ? format(t.hrs, { count: fmt.number(production.totalLabourHours) }) +
+                (production.peopleInvolved ? format(t.people, { count: production.peopleInvolved }) : "")
+              : t.notRecorded
           }
         />
       </dl>
 
       <Button as={Link} href={href} size="sm">
-        Open batch
+        {t.openBatch}
       </Button>
     </Panel>
   );

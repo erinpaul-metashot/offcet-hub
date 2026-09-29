@@ -3,11 +3,15 @@
 import { useMemo, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Button, EmptyState, Input, Panel, Select } from "@/components/ui";
-import { statusLabel } from "../../_mock/domain";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoMaker } from "@/lib/i18n/messages/demo-maker";
+import { statusLabelIn } from "../../_mock/domain-labels";
 import { listMakerRequests } from "../../_mock/selectors-maker";
-import { categoryLabel, formatQuantity, isOverdue } from "../../_mock/selectors-shared";
+import { isOverdue } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
-import { CirkaBadge, GapNote, NoticeBanner, SectionHeading, formatDate } from "../../_components/cirka-ui";
+import { CirkaBadge, GapNote, NoticeBanner, SectionHeading } from "../../_components/cirka-ui";
+import { useFormat } from "../../_components/use-format";
+import { useLabels } from "../../_components/use-labels";
 import { NewRequestDrawer, type NewRequestValues } from "../../_components/new-request-drawer";
 import { RequestDetailDrawer } from "../../_components/request-detail-drawer";
 import { useAction } from "../../_components/use-action";
@@ -38,6 +42,9 @@ export default function MakerRequestsPage() {
   const store = useDemoStore();
   const { scope } = useDemoPersona("maker");
   const { run, error, pending } = useAction();
+  const { requests: t } = useMessages(demoMaker);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const rows = listMakerRequests(store.db, scope.orgId);
 
@@ -87,16 +94,16 @@ export default function MakerRequestsPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        title="My requests"
+        title={t.title}
         action={
           <Button size="sm" onClick={() => setComposeOpen(true)}>
-            New request
+            {t.newRequest}
           </Button>
         }
       />
 
       {error && !composeOpen && (
-        <NoticeBanner tone="blocking" title="The request was not submitted">
+        <NoticeBanner tone="blocking" title={t.notSubmitted}>
           {error}
         </NoticeBanner>
       )}
@@ -104,15 +111,15 @@ export default function MakerRequestsPage() {
       <Panel className="p-5">
         <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
           <Input
-            placeholder="Search title or reference"
+            placeholder={t.search}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
           <Select value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="">All statuses</option>
+            <option value="">{t.allStatuses}</option>
             {statuses.map((value) => (
               <option key={value} value={value}>
-                {statusLabel(value)}
+                {statusLabelIn(labels, value)}
               </option>
             ))}
           </Select>
@@ -121,9 +128,9 @@ export default function MakerRequestsPage() {
 
       {filteredRows.length === 0 ? (
         rows.length === 0 ? (
-          <EmptyState title="No requests yet" />
+          <EmptyState title={t.noRequests} />
         ) : (
-          <EmptyState title="No matches" />
+          <EmptyState title={t.noMatches} />
         )
       ) : (
         <Panel className="overflow-hidden">
@@ -131,12 +138,12 @@ export default function MakerRequestsPage() {
             <table className="w-full min-w-[48rem] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-[var(--line)] text-left text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  <th className="py-3 pl-5 pr-4">Reference</th>
-                  <th className="py-3 pr-4">Request</th>
-                  <th className="py-3 pr-4">Category</th>
-                  <th className="py-3 pr-4 text-right">Quantity</th>
-                  <th className="py-3 pr-4">Status</th>
-                  <th className="py-3 pr-4">Needed by</th>
+                  <th className="py-3 pl-5 pr-4">{t.colReference}</th>
+                  <th className="py-3 pr-4">{t.colRequest}</th>
+                  <th className="py-3 pr-4">{t.colCategory}</th>
+                  <th className="py-3 pr-4 text-right">{t.colQuantity}</th>
+                  <th className="py-3 pr-4">{t.colStatus}</th>
+                  <th className="py-3 pr-4">{t.colNeededBy}</th>
                   <th className="py-3 pr-5" aria-hidden="true" />
                 </tr>
               </thead>
@@ -168,21 +175,21 @@ export default function MakerRequestsPage() {
                         )}
                       </td>
                       <td className="py-3.5 pr-4 text-[var(--ink-muted)]">
-                        {categoryLabel(request.materialCategory)}
+                        {labels.MATERIAL_CATEGORY_LABELS[request.materialCategory]}
                       </td>
                       <td className="py-3.5 pr-4 text-right tabular-nums text-[var(--ink)]">
-                        {formatQuantity(request.quantityMatched, request.unit)} /{" "}
-                        {formatQuantity(request.quantityNeeded, request.unit)}
+                        {fmt.quantity(request.quantityMatched, request.unit)} /{" "}
+                        {fmt.quantity(request.quantityNeeded, request.unit)}
                       </td>
                       <td className="py-3.5 pr-4">
                         <CirkaBadge status={request.status} />
                       </td>
                       <td className="py-3.5 pr-4 whitespace-nowrap text-[var(--ink-muted)]">
-                        {formatDate(request.neededBy)}
+                        {fmt.date(request.neededBy)}
                         {overdue && (
                           <>
                             {" · "}
-                            <GapNote>overdue</GapNote>
+                            <GapNote>{t.overdue}</GapNote>
                           </>
                         )}
                       </td>

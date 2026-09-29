@@ -4,9 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ImageOff } from "lucide-react";
 import { Button, EmptyState, Panel } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoMaker } from "@/lib/i18n/messages/demo-maker";
 import { listMakerProjects, UNASSIGNED_PROJECT } from "../../_mock/selectors-maker";
 import type { MakerProjectRow } from "../../_mock/selectors-maker";
-import { formatPercent, formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import {
   CirkaBadge,
@@ -15,6 +17,7 @@ import {
   SectionHeading,
   materialFlowSegments,
 } from "../../_components/cirka-ui";
+import { useFormat } from "../../_components/use-format";
 
 interface Disposition {
   incorporated: number;
@@ -52,13 +55,14 @@ function OutputRail({ row }: { row: MakerProjectRow }) {
     output.finishedImageUrls.map((url) => ({ url, output }))
   );
   const [activeIndex, setActiveIndex] = useState(0);
+  const { projects: t } = useMessages(demoMaker);
 
   if (photos.length === 0) {
     return (
       <div className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 bg-[var(--surface)] p-6 text-center lg:w-[220px] lg:shrink-0">
         <ImageOff size={18} className="text-[var(--ink-muted)]" />
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-          No photo
+          {t.noPhoto}
         </p>
       </div>
     );
@@ -94,7 +98,7 @@ function OutputRail({ row }: { row: MakerProjectRow }) {
                     ? "w-4 bg-white"
                     : "w-1.5 bg-white/50 hover:bg-white/90"
                 }`}
-                title={`${p.output.productName} (${idx + 1}/${photos.length})`}
+                title={format(t.photoOf, { product: p.output.productName, n: idx + 1, total: photos.length })}
               />
             ))}
             <span className="ml-1 text-[9px] font-bold uppercase tracking-wider text-white/80">
@@ -111,6 +115,8 @@ export default function MakerProjectsPage() {
   const { db } = useDemoStore();
   const { scope } = useDemoPersona("maker");
   const allRows = listMakerProjects(db, scope.orgId);
+  const { projects: t } = useMessages(demoMaker);
+  const fmt = useFormat();
   const upcoming = allRows.filter((row) => row.runs.length === 0);
   const rows = allRows.filter((row) => row.runs.length > 0);
 
@@ -133,10 +139,10 @@ export default function MakerProjectsPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        title="Projects"
+        title={t.title}
         action={
           <Button as={Link} href="/demo/maker/production/new" size="sm">
-            New production batch
+            {t.newProduction}
           </Button>
         }
       />
@@ -144,7 +150,7 @@ export default function MakerProjectsPage() {
       {upcoming.length > 0 && (
         <section className="space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Upcoming briefs
+            {t.upcoming}
           </p>
           <Panel className="overflow-hidden p-0">
             {upcoming.map((row) => (
@@ -152,7 +158,7 @@ export default function MakerProjectsPage() {
                 key={row.key}
                 href={`/demo/maker/projects/${row.key}`}
                 title={row.title}
-                meta={`${row.reference} · for ${row.brandName} · no production batch yet`}
+                meta={format(t.upcomingMeta, { reference: row.reference ?? "", brand: row.brandName ?? "" })}
                 right={row.project && <CirkaBadge status={row.project.status} />}
               />
             ))}
@@ -161,31 +167,31 @@ export default function MakerProjectsPage() {
       )}
 
       {rows.length === 0 ? (
-        upcoming.length === 0 && <EmptyState title="Nothing made yet" />
+        upcoming.length === 0 && <EmptyState title={t.nothingMade} />
       ) : (
         <>
           <Panel className="space-y-5 p-6">
             <div className="flex flex-wrap items-end justify-between gap-6">
               <div className="space-y-1">
                 <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  Into product
+                  {t.intoProduct}
                 </p>
                 <p className="text-3xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                  {formatQuantity(portfolio.incorporated, unit)}
+                  {fmt.quantity(portfolio.incorporated, unit)}
                   <span className="ml-2 text-sm font-medium text-[var(--ink-muted)]">
-                    of {formatQuantity(portfolio.used, unit)} used
+                    {format(t.ofUsed, { quantity: fmt.quantity(portfolio.used, unit) })}
                     {portfolio.used > 0
-                      ? ` · ${formatPercent(portfolio.incorporated / portfolio.used)} yield`
+                      ? format(t.yield, { percent: fmt.percent(portfolio.incorporated / portfolio.used) })
                       : ""}
                   </span>
                 </p>
               </div>
               <div className="flex flex-wrap gap-8">
-                <Figure label="Units completed" value={`${portfolio.units}`} />
-                <Figure label="Labour hours" value={`${portfolio.hours}`} />
+                <Figure label={t.unitsCompleted} value={fmt.number(portfolio.units)} />
+                <Figure label={t.labourHours} value={fmt.number(portfolio.hours)} />
                 <Figure
-                  label="Runs"
-                  value={`${portfolio.runs} across ${rows.length} project${rows.length === 1 ? "" : "s"}`}
+                  label={t.runs}
+                  value={format(rows.length === 1 ? t.runsAcrossOne : t.runsAcrossMany, { runs: portfolio.runs, count: rows.length })}
                 />
               </div>
             </div>
@@ -215,25 +221,25 @@ export default function MakerProjectsPage() {
                               {row.activeRuns > 0 && (
                                 <CirkaBadge
                                   status="in_production"
-                                  label={`${row.activeRuns} in production`}
+                                  label={format(t.inProduction, { count: row.activeRuns })}
                                 />
                               )}
                             </div>
                             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                               {unassigned
-                                ? "Own initiative"
-                                : `${row.reference} · for ${row.brandName}`}
+                                ? t.ownInitiative
+                                : format(t.forBrand, { reference: row.reference ?? "", brand: row.brandName ?? "" })}
                             </p>
                           </div>
 
                           <div className="shrink-0 text-right">
                             <p className="text-2xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                              {formatQuantity(row.material.incorporated, row.material.unit)}
+                              {fmt.quantity(row.material.incorporated, row.material.unit)}
                             </p>
                             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              into product
+                              {t.intoProductLower}
                               {row.material.yield !== undefined
-                                ? ` · ${formatPercent(row.material.yield)} yield`
+                                ? format(t.yield, { percent: fmt.percent(row.material.yield) })
                                 : ""}
                             </p>
                           </div>
@@ -247,21 +253,23 @@ export default function MakerProjectsPage() {
                           />
                         ) : (
                           <p className="text-sm text-[var(--ink-muted)]">
-                            {formatQuantity(row.material.received, row.material.unit)} received · use not
-                            recorded
+                            {format(t.receivedNoUse, { quantity: fmt.quantity(row.material.received, row.material.unit) })}
                           </p>
                         )}
 
                         <div className="flex flex-wrap items-end justify-between gap-6 border-t border-[var(--line)] pt-4">
                           <div className="flex flex-wrap gap-8">
                             <Figure
-                              label="Units"
-                              value={`${row.unitsCompleted} of ${row.unitsPlanned || row.unitsCompleted} planned`}
+                              label={t.units}
+                              value={format(t.unitsOf, { completed: row.unitsCompleted, planned: row.unitsPlanned || row.unitsCompleted })}
                             />
-                            <Figure label="Labour" value={`${row.hours} hrs`} />
+                            <Figure label={t.labour} value={format(t.hrs, { count: row.hours })} />
                             <Figure
-                              label="Evidence reviewed"
-                              value={`${row.reviewedRuns} of ${row.runs.length} run${row.runs.length === 1 ? "" : "s"}`}
+                              label={t.evidenceReviewed}
+                              value={format(row.runs.length === 1 ? t.runsReviewedOne : t.runsReviewedMany, {
+                                reviewed: row.reviewedRuns,
+                                count: row.runs.length,
+                              })}
                             />
                           </div>
 
@@ -270,7 +278,7 @@ export default function MakerProjectsPage() {
                               href={`/demo/maker/projects/${row.key}`}
                               className="group inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--brand-primary)] transition-colors duration-200 ease-[var(--ease-out)] hover:text-[var(--ink)]"
                             >
-                              Open project
+                              {t.openProject}
                               <ArrowRight
                                 size={14}
                                 className="transition-transform duration-200 ease-[var(--ease-out)] group-hover:translate-x-1"
@@ -286,7 +294,7 @@ export default function MakerProjectsPage() {
                                 key={production._id}
                                 href={`/demo/maker/production/${production._id}`}
                                 title={production.productName}
-                                meta={`${production.reference} · from ${batch?.reference ?? "a resource batch"}`}
+                                meta={format(t.fromBatch, { reference: production.reference, batch: batch?.reference ?? t.aBatch })}
                                 right={<CirkaBadge status={production.status} />}
                               />
                             ))}

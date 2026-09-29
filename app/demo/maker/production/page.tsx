@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button, EmptyState } from "@/components/ui";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoMaker } from "@/lib/i18n/messages/demo-maker";
 import { listMakerProduction } from "../../_mock/selectors-maker";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { SectionHeading, ViewModeToggle } from "../../_components/cirka-ui";
@@ -13,16 +15,17 @@ export default function MakerProductionPage() {
   const { scope } = useDemoPersona("maker");
   const rows = listMakerProduction(db, scope.orgId);
   const [view, setView] = useState<"grid" | "list">("list");
+  const { production: t } = useMessages(demoMaker);
 
   return (
     <div className="space-y-6">
       <SectionHeading
-        title="Production"
+        title={t.title}
         action={
           <div className="flex items-center gap-3">
             <ViewModeToggle value={view} onChange={setView} />
             <Button as={Link} href="/demo/maker/production/new" size="sm">
-              New production batch
+              {t.newProduction}
             </Button>
           </div>
         }
@@ -30,8 +33,8 @@ export default function MakerProductionPage() {
 
       {rows.length === 0 ? (
         <EmptyState
-          title="No production batches"
-          body="Create one against a received allocation."
+          title={t.noProduction}
+          body={t.noProductionBody}
         />
       ) : view === "list" ? (
         <div className="overflow-hidden rounded-[1.5rem] border border-[var(--line)] bg-[var(--paper)]">
@@ -40,7 +43,7 @@ export default function MakerProductionPage() {
               key={production._id}
               href={`/demo/maker/production/${production._id}`}
               production={production}
-              batchReference={batch?.reference ?? "a resource batch"}
+              batchReference={batch?.reference ?? t.aBatch}
               outputs={outputs}
               overdue={overdue}
             />
@@ -53,7 +56,7 @@ export default function MakerProductionPage() {
               key={production._id}
               href={`/demo/maker/production/${production._id}`}
               production={production}
-              batchReference={batch?.reference ?? "a resource batch"}
+              batchReference={batch?.reference ?? t.aBatch}
               outputs={outputs}
               overdue={overdue}
             />

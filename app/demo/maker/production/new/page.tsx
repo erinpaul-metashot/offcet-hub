@@ -3,16 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, EmptyState, Field, Input, Panel, Select, Textarea } from "@/components/ui";
-import {
-  PRODUCT_CATEGORIES,
-  PRODUCT_CATEGORY_LABELS,
-  type ProductCategory,
-} from "../../../_mock/domain";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoMaker } from "@/lib/i18n/messages/demo-maker";
+import { PRODUCT_CATEGORIES, type ProductCategory } from "../../../_mock/domain";
 import { listMakerAllocations } from "../../../_mock/selectors-maker";
-import { formatQuantity } from "../../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../../_mock/store";
 import { NoticeBanner, SectionHeading } from "../../../_components/cirka-ui";
 import { useAction } from "../../../_components/use-action";
+import { useFormat } from "../../../_components/use-format";
+import { useLabels } from "../../../_components/use-labels";
 
 function toTimestamp(value: string): number | undefined {
   if (!value) {
@@ -28,6 +27,9 @@ export default function NewProductionBatchPage() {
   const store = useDemoStore();
   const { scope } = useDemoPersona("maker");
   const { run, error, pending } = useAction();
+  const { newProduction: t } = useMessages(demoMaker);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const available = listMakerAllocations(store.db, scope.orgId).filter(
     (entry) =>
@@ -65,19 +67,19 @@ export default function NewProductionBatchPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="New Production Batch" />
+      <SectionHeading title={t.title} />
 
-      {error && <NoticeBanner tone="blocking" title="The batch was not created">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={t.notCreated}>{error}</NoticeBanner>}
 
       {available.length === 0 ? (
         <EmptyState
-          title="No allocation available"
-          body="Accept an allocation first."
+          title={t.noAllocation}
+          body={t.noAllocationBody}
         />
       ) : (
         <form onSubmit={submit} className="space-y-6">
           <Panel className="space-y-5 p-6">
-            <Field label="Allocation">
+            <Field label={t.allocation}>
               <Select
                 value={form.allocationId}
                 onChange={(event) =>
@@ -87,24 +89,24 @@ export default function NewProductionBatchPage() {
                 {available.map((entry) => (
                   <option key={entry.allocation._id} value={entry.allocation._id}>
                     {entry.allocation.reference} · {entry.batchName} ·{" "}
-                    {formatQuantity(entry.allocation.quantityAllocated, entry.allocation.unit)}
+                    {fmt.quantity(entry.allocation.quantityAllocated, entry.allocation.unit)}
                   </option>
                 ))}
               </Select>
             </Field>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Product or collection name">
+              <Field label={t.productName}>
                 <Input
                   required
                   value={form.productName}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, productName: event.target.value }))
                   }
-                  placeholder="Reclaimed Jersey Tote and Pouch"
+                  placeholder={t.productNamePlaceholder}
                 />
               </Field>
-              <Field label="Product category">
+              <Field label={t.productCategory}>
                 <Select
                   value={form.productCategory}
                   onChange={(event) =>
@@ -116,25 +118,25 @@ export default function NewProductionBatchPage() {
                 >
                   {PRODUCT_CATEGORIES.map((value) => (
                     <option key={value} value={value}>
-                      {PRODUCT_CATEGORY_LABELS[value]}
+                      {labels.PRODUCT_CATEGORY_LABELS[value]}
                     </option>
                   ))}
                 </Select>
               </Field>
             </div>
 
-            <Field label="Description">
+            <Field label={t.description}>
               <Textarea
                 value={form.productDescription}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, productDescription: event.target.value }))
                 }
-                placeholder="Panelled tote with a matching pouch, cut to absorb shade variation."
+                placeholder={t.descriptionPlaceholder}
               />
             </Field>
 
             <div className="grid gap-5 sm:grid-cols-3">
-              <Field label="Planned units">
+              <Field label={t.plannedUnits}>
                 <Input
                   required
                   type="number"
@@ -146,7 +148,7 @@ export default function NewProductionBatchPage() {
                   placeholder="150"
                 />
               </Field>
-              <Field label="Planned start">
+              <Field label={t.plannedStart}>
                 <Input
                   type="date"
                   value={form.plannedStartDate}
@@ -155,7 +157,7 @@ export default function NewProductionBatchPage() {
                   }
                 />
               </Field>
-              <Field label="Planned completion">
+              <Field label={t.plannedCompletion}>
                 <Input
                   type="date"
                   value={form.plannedCompletionDate}
@@ -172,7 +174,7 @@ export default function NewProductionBatchPage() {
 
           <div className="flex justify-end">
             <Button type="submit" disabled={pending}>
-              Create production batch
+              {t.create}
             </Button>
           </div>
         </form>

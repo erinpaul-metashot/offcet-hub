@@ -4,12 +4,15 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { EmptyState } from "@/components/ui";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { demoMaker } from "@/lib/i18n/messages/demo-maker";
 import type { AllocationStatus } from "../../_mock/domain";
 import { listMakerAllocations } from "../../_mock/selectors-maker";
-import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { CirkaBadge, NoticeBanner, SectionHeading } from "../../_components/cirka-ui";
 import { useAction } from "../../_components/use-action";
+import { useFormat } from "../../_components/use-format";
 import { AllocationDetailDrawer } from "../../_components/allocation-detail-drawer";
 
 type Bucket = "needs-you" | "in-progress" | "settled";
@@ -30,12 +33,8 @@ function bucketFor(status: AllocationStatus, hasFeedback: boolean): Bucket {
   return "in-progress";
 }
 
-const TABS = [
-  { key: "all", label: "All" },
-  { key: "needs-you", label: "Needs you" },
-  { key: "in-progress", label: "In progress" },
-  { key: "settled", label: "Settled" },
-] as const;
+/** Tab names live in `demoMaker.allocations.tabs`, keyed like this list. */
+const TABS = [{ key: "all" }, { key: "needs-you" }, { key: "in-progress" }, { key: "settled" }] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
 
@@ -49,6 +48,9 @@ export default function MakerAllocationsPage() {
   const store = useDemoStore();
   const { scope } = useDemoPersona("maker");
   const { run, error, pending, clearError } = useAction();
+  const { allocations: t } = useMessages(demoMaker);
+  const { ui } = useMessages(demoCommon);
+  const fmt = useFormat();
 
   const searchParams = useSearchParams();
 
@@ -83,16 +85,16 @@ export default function MakerAllocationsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Allocations" />
+      <SectionHeading title={t.title} />
 
       {error && !openEntry && (
-        <NoticeBanner tone="blocking" title="That step was refused">
+        <NoticeBanner tone="blocking" title={ui.stepRefused}>
           {error}
         </NoticeBanner>
       )}
 
       {allocations.length === 0 ? (
-        <EmptyState title="Nothing allocated yet" />
+        <EmptyState title={t.nothingAllocated} />
       ) : (
         <>
           <div className="flex gap-6 border-b border-[var(--line)]">
@@ -107,7 +109,7 @@ export default function MakerAllocationsPage() {
                     : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
                 }`}
               >
-                {entry.label}
+                {t.tabs[entry.key]}
                 <span
                   className={`ml-2 text-[11px] tabular-nums ${
                     entry.key === "needs-you" && counts[entry.key] > 0
@@ -125,7 +127,7 @@ export default function MakerAllocationsPage() {
           </div>
 
           {visible.length === 0 ? (
-            <EmptyState title="Nothing here" />
+            <EmptyState title={t.nothingHere} />
           ) : (
             <div>
               {visible.map(({ entry, bucket }) => {
@@ -159,7 +161,7 @@ export default function MakerAllocationsPage() {
                     <CirkaBadge status={allocation.status} />
                     <span className="flex items-center gap-2">
                       <span className="text-sm font-medium tabular-nums text-[var(--ink)]">
-                        {formatQuantity(allocation.quantityAllocated, allocation.unit)}
+                        {fmt.quantity(allocation.quantityAllocated, allocation.unit)}
                       </span>
                       <ChevronRight
                         size={16}
