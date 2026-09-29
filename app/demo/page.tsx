@@ -13,11 +13,16 @@ import {
   ShieldCheck,
   Warehouse,
 } from "lucide-react";
+import { LocaleToggle } from "@/components/locale-toggle";
 import { Button } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoShell } from "@/lib/i18n/messages/demo-shell";
+import { useFormat } from "./_components/use-format";
+import { useLabels } from "./_components/use-labels";
 import { type CirkaRole } from "./_mock/domain";
 import { checkLedgerIntegrity } from "./_mock/ledger";
 import { useDemoStore } from "./_mock/store";
-import { formatQuantity } from "./_mock/selectors-shared";
 import { getAdminDashboard } from "./_mock/selectors-admin";
 
 const ROLE_ORDER: CirkaRole[] = ["brand", "manufacturer", "custodian", "maker", "admin"];
@@ -32,16 +37,19 @@ const ROLE_ICONS: Record<CirkaRole, React.ReactNode> = {
 
 export default function DemoRoleSelectorPage() {
   const { db, personaFor, resetDemo, resetToFresh, isFresh } = useDemoStore();
+  const { shell, hub } = useMessages(demoShell);
+  const { ROLE_LABELS } = useLabels();
+  const fmt = useFormat();
 
   const admin = getAdminDashboard(db);
   const integrity = checkLedgerIntegrity(db);
 
-  const roleStat: Record<CirkaRole, string> = {
-    brand: `${db.projects.filter((project) => project.status === "active").length} active projects`,
-    manufacturer: `${db.resourceBatches.filter((batch) => batch.ownerOrgId === personaFor("manufacturer").orgId).length} batches recorded`,
-    custodian: `${db.allocations.filter((allocation) => allocation.toOrgId === personaFor("custodian").orgId && allocation.status === "in_transit").length} arrivals expected`,
-    maker: `${db.allocations.filter((allocation) => allocation.toOrgId === personaFor("maker").orgId && allocation.status === "proposed").length} allocations to answer`,
-    admin: `${admin.metrics.openActions} open actions`,
+  const roleCount: Record<CirkaRole, number> = {
+    brand: db.projects.filter((project) => project.status === "active").length,
+    manufacturer: db.resourceBatches.filter((batch) => batch.ownerOrgId === personaFor("manufacturer").orgId).length,
+    custodian: db.allocations.filter((allocation) => allocation.toOrgId === personaFor("custodian").orgId && allocation.status === "in_transit").length,
+    maker: db.allocations.filter((allocation) => allocation.toOrgId === personaFor("maker").orgId && allocation.status === "proposed").length,
+    admin: admin.metrics.openActions,
   };
 
   return (
@@ -49,14 +57,17 @@ export default function DemoRoleSelectorPage() {
       <div className="mx-auto flex max-w-6xl flex-col gap-8 w-full">
         {/* Header */}
         <header className="space-y-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/cirka-logo-white.png"
-            alt="Cirka"
-            className="h-10 w-auto object-contain object-left"
-          />
+          <div className="flex items-center justify-between gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/cirka-logo-white.png"
+              alt="Cirka"
+              className="h-10 w-auto object-contain object-left"
+            />
+            <LocaleToggle label={shell.language} />
+          </div>
           <h1 className="max-w-2xl text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">
-            Choose a role
+            {hub.heading}
           </h1>
         </header>
 
@@ -81,13 +92,13 @@ export default function DemoRoleSelectorPage() {
                         {ROLE_ICONS[role]}
                       </span>
                       <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                        {roleStat[role]}
+                        {format(hub.stats[role], { count: roleCount[role] })}
                       </span>
                     </div>
 
                     <div className="space-y-1">
-                      <h2 className="text-xl font-semibold capitalize tracking-[-0.03em] text-[var(--ink)]">
-                        {role === "admin" ? "CIRKA Admin" : role}
+                      <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
+                        {ROLE_LABELS[role]}
                       </h2>
                       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--ink-muted)]">
                         {persona.name}
@@ -110,17 +121,17 @@ export default function DemoRoleSelectorPage() {
         {/* Database Summary Strip: Inline & Compact */}
         <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-sm flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-xs">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[var(--sidebar-text-muted)]">
-            <span className="text-white font-medium">Database state:</span>
+            <span className="text-white font-medium">{hub.databaseState}</span>
             {isFresh ? (
               <span className="rounded-full border border-[var(--brand-primary)] px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--brand-primary)]">
-                Fresh slate
+                {hub.freshSlate}
               </span>
             ) : null}
-            <span>Recorded: <strong className="text-white tabular-nums">{formatQuantity(admin.metrics.recorded, "kg")}</strong></span>
-            <span>Available: <strong className="text-white tabular-nums">{formatQuantity(admin.metrics.available, "kg")}</strong></span>
-            <span>In Motion: <strong className="text-white tabular-nums">{formatQuantity(admin.metrics.inMotion, "kg")}</strong></span>
-            <span>Transformed: <strong className="text-white tabular-nums">{formatQuantity(admin.metrics.consumed, "kg")}</strong></span>
-            <span>Written Off: <strong className="text-white tabular-nums">{formatQuantity(admin.metrics.writtenOff, "kg")}</strong></span>
+            <span>{hub.recorded} <strong className="text-white tabular-nums">{fmt.quantity(admin.metrics.recorded, "kg")}</strong></span>
+            <span>{hub.available} <strong className="text-white tabular-nums">{fmt.quantity(admin.metrics.available, "kg")}</strong></span>
+            <span>{hub.inMotion} <strong className="text-white tabular-nums">{fmt.quantity(admin.metrics.inMotion, "kg")}</strong></span>
+            <span>{hub.transformed} <strong className="text-white tabular-nums">{fmt.quantity(admin.metrics.consumed, "kg")}</strong></span>
+            <span>{hub.writtenOff} <strong className="text-white tabular-nums">{fmt.quantity(admin.metrics.writtenOff, "kg")}</strong></span>
           </div>
 
           <span
@@ -132,8 +143,8 @@ export default function DemoRoleSelectorPage() {
           >
             {integrity.length === 0 ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
             {integrity.length === 0
-              ? "Ledger balanced"
-              : `${integrity.length} discrepanc${integrity.length === 1 ? "y" : "ies"}`}
+              ? hub.ledgerBalanced
+              : format(integrity.length === 1 ? hub.discrepancyOne : hub.discrepancyMany, { count: integrity.length })}
           </span>
         </div>
       </div>
@@ -149,7 +160,7 @@ export default function DemoRoleSelectorPage() {
             className="gap-2"
           >
             <PlayCircle size={14} />
-            Guided Walkthrough
+            {hub.walkthrough}
           </Button>
           <Button
             onClick={resetDemo}
@@ -158,17 +169,17 @@ export default function DemoRoleSelectorPage() {
             className="gap-2 border-[var(--sidebar-border)] bg-transparent text-white hover:bg-[var(--sidebar-hover)]"
           >
             <RotateCcw size={14} />
-            Reset seed data
+            {hub.resetSeed}
           </Button>
           <Button
             onClick={resetToFresh}
             variant="secondary"
             size="sm"
             className="gap-2 border-[var(--sidebar-border)] bg-transparent text-white hover:bg-[var(--sidebar-hover)]"
-            title="Clear all batches, projects and allocations. The five role accounts stay approved."
+            title={hub.wipeHint}
           >
             <Eraser size={14} />
-            Wipe data (fresh demo)
+            {hub.wipe}
           </Button>
           <Button
             as={Link}
@@ -177,7 +188,7 @@ export default function DemoRoleSelectorPage() {
             size="sm"
             className="text-white hover:bg-[var(--sidebar-hover)]"
           >
-            Back to site
+            {hub.backToSite}
           </Button>
         </div>
       </footer>

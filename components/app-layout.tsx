@@ -106,6 +106,8 @@ export function AppLayout(props: {
   pageTitle?: string;
   /** Replaces the sidebar sign-out control (used by the mock demo tree). */
   footerAction?: (collapsed: boolean) => React.ReactNode;
+  /** Badge text in the viewer's language. The badge colour still comes from `user.role`. */
+  roleLabel?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -121,6 +123,7 @@ function AppLayoutInner({
   navItems,
   pageTitle,
   footerAction,
+  roleLabel,
   children,
 }: {
   user: { name: string; email: string; role?: string };
@@ -128,10 +131,12 @@ function AppLayoutInner({
   navItems: NavItem[];
   pageTitle?: string;
   footerAction?: (collapsed: boolean) => React.ReactNode;
+  roleLabel?: string;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const roleBadge = parseRoleBadge(roleTitle, user.role);
+  const parsedBadge = parseRoleBadge(roleTitle, user.role);
+  const roleBadge = roleLabel ? { ...parsedBadge, label: roleLabel } : parsedBadge;
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setCollapsed] = useState(false);
   const { isSigningOut } = useSignOut();

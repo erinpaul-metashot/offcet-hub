@@ -1,0 +1,31 @@
+{
+  "shell": {
+    "language": "Language",
+    "switchRole": "Switch role"
+  },
+  "hub": {
+    "heading": "Choose a role",
+    "stats": {
+      "brand": "{count} active projects",
+      "manufacturer": "{count} batches recorded",
+      "custodian": "{count} arrivals expected",
+      "maker": "{count} allocations to answer",
+      "admin": "{count} open actions"
+    },
+    "databaseState": "Database state:",
+    "freshSlate": "Fresh slate",
+    "recorded": "Recorded:",
+    "available": "Available:",
+    "inMotion": "In motion:",
+    "transformed": "Transformed:",
+    "writtenOff": "Written off:",
+    "ledgerBalanced": "Ledger balanced",
+    "discrepancyOne": "{count} discrepancy",
+    "discrepancyMany": "{count} discrepancies",
+    "walkthrough": "Guided walkthrough",
+    "resetSeed": "Reset seed data",
+    "wipe": "Wipe data (fresh demo)",
+    "wipeHint": "Clear all batches, projects and allocations. The five role accounts stay approved.",
+    "backToSite": "Back to site"
+  }
+}

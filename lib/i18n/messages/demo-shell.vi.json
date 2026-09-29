@@ -1,0 +1,31 @@
+{
+  "shell": {
+    "language": "Ngôn ngữ",
+    "switchRole": "Đổi vai trò"
+  },
+  "hub": {
+    "heading": "Chọn vai trò",
+    "stats": {
+      "brand": "{count} dự án đang hoạt động",
+      "manufacturer": "{count} lô đã ghi nhận",
+      "custodian": "{count} lô hàng sắp đến",
+      "maker": "{count} phân bổ chờ phản hồi",
+      "admin": "{count} tác vụ cần xử lý"
+    },
+    "databaseState": "Trạng thái cơ sở dữ liệu:",
+    "freshSlate": "Khởi đầu mới",
+    "recorded": "Đã ghi nhận:",
+    "available": "Có sẵn:",
+    "inMotion": "Đang luân chuyển:",
+    "transformed": "Đã chế tác:",
+    "writtenOff": "Đã xuất hủy:",
+    "ledgerBalanced": "Sổ cái cân bằng",
+    "discrepancyOne": "{count} chênh lệch",
+    "discrepancyMany": "{count} chênh lệch",
+    "walkthrough": "Trải nghiệm có hướng dẫn",
+    "resetSeed": "Đặt lại dữ liệu mẫu",
+    "wipe": "Xóa dữ liệu (demo mới)",
+    "wipeHint": "Xóa tất cả các lô, dự án và phân bổ. Năm tài khoản vai trò vẫn được phê duyệt.",
+    "backToSite": "Trở lại trang web"
+  }
+}
