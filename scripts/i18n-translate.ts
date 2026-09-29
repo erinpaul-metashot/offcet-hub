@@ -22,7 +22,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadEnvConfig } from "@next/env";
 import { GoogleAuth } from "google-auth-library";
-import { flatten, protect, rebreak, restoreTokens, unflatten, verify, type Flat, type Glossary, type Json } from "./i18n-core";
+import { flatten, keepEdges, onlyTokens, protect, rebreak, restoreTokens, unflatten, verify, type Flat, type Glossary, type Json } from "./i18n-core";
 
 const ROOT = process.cwd();
 const MESSAGES = join(ROOT, "lib", "i18n", "messages");
@@ -159,10 +159,12 @@ async function main() {
   // 2. Machine-translate new or changed English.
   if (pending.length > 0) {
     const guarded = pending.map((key) => protect(en[key], glossary));
-    const translated = await machineTranslate(call, name, guarded.map((g) => g.text));
+    const needsMachine = guarded.filter((g) => !onlyTokens(g.text));
+    const machine = needsMachine.length > 0 ? await machineTranslate(call, name, needsMachine.map((g) => g.text)) : [];
+    const translated = guarded.map((g) => (onlyTokens(g.text) ? g.text : (machine.shift() as string)));
     pending.forEach((key, i) => {
       const breaks = en[key].split("\n").length - 1;
-      vi[key] = rebreak(restoreTokens(translated[i], guarded[i].restore), breaks);
+      vi[key] = keepEdges(en[key], rebreak(restoreTokens(translated[i], guarded[i].restore), breaks));
     });
   }
 

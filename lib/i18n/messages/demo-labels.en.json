@@ -1,0 +1,241 @@
+{
+  "ACTION_KIND_LABELS": {
+    "awaiting_match": "Awaiting match",
+    "awaiting_acceptance": "Awaiting acceptance",
+    "awaiting_dispatch": "Awaiting dispatch",
+    "awaiting_receipt": "Awaiting receipt",
+    "quantity_discrepancy": "Quantity discrepancies",
+    "arrival_issue": "Arrival issues",
+    "production_stalled": "Stalled production",
+    "missing_evidence": "Evidence missing",
+    "awaiting_review": "Awaiting review",
+    "transfer_failed": "Failed data transfers",
+    "overdue": "Past expected date"
+  },
+  "ARRIVAL_ISSUE_LABELS": {
+    "damaged": "Damaged in transit",
+    "contaminated": "Contaminated or soiled",
+    "wrong_material": "Not the material described",
+    "missing_paperwork": "Paperwork missing or wrong",
+    "late": "Arrived outside the expected window"
+  },
+  "ASSURANCE_LABELS": {
+    "self_reported": "Self-reported",
+    "cirka_reviewed": "CIRKA reviewed",
+    "externally_verified": "Externally verified"
+  },
+  "BUCKET_LABELS": {
+    "available": "Available",
+    "reserved": "Reserved",
+    "allocated": "Allocated",
+    "in_transit": "In transit",
+    "at_custodian": "At custodian",
+    "with_maker": "With maker",
+    "consumed": "Consumed",
+    "written_off": "Written off",
+    "unexplained": "Unexplained"
+  },
+  "DATA_SOURCE_LABELS": {
+    "manual_entry": "Manual entry",
+    "csv_import": "CSV import",
+    "api_import": "API integration",
+    "erp_import": "ERP import",
+    "sorting_system": "Sorting technology"
+  },
+  "FACILITY_TYPE_LABELS": {
+    "source": "Source site",
+    "storage": "Storage site",
+    "production": "Production site"
+  },
+  "FORMAT_LABELS": {
+    "roll": "Roll",
+    "bale": "Bale",
+    "loose": "Loose",
+    "cut_pieces": "Cut pieces",
+    "garment": "Garment",
+    "other": "Other"
+  },
+  "INPUT_TYPE_LABELS": {
+    "fabric": "Additional fabric",
+    "thread": "Thread",
+    "lining": "Lining",
+    "zips": "Zips",
+    "buttons": "Buttons",
+    "labels": "Labels",
+    "dyes": "Dyes",
+    "adhesives": "Adhesives",
+    "packaging": "Packaging",
+    "trims": "Trims",
+    "other": "Other"
+  },
+  "MATERIAL_CATEGORY_LABELS": {
+    "cotton_offcuts": "Cotton offcuts",
+    "denim": "Denim",
+    "knitwear": "Knitwear",
+    "wool": "Wool",
+    "linen": "Linen",
+    "polyester_blend": "Polyester blend",
+    "trims": "Trims",
+    "leather": "Leather",
+    "mixed_textile": "Mixed textile"
+  },
+  "MILESTONE_LABELS": {
+    "demand_created": "Demand created",
+    "resource_matched": "Resource matched",
+    "allocation_approved": "Allocation approved",
+    "custodian_assigned": "Custodian assigned",
+    "material_received": "Material received",
+    "maker_allocated": "Maker allocated",
+    "production_started": "Production started",
+    "output_completed": "Output completed",
+    "evidence_reviewed": "Evidence reviewed"
+  },
+  "MOVEMENT_REASON_LABELS": {
+    "initial_record": "Initial record",
+    "reserved": "Reserved against a match",
+    "reservation_released": "Reservation released",
+    "allocated": "Allocation accepted",
+    "dispatched": "Dispatched",
+    "received": "Receipt confirmed",
+    "shortfall": "Receipt shortfall",
+    "sub_allocated": "Sub-allocated to maker",
+    "consumed": "Used in production",
+    "offcut_returned": "Offcut returned to stock",
+    "returned": "Returned unused",
+    "written_off": "Written off",
+    "correction": "Correction"
+  },
+  "ORG_ROLE_DESCRIPTIONS": {
+    "owner": "Can manage the organisation's own settings, sites and people.",
+    "member": "Works in the organisation but cannot change its settings."
+  },
+  "ORG_ROLE_LABELS": {
+    "owner": "Owner",
+    "member": "Member"
+  },
+  "ORGANISATION_TYPE_LABELS": {
+    "manufacturer": "Manufacturer",
+    "custodian": "Custodian",
+    "maker": "Maker",
+    "brand": "Brand",
+    "cirka": "CIRKA"
+  },
+  "PRODUCT_CATEGORY_LABELS": {
+    "apparel": "Apparel",
+    "accessories": "Accessories",
+    "bags": "Bags",
+    "homeware": "Homeware",
+    "footwear": "Footwear",
+    "workwear": "Workwear",
+    "other": "Other"
+  },
+  "QUALITY_CLASS_LABELS": {
+    "a_grade": "A-grade",
+    "b_grade": "B-grade",
+    "mixed": "Mixed",
+    "unsorted": "Unsorted"
+  },
+  "ROLE_DESCRIPTIONS": {
+    "manufacturer": "Holds the leftover material. Records it, confirms it is ready, sends it.",
+    "custodian": "A verified local node that receives, stores and hands out material.",
+    "maker": "Turns secondary resources into products. Also called a transformation partner.",
+    "brand": "Commissions the work. Sets the brief, approves, and reads the results.",
+    "admin": "Runs matching, resolves exceptions and reviews evidence."
+  },
+  "ROLE_LABELS": {
+    "manufacturer": "Manufacturer",
+    "custodian": "Custodian",
+    "maker": "Maker",
+    "brand": "Brand",
+    "admin": "CIRKA Admin"
+  },
+  "SOURCING_CATEGORY_LABELS": {
+    "new": "New",
+    "reused": "Reused",
+    "recycled": "Recycled",
+    "unknown": "Unknown"
+  },
+  "STATUS_LABELS": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "disabled": "Disabled",
+    "suspended": "Suspended",
+    "awaiting_review": "Awaiting review",
+    "awaiting_allocation": "Awaiting allocation",
+    "match_proposed": "Match proposed",
+    "partially_allocated": "Partially allocated",
+    "fully_allocated": "Fully allocated",
+    "available": "Available",
+    "reserved": "Reserved",
+    "awaiting_dispatch": "Awaiting dispatch",
+    "in_transit": "In transit",
+    "received": "Received",
+    "completed": "Completed",
+    "receipt_discrepancy": "Receipt discrepancy",
+    "cancelled": "Cancelled",
+    "returned": "Returned",
+    "damaged": "Damaged",
+    "reallocated": "Reallocated",
+    "on_hold": "On hold",
+    "draft": "Draft",
+    "submitted": "Submitted",
+    "under_review": "Under review",
+    "partially_matched": "Partially matched",
+    "matched": "Matched",
+    "unfulfillable": "Unfulfillable",
+    "in_delivery": "In delivery",
+    "fulfilled": "Fulfilled",
+    "closed": "Closed",
+    "proposed": "Proposed",
+    "withdrawn": "Withdrawn",
+    "superseded": "Superseded",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "discrepancy": "Discrepancy",
+    "planned": "Planned",
+    "awaiting_material": "Awaiting material",
+    "material_received": "Material received",
+    "in_production": "In production",
+    "quality_review": "Quality review",
+    "evidence_submitted": "Evidence submitted",
+    "cirka_reviewed": "CIRKA reviewed",
+    "maker_reported": "Maker reported",
+    "active": "Active",
+    "in_progress": "In progress",
+    "success": "Success",
+    "failed": "Failed",
+    "uploaded": "Uploaded",
+    "validating": "Validating",
+    "preview_ready": "Preview ready",
+    "committing": "Committing",
+    "overdue": "Overdue",
+    "skipped": "Skipped",
+    "open": "Open",
+    "resolved": "Resolved",
+    "dismissed": "Dismissed"
+  },
+  "SUITABILITY_LABELS": {
+    "suitable": "Suitable",
+    "partly_suitable": "Partly suitable",
+    "unsuitable": "Unsuitable"
+  },
+  "TIME_ACTIVITY_LABELS": {
+    "design_development": "Design and development",
+    "material_preparation": "Material preparation",
+    "cutting": "Cutting",
+    "sewing_assembly": "Sewing or assembly",
+    "finishing": "Finishing",
+    "quality_control": "Quality control",
+    "rework": "Rework",
+    "packaging": "Packaging",
+    "other": "Other"
+  },
+  "UNIT_LABELS": {
+    "kg": "kg",
+    "m": "m",
+    "m2": "m²",
+    "pieces": "pieces",
+    "rolls": "rolls"
+  }
+}

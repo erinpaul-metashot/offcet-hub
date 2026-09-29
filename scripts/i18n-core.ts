@@ -47,6 +47,9 @@ export interface Protected {
   restore: string[];
 }
 
+/** Nothing left to translate once names and terms are tokens ("Custodian" → "[[0]]"). */
+export const onlyTokens = (text: string) => /^(\s|\[\[\d+\]\])*$/.test(text);
+
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
@@ -79,7 +82,8 @@ export function protect(text: string, glossary: Glossary): Protected {
 /** Puts tokens back. Translators sometimes add spaces inside or around them. */
 export function restoreTokens(translated: string, restore: string[]): string {
   return translated
-    .replace(/\s*\[\[\s*(\d+)\s*\]\]\s*/g, (match, index: string) => {
+    // Translators sometimes eat, move or decorate a bracket ("[0]]", "[[0]", "[+0]", "[]0]", "[]0").
+    .replace(/\s*\[{1,2}\]?\s*\+?(\d+)\s*\]{0,2}\s*/g, (match, index: string) => {
       const value = restore[Number(index)];
       if (value === undefined) {
         return match;
@@ -92,7 +96,18 @@ export function restoreTokens(translated: string, restore: string[]): string {
       return `${lead}${value}${trail}`;
     })
     .replace(/ *\n */g, "\n")
+    // Google Translate swaps the "·" separator for a "•" bullet (no source string uses "•").
+    .replace(/•/g, "·")
+    // Google Translate sometimes inserts zero-width spaces ("Dự kiến​​đến").
+    .replace(/[​-‍﻿]/g, "")
     .trim();
+}
+
+/** Keeps the source's leading/trailing spaces: fragments like " · {n} received" are concatenated. */
+export function keepEdges(source: string, target: string): string {
+  const lead = source.match(/^\s*/)?.[0] ?? "";
+  const trail = source.match(/\s*$/)?.[0] ?? "";
+  return `${lead}${target.trim()}${trail}`;
 }
 
 /**
@@ -144,10 +159,14 @@ export function verify(en: Flat, vi: Flat): Verdict {
       errors.push(`${key}: missing`);
       continue;
     }
+    if (/[​-‍﻿]/.test(target)) {
+      errors.push(`${key}: contains an invisible zero-width character`);
+    }
     if (!target.trim()) {
       errors.push(`${key}: empty`);
     }
-    if (/\[\[\s*\d+\s*\]\]/.test(target)) {
+    // Any bracket the English doesn't have is debris from a mangled token ("[]{date}", "[0]]").
+    if (/[[\]]/.test(target) && !/[[\]]/.test(source)) {
       errors.push(`${key}: leftover token in "${target}"`);
     }
     if (placeholders(source) !== placeholders(target)) {

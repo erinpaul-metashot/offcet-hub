@@ -1,0 +1,241 @@
+{
+  "ACTION_KIND_LABELS": {
+    "awaiting_match": "Chờ ghép nối",
+    "awaiting_acceptance": "Chờ chấp nhận",
+    "awaiting_dispatch": "Chờ xuất kho",
+    "awaiting_receipt": "Chờ nhận hàng",
+    "quantity_discrepancy": "Chênh lệch số lượng",
+    "arrival_issue": "Sự cố khi nhận hàng",
+    "production_stalled": "Sản xuất bị đình trệ",
+    "missing_evidence": "Thiếu minh chứng",
+    "awaiting_review": "Chờ xét duyệt",
+    "transfer_failed": "Truyền dữ liệu thất bại",
+    "overdue": "Đã quá ngày dự kiến"
+  },
+  "ARRIVAL_ISSUE_LABELS": {
+    "damaged": "Bị hư hỏng khi vận chuyển",
+    "contaminated": "Bị nhiễm bẩn hoặc ô nhiễm",
+    "wrong_material": "Không phải là vật liệu được mô tả",
+    "missing_paperwork": "Giấy tờ bị thiếu hoặc sai",
+    "late": "Đến ngoài khung giờ dự kiến"
+  },
+  "ASSURANCE_LABELS": {
+    "self_reported": "Tự báo cáo",
+    "cirka_reviewed": "CIRKA đã thẩm tra",
+    "externally_verified": "Xác minh độc lập"
+  },
+  "BUCKET_LABELS": {
+    "available": "Có sẵn",
+    "reserved": "Đã tạm giữ",
+    "allocated": "Đã phân bổ",
+    "in_transit": "Đang vận chuyển",
+    "at_custodian": "Tại đơn vị lưu giữ",
+    "with_maker": "Tại xưởng chế tác",
+    "consumed": "Đã sử dụng",
+    "written_off": "Đã xuất hủy",
+    "unexplained": "Chưa rõ nguyên nhân"
+  },
+  "DATA_SOURCE_LABELS": {
+    "manual_entry": "Nhập thủ công",
+    "csv_import": "Nhập CSV",
+    "api_import": "Tích hợp API",
+    "erp_import": "Nhập từ ERP",
+    "sorting_system": "Công nghệ phân loại"
+  },
+  "FACILITY_TYPE_LABELS": {
+    "source": "Địa điểm nguồn",
+    "storage": "Địa điểm lưu trữ",
+    "production": "Địa điểm sản xuất"
+  },
+  "FORMAT_LABELS": {
+    "roll": "Cuộn",
+    "bale": "Kiện",
+    "loose": "Dạng rời",
+    "cut_pieces": "Mảnh cắt",
+    "garment": "Quần áo",
+    "other": "Khác"
+  },
+  "INPUT_TYPE_LABELS": {
+    "fabric": "Vải bổ sung",
+    "thread": "Chỉ may",
+    "lining": "Vải lót",
+    "zips": "Khóa kéo",
+    "buttons": "Khuy cài",
+    "labels": "Nhãn",
+    "dyes": "Thuốc nhuộm",
+    "adhesives": "Chất kết dính",
+    "packaging": "Bao bì",
+    "trims": "Phụ liệu may",
+    "other": "Khác"
+  },
+  "MATERIAL_CATEGORY_LABELS": {
+    "cotton_offcuts": "Vải vụn cotton",
+    "denim": "Vải denim",
+    "knitwear": "Vải dệt kim",
+    "wool": "Len",
+    "linen": "Lanh",
+    "polyester_blend": "Vải pha polyester",
+    "trims": "Phụ liệu may",
+    "leather": "Da thuộc",
+    "mixed_textile": "Vải hỗn hợp"
+  },
+  "MILESTONE_LABELS": {
+    "demand_created": "Đã tạo nhu cầu",
+    "resource_matched": "Đã ghép nối tài nguyên",
+    "allocation_approved": "Đã duyệt phân bổ",
+    "custodian_assigned": "Đã chỉ định đơn vị lưu giữ",
+    "material_received": "Vật liệu đã nhận",
+    "maker_allocated": "Đã phân bổ xưởng chế tác",
+    "production_started": "Đã bắt đầu sản xuất",
+    "output_completed": "Hoàn tất sản phẩm",
+    "evidence_reviewed": "Đã duyệt minh chứng"
+  },
+  "MOVEMENT_REASON_LABELS": {
+    "initial_record": "Bản ghi ban đầu",
+    "reserved": "Tạm giữ cho yêu cầu ghép nối",
+    "reservation_released": "Hủy tạm giữ vật liệu",
+    "allocated": "Đã chấp nhận phân bổ",
+    "dispatched": "Đã gửi đi",
+    "received": "Đã nhận hàng",
+    "shortfall": "Hao hụt khi nhận hàng",
+    "sub_allocated": "Phân bổ tiếp cho xưởng chế tác",
+    "consumed": "Sử dụng trong sản xuất",
+    "offcut_returned": "Vải thừa hoàn lại kho",
+    "returned": "Hoàn trả nguyên vẹn",
+    "written_off": "Đã xuất hủy",
+    "correction": "Điều chỉnh số lượng"
+  },
+  "ORG_ROLE_DESCRIPTIONS": {
+    "owner": "Có thể quản lý cài đặt, cơ sở và nhân sự của tổ chức.",
+    "member": "Làm việc trong tổ chức nhưng không thể thay đổi cài đặt của tổ chức."
+  },
+  "ORG_ROLE_LABELS": {
+    "owner": "Chủ sở hữu",
+    "member": "Thành viên"
+  },
+  "ORGANISATION_TYPE_LABELS": {
+    "manufacturer": "Nhà sản xuất",
+    "custodian": "Đơn vị lưu giữ",
+    "maker": "Xưởng chế tác",
+    "brand": "Thương hiệu",
+    "cirka": "CIRKA"
+  },
+  "PRODUCT_CATEGORY_LABELS": {
+    "apparel": "Quần áo",
+    "accessories": "Phụ kiện",
+    "bags": "Túi",
+    "homeware": "Đồ gia dụng",
+    "footwear": "Giày dép",
+    "workwear": "Quần áo lao động",
+    "other": "Khác"
+  },
+  "QUALITY_CLASS_LABELS": {
+    "a_grade": "Hạng A",
+    "b_grade": "Hạng B",
+    "mixed": "Hỗn hợp",
+    "unsorted": "Chưa phân loại"
+  },
+  "ROLE_DESCRIPTIONS": {
+    "manufacturer": "Lưu giữ phần nguyên liệu còn thừa. Ghi lại thông tin, xác nhận đã sẵn sàng, rồi gửi đi.",
+    "custodian": "Đầu mối địa phương được xác thực, chuyên tiếp nhận, lưu trữ và cung ứng vật liệu.",
+    "maker": "Biến tài nguyên thứ cấp thành sản phẩm. Còn được gọi là đối tác chuyển đổi.",
+    "brand": "Đặt hàng công việc. Đưa ra yêu cầu, phê duyệt và đọc kết quả.",
+    "admin": "Thực hiện ghép nối, giải quyết các ngoại lệ và xem xét minh chứng."
+  },
+  "ROLE_LABELS": {
+    "manufacturer": "Nhà sản xuất",
+    "custodian": "Đơn vị lưu giữ",
+    "maker": "Xưởng chế tác",
+    "brand": "Thương hiệu",
+    "admin": "Quản trị viên CIRKA"
+  },
+  "SOURCING_CATEGORY_LABELS": {
+    "new": "Mới",
+    "reused": "Tái sử dụng",
+    "recycled": "Tái chế",
+    "unknown": "Không rõ"
+  },
+  "STATUS_LABELS": {
+    "pending": "Chờ xử lý",
+    "approved": "Đã duyệt",
+    "rejected": "Đã từ chối",
+    "disabled": "Đã vô hiệu hóa",
+    "suspended": "Tạm đình chỉ",
+    "awaiting_review": "Chờ xét duyệt",
+    "awaiting_allocation": "Chờ phân bổ",
+    "match_proposed": "Đã đề xuất ghép nối",
+    "partially_allocated": "Đã phân bổ một phần",
+    "fully_allocated": "Đã phân bổ đủ",
+    "available": "Có sẵn",
+    "reserved": "Đã tạm giữ",
+    "awaiting_dispatch": "Chờ xuất kho",
+    "in_transit": "Đang vận chuyển",
+    "received": "Đã nhận",
+    "completed": "Hoàn thành",
+    "receipt_discrepancy": "Chênh lệch nhận hàng",
+    "cancelled": "Đã hủy",
+    "returned": "Đã hoàn trả",
+    "damaged": "Bị hư hại",
+    "reallocated": "Đã phân bổ lại",
+    "on_hold": "Tạm dừng",
+    "draft": "Bản nháp",
+    "submitted": "Đã gửi",
+    "under_review": "Đang xét duyệt",
+    "partially_matched": "Đã khớp một phần",
+    "matched": "Đã khớp",
+    "unfulfillable": "Không thể đáp ứng",
+    "in_delivery": "Đang giao hàng",
+    "fulfilled": "Đã hoàn tất",
+    "closed": "Đã đóng",
+    "proposed": "Đã đề xuất",
+    "withdrawn": "Đã rút lại",
+    "superseded": "Đã bị thay thế",
+    "accepted": "Đã chấp nhận",
+    "declined": "Đã từ chối",
+    "discrepancy": "Có chênh lệch",
+    "planned": "Đã lên kế hoạch",
+    "awaiting_material": "Chờ vật liệu",
+    "material_received": "Đã nhận vật liệu",
+    "in_production": "Đang sản xuất",
+    "quality_review": "Đánh giá chất lượng",
+    "evidence_submitted": "Đã nộp minh chứng",
+    "cirka_reviewed": "CIRKA đã thẩm tra",
+    "maker_reported": "Xưởng đã báo cáo",
+    "active": "Đang hoạt động",
+    "in_progress": "Đang tiến hành",
+    "success": "Thành công",
+    "failed": "Thất bại",
+    "uploaded": "Đã tải lên",
+    "validating": "Đang xác thực",
+    "preview_ready": "Sẵn sàng xem trước",
+    "committing": "Đang lưu dữ liệu",
+    "overdue": "Quá hạn",
+    "skipped": "Đã bỏ qua",
+    "open": "Đang mở",
+    "resolved": "Đã giải quyết",
+    "dismissed": "Đã loại bỏ"
+  },
+  "SUITABILITY_LABELS": {
+    "suitable": "Thích hợp",
+    "partly_suitable": "Phù hợp một phần",
+    "unsuitable": "Không phù hợp"
+  },
+  "TIME_ACTIVITY_LABELS": {
+    "design_development": "Thiết kế và phát triển",
+    "material_preparation": "Chuẩn bị vật liệu",
+    "cutting": "Cắt",
+    "sewing_assembly": "May hoặc lắp ráp",
+    "finishing": "Hoàn thiện",
+    "quality_control": "Kiểm soát chất lượng",
+    "rework": "Xử lý lại",
+    "packaging": "Đóng gói",
+    "other": "Khác"
+  },
+  "UNIT_LABELS": {
+    "kg": "kg",
+    "m": "m",
+    "m2": "m²",
+    "pieces": "chiếc",
+    "rolls": "cuộn"
+  }
+}

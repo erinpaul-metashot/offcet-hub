@@ -5,7 +5,7 @@
  */
 
 import assert from "node:assert";
-import { flatten, protect, rebreak, restoreTokens, unflatten, verify, type Glossary } from "./i18n-core";
+import { flatten, keepEdges, onlyTokens, protect, rebreak, restoreTokens, unflatten, verify, type Glossary } from "./i18n-core";
 
 const glossary: Glossary = { doNotTranslate: ["CIRKA"], terms: { Custodian: "Đơn vị lưu giữ" } };
 
@@ -27,6 +27,21 @@ assert.strictEqual(
   "© {year} CIRKA\nđiểm Đơn vị lưu giữ",
 );
 
+// a translator dropping a bracket is still restored; a token-only string needs no translator
+assert.strictEqual(restoreTokens("[0]]", ["Đơn vị lưu giữ"]), "Đơn vị lưu giữ");
+assert.ok(onlyTokens(protect("Custodian", glossary).text));
+assert.ok(!onlyTokens(protect("Custodian site", glossary).text));
+assert.ok(verify({ a: "X" }, { a: "[0]]" }).errors.length > 0);
+assert.ok(verify({ a: "Target: {date}" }, { a: "Mục tiêu: []{date}" }).errors.length > 0);
+
+// "[+0]" is restored; concatenated fragments keep their edge spaces
+assert.strictEqual(restoreTokens("· [+0] đã nhận", ["{quantity}"]), "· {quantity} đã nhận");
+assert.strictEqual(restoreTokens("ID: []0]", ["{id}"]), "ID: {id}");
+assert.strictEqual(restoreTokens("Dự kiến \u200b\u200bđến", []), "Dự kiến đến");
+assert.ok(verify({ a: "X" }, { a: "Y\u200b" }).errors.length > 0);
+assert.strictEqual(restoreTokens("cột []0", ["{count}"]), "cột {count}");
+assert.strictEqual(keepEdges(" · {n} received", "· {n} đã nhận"), " · {n} đã nhận");
+
 // rebreak restores a dropped line break at the most even word boundary
 assert.strictEqual(rebreak("Tài nguyên thứ cấp", 1), "Tài nguyên\nthứ cấp");
 assert.strictEqual(rebreak("Chính phủ & Hiệp hội thương mại", 2).split("\n").length, 3);
@@ -41,5 +56,8 @@ const bad = verify(en, { a: "Chào", b: "Một Hai [[0]]", c: "Same", d: "extra"
 assert.strictEqual(bad.errors.length, 4, bad.errors.join("\n"));
 assert.strictEqual(bad.warnings.length, 1);
 assert.ok(verify(en, { a: "Chào {name}", b: "Một\nHai" }).errors.some((e) => e.startsWith("c: missing")));
+
+// the "·" separator survives when Google swaps it for a bullet
+assert.strictEqual(restoreTokens("[[0]] • bao gồm ước tính", ["{count}"]), "{count} · bao gồm ước tính");
 
 console.log("i18n-core: all checks passed");
