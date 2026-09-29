@@ -5,22 +5,17 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button, EmptyState, Field, Input, Panel, Select, Textarea } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoBrand } from "@/lib/i18n/messages/demo-brand";
 import {
-  DATA_SOURCE_LABELS,
   MATERIAL_CATEGORIES,
   UNITS,
-  UNIT_LABELS,
   type MaterialCategory,
   type Unit,
 } from "../../../_mock/domain";
 import { getProjectProofView } from "../../../_mock/selectors-brand";
 import { potSlices } from "../../../_mock/selectors-batches";
-import {
-  categoryLabel,
-  formatCurrency,
-  formatPercent,
-  formatQuantity,
-} from "../../../_mock/selectors-shared";
 import type { Id } from "../../../_mock/types";
 import { useDemoPersona, useDemoStore } from "../../../_mock/store";
 import {
@@ -30,13 +25,14 @@ import {
   ProvenanceChip,
   QuantityPotsBar,
   SectionHeading,
-  formatDate,
 } from "../../../_components/cirka-ui";
 import { EvidenceGrid } from "../../../_components/records";
 import { AddBriefResource, ProjectBriefPack } from "../../../_components/project-brief-pack";
 import { ThreadTimelinePanel } from "../../../_components/trace-timeline";
 import { downloadCsv, downloadJson } from "../../../_mock/exports";
 import { useAction } from "../../../_components/use-action";
+import { useFormat } from "../../../_components/use-format";
+import { useLabels } from "../../../_components/use-labels";
 
 function toTimestamp(value: string): number | undefined {
   if (!value) {
@@ -62,11 +58,13 @@ function AddDemandForm({ projectId, projectTitle }: { projectId: Id; projectTitl
   const { run, error, pending } = useAction();
   const [open, setOpen] = useState(false);
   const [demand, setDemand] = useState(EMPTY_DEMAND);
+  const { project: t } = useMessages(demoBrand);
+  const labels = useLabels();
 
   if (!open) {
     return (
       <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
-        <Plus className="h-4 w-4" /> Add another demand
+        <Plus className="h-4 w-4" /> {t.addDemand}
       </Button>
     );
   }
@@ -77,7 +75,7 @@ function AddDemandForm({ projectId, projectTitle }: { projectId: Id; projectTitl
     await run(async () => {
       await store.createResourceRequest("brand", {
         projectId,
-        title: demand.title || `${projectTitle}: material request`,
+        title: demand.title || format(t.defaultRequestTitle, { project: projectTitle }),
         materialCategory: demand.materialCategory,
         materialDescription: demand.materialDescription || undefined,
         quantityNeeded: Number(demand.quantityNeeded),
@@ -97,21 +95,21 @@ function AddDemandForm({ projectId, projectTitle }: { projectId: Id; projectTitl
       className="space-y-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5"
     >
       {error && (
-        <NoticeBanner tone="blocking" title="The demand was not created">
+        <NoticeBanner tone="blocking" title={t.demandNotCreated}>
           {error}
         </NoticeBanner>
       )}
 
-      <Field label="Request title">
+      <Field label={t.requestTitle}>
         <Input
           value={demand.title}
           onChange={(event) => setDemand((current) => ({ ...current, title: event.target.value }))}
-          placeholder="Cotton jersey offcuts for the capsule tote"
+          placeholder={t.requestTitlePlaceholder}
         />
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Material category">
+        <Field label={t.materialCategory}>
           <Select
             value={demand.materialCategory}
             onChange={(event) =>
@@ -123,12 +121,12 @@ function AddDemandForm({ projectId, projectTitle }: { projectId: Id; projectTitl
           >
             {MATERIAL_CATEGORIES.map((value) => (
               <option key={value} value={value}>
-                {categoryLabel(value)}
+                {labels.MATERIAL_CATEGORY_LABELS[value]}
               </option>
             ))}
           </Select>
         </Field>
-        <Field label="Quantity needed" required>
+        <Field label={t.quantityNeeded} required>
           <Input
             required
             type="number"
@@ -141,7 +139,7 @@ function AddDemandForm({ projectId, projectTitle }: { projectId: Id; projectTitl
             placeholder="300"
           />
         </Field>
-        <Field label="Unit">
+        <Field label={t.unit}>
           <Select
             value={demand.unit}
             onChange={(event) =>
@@ -150,14 +148,14 @@ function AddDemandForm({ projectId, projectTitle }: { projectId: Id; projectTitl
           >
             {UNITS.map((value) => (
               <option key={value} value={value}>
-                {UNIT_LABELS[value]}
+                {labels.UNIT_LABELS[value]}
               </option>
             ))}
           </Select>
         </Field>
       </div>
 
-      <Field label="Needed by">
+      <Field label={t.neededBy}>
         <Input
           type="date"
           value={demand.neededBy}
@@ -165,22 +163,22 @@ function AddDemandForm({ projectId, projectTitle }: { projectId: Id; projectTitl
         />
       </Field>
 
-      <Field label="Material requirements">
+      <Field label={t.requirements}>
         <Textarea
           value={demand.materialDescription}
           onChange={(event) =>
             setDemand((current) => ({ ...current, materialDescription: event.target.value }))
           }
-          placeholder="Light to mid-weight jersey, undyed or pale, minimum piece size 30 x 30 cm."
+          placeholder={t.requirementsPlaceholder}
         />
       </Field>
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
-          Cancel
+          {t.cancel}
         </Button>
         <Button type="submit" size="sm" disabled={pending}>
-          {pending ? "Adding…" : "Add demand"}
+          {pending ? t.adding : t.addDemandSubmit}
         </Button>
       </div>
     </form>
@@ -204,17 +202,19 @@ type Material = NonNullable<ReturnType<typeof getProjectProofView>>["material"];
  * still somewhere in the chain.
  */
 function MaterialOutcome({ material }: { material: Material }) {
+  const { project: t } = useMessages(demoBrand);
+  const fmt = useFormat();
   const parts = [
-    { bucket: "incorporated", label: "Into products", quantity: material.incorporated },
-    { bucket: "prototypes", label: "Prototypes", quantity: material.prototypes },
-    { bucket: "reusable", label: "Reusable", quantity: material.remaining + material.offcuts },
-    { bucket: "lost", label: "Lost", quantity: material.loss + material.writtenOffInTransit },
+    { bucket: "incorporated", label: t.intoProducts, quantity: material.incorporated },
+    { bucket: "prototypes", label: t.prototypes, quantity: material.prototypes },
+    { bucket: "reusable", label: t.reusable, quantity: material.remaining + material.offcuts },
+    { bucket: "lost", label: t.lost, quantity: material.loss + material.writtenOffInTransit },
   ];
   const accounted = parts.reduce((total, part) => total + part.quantity, 0);
   const total = Math.max(material.activated, accounted);
   const slices = [
     ...parts,
-    { bucket: "not_yet_used", label: "Not yet used", quantity: total - accounted },
+    { bucket: "not_yet_used", label: t.notYetUsed, quantity: total - accounted },
   ]
     .filter((part) => part.quantity > 0)
     .map((part) => ({ ...part, share: part.quantity / total }));
@@ -222,20 +222,22 @@ function MaterialOutcome({ material }: { material: Material }) {
   return (
     <Panel className="grid gap-6 p-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
       {total > 0 ? (
-        <QuantityPotsBar slices={slices} total={total} unit={material.unit} totalLabel="Activated" />
+        <QuantityPotsBar slices={slices} total={total} unit={material.unit} totalLabel={t.activated} />
       ) : (
-        <p className="text-sm text-[var(--ink-muted)]">No material activated yet</p>
+        <p className="text-sm text-[var(--ink-muted)]">{t.noneActivated}</p>
       )}
       <div className="md:border-l md:border-[var(--line)] md:pl-6 md:text-right">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-          Material yield
+          {t.materialYield}
         </p>
         <p className="text-4xl font-semibold tracking-[-0.05em] tabular-nums text-[var(--brand-primary)]">
-          {formatPercent(material.yield)}
+          {fmt.percent(material.yield)}
         </p>
         <p className="text-xs tabular-nums text-[var(--ink-muted)]">
-          {formatQuantity(material.incorporated, material.unit)} of{" "}
-          {formatQuantity(material.used, material.unit)} used
+          {format(t.ofUsed, {
+            incorporated: fmt.quantity(material.incorporated, material.unit),
+            used: fmt.quantity(material.used, material.unit),
+          })}
         </p>
       </div>
     </Panel>
@@ -249,9 +251,12 @@ export default function BrandProofViewPage() {
   const { run } = useAction();
 
   const proof = getProjectProofView(store.db, scope, params.id);
+  const { project: t } = useMessages(demoBrand);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   if (!proof) {
-    return <EmptyState title="Project not found" />;
+    return <EmptyState title={t.notFound} />;
   }
 
   const { project, material, operational, social, commercial, assurance } = proof;
@@ -281,11 +286,11 @@ export default function BrandProofViewPage() {
     <div className="space-y-10 pb-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button as={Link} href="/demo/brand/projects" variant="ghost" size="sm">
-          ← All projects
+          {t.allProjects}
         </Button>
         <div className="flex flex-wrap gap-3">
           <Button as={Link} href={`/demo/brand/projects/${project._id}/report`} size="sm">
-            Report
+            {t.report}
           </Button>
           <Button
             variant="secondary"
@@ -301,7 +306,7 @@ export default function BrandProofViewPage() {
               })
             }
           >
-            Download CSV
+            {t.downloadCsv}
           </Button>
           <Button
             variant="secondary"
@@ -328,7 +333,7 @@ export default function BrandProofViewPage() {
               })
             }
           >
-            Download JSON
+            {t.downloadJson}
           </Button>
         </div>
       </div>
@@ -342,17 +347,17 @@ export default function BrandProofViewPage() {
         <MaterialOutcome material={material} />
       </div>
 
-      <Section title="Brief">
+      <Section title={t.brief}>
         <Panel className="p-6">
           <dl>
-            <DataRow label="Objective" value={project.objective} />
-            <DataRow label="Intended product" value={project.intendedProduct ?? "-"} />
-            <DataRow label="Design intent" value={project.designIntent ?? "-"} />
-            <DataRow label="Commercial objectives" value={project.commercialObjectives ?? "-"} />
-            <DataRow label="Impact objectives" value={project.impactObjectives ?? "-"} />
+            <DataRow label={t.objective} value={project.objective} />
+            <DataRow label={t.intendedProduct} value={project.intendedProduct ?? "-"} />
+            <DataRow label={t.designIntent} value={project.designIntent ?? "-"} />
+            <DataRow label={t.commercialObjectives} value={project.commercialObjectives ?? "-"} />
+            <DataRow label={t.impactObjectives} value={project.impactObjectives ?? "-"} />
             <DataRow
-              label="Timeline"
-              value={`${formatDate(project.startDate)} → ${formatDate(project.targetCompletionDate)}`}
+              label={t.timeline}
+              value={`${fmt.date(project.startDate)} → ${fmt.date(project.targetCompletionDate)}`}
             />
           </dl>
 
@@ -363,9 +368,9 @@ export default function BrandProofViewPage() {
                   <div>
                     <p className="text-sm font-medium text-[var(--ink)]">{request.title}</p>
                     <p className="text-xs text-[var(--ink-muted)]">
-                      {request.reference} · {formatQuantity(request.quantityNeeded, request.unit)}{" "}
-                      {categoryLabel(request.materialCategory)}
-                      {request.neededBy ? ` · needed by ${formatDate(request.neededBy)}` : ""}
+                      {request.reference} · {fmt.quantity(request.quantityNeeded, request.unit)}{" "}
+                      {labels.MATERIAL_CATEGORY_LABELS[request.materialCategory]}
+                      {request.neededBy ? format(t.neededByDate, { date: fmt.date(request.neededBy) }) : ""}
                     </p>
                   </div>
                   <CirkaBadge status={request.status} />
@@ -376,7 +381,7 @@ export default function BrandProofViewPage() {
 
           <div className="mt-5 space-y-4 border-t border-[var(--line)] pt-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Brief pack
+              {t.briefPack}
             </p>
             <ProjectBriefPack items={proof.references} />
             <AddBriefResource projectId={project._id} />
@@ -388,7 +393,7 @@ export default function BrandProofViewPage() {
         </Panel>
       </Section>
 
-      <Section title="Material sources">
+      <Section title={t.materialSources}>
         <div className="space-y-4">
           {proof.batches.map((batch) => (
             <Panel key={batch._id} className="space-y-4 p-6">
@@ -396,8 +401,8 @@ export default function BrandProofViewPage() {
                 <div>
                   <h3 className="text-base font-semibold text-[var(--ink)]">{batch.name}</h3>
                   <p className="text-xs uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                    {batch.reference} · {categoryLabel(batch.materialCategory)} ·{" "}
-                    {batch.composition ?? "composition not recorded"}
+                    {batch.reference} · {labels.MATERIAL_CATEGORY_LABELS[batch.materialCategory]} ·{" "}
+                    {batch.composition ?? t.compositionMissing}
                   </p>
                 </div>
                 <ProvenanceChip
@@ -415,35 +420,38 @@ export default function BrandProofViewPage() {
               />
 
               <dl className="grid gap-x-8 sm:grid-cols-2">
-                <DataRow label="Source location" value={batch.locationText ?? "-"} />
-                <DataRow label="Available from" value={formatDate(batch.availableFrom)} />
-                <DataRow label="Quality" value={batch.qualityClass?.replace(/_/g, " ") ?? "-"} />
+                <DataRow label={t.sourceLocation} value={batch.locationText ?? "-"} />
+                <DataRow label={t.availableFrom} value={fmt.date(batch.availableFrom)} />
+                <DataRow
+                  label={t.quality}
+                  value={batch.qualityClass ? labels.QUALITY_CLASS_LABELS[batch.qualityClass] : "-"}
+                />
               </dl>
             </Panel>
           ))}
-          {proof.batches.length === 0 && <EmptyState title="No resource matched yet" />}
+          {proof.batches.length === 0 && <EmptyState title={t.noResource} />}
         </div>
       </Section>
 
-      <Section title="Matches & participants">
+      <Section title={t.matchesParticipants}>
         <div className="space-y-4">
           {proof.matches.map(({ match, batch }) => (
             <Panel key={match._id} className="space-y-3 p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="font-medium text-[var(--ink)]">
-                  {formatQuantity(match.quantityProposed, match.unit)} · {batch?.name}
+                  {fmt.quantity(match.quantityProposed, match.unit)} · {batch?.name}
                 </p>
                 <CirkaBadge status={match.status} />
               </div>
               <div className="rounded-2xl bg-[var(--surface)] p-4">
                 <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  Matching rationale
+                  {t.matchingRationale}
                 </p>
                 <p className="text-sm leading-relaxed text-[var(--ink)]">{match.rationale}</p>
               </div>
               <p className="text-xs text-[var(--ink-muted)]">
-                Proposed {formatDate(match.proposedAt)}
-                {match.decidedAt ? ` · approved ${formatDate(match.decidedAt)}` : ""}
+                {format(t.proposedOn, { date: fmt.date(match.proposedAt) })}
+                {match.decidedAt ? format(t.approvedOn, { date: fmt.date(match.decidedAt) }) : ""}
                 {match.distanceKm ? ` · ${match.distanceKm} km` : ""}
               </p>
             </Panel>
@@ -452,7 +460,7 @@ export default function BrandProofViewPage() {
           <Panel className="overflow-hidden">
             <div className="border-b border-[var(--line)] px-6 py-4">
               <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                Participating organisations
+                {t.participating}
               </h3>
             </div>
             <div className="divide-y divide-[var(--line)]">
@@ -467,9 +475,9 @@ export default function BrandProofViewPage() {
                     </p>
                     <p className="text-xs text-[var(--ink-muted)]">
                       {allocation.reference} ·{" "}
-                      {formatQuantity(allocation.quantityAllocated, allocation.unit)}
+                      {fmt.quantity(allocation.quantityAllocated, allocation.unit)}
                       {allocation.quantityReceived !== undefined
-                        ? ` · ${formatQuantity(allocation.quantityReceived, allocation.unit)} received`
+                        ? format(t.receivedQuantity, { quantity: fmt.quantity(allocation.quantityReceived, allocation.unit) })
                         : ""}
                     </p>
                   </div>
@@ -481,28 +489,28 @@ export default function BrandProofViewPage() {
         </div>
       </Section>
 
-      <Section title="Journey">
+      <Section title={t.journey}>
         <Panel className="overflow-x-auto">
           <table className="w-full min-w-[44rem] border-collapse text-sm">
             <thead>
               <tr className="border-b border-[var(--line)] text-left text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                <th className="px-6 py-4">Stage</th>
-                <th className="px-6 py-4">Responsible</th>
-                <th className="px-6 py-4">Expected</th>
-                <th className="px-6 py-4">Actual</th>
-                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">{t.stage}</th>
+                <th className="px-6 py-4">{t.responsible}</th>
+                <th className="px-6 py-4">{t.expected}</th>
+                <th className="px-6 py-4">{t.actual}</th>
+                <th className="px-6 py-4">{t.status}</th>
               </tr>
             </thead>
             <tbody>
               {proof.journey.map((row) => (
                 <tr key={row.stage} className="border-b border-[var(--line)] last:border-b-0">
                   <td className="px-6 py-4">
-                    <p className="font-medium text-[var(--ink)]">{row.label}</p>
+                    <p className="font-medium text-[var(--ink)]">{labels.MILESTONE_LABELS[row.stage] ?? row.label}</p>
                     {row.note && <p className="text-xs text-[var(--ink-muted)]">{row.note}</p>}
                   </td>
                   <td className="px-6 py-4 text-[var(--ink-muted)]">{row.responsible}</td>
-                  <td className="px-6 py-4 text-[var(--ink-muted)]">{formatDate(row.plannedDate)}</td>
-                  <td className="px-6 py-4 text-[var(--ink-muted)]">{formatDate(row.actualDate)}</td>
+                  <td className="px-6 py-4 text-[var(--ink-muted)]">{fmt.date(row.plannedDate)}</td>
+                  <td className="px-6 py-4 text-[var(--ink-muted)]">{fmt.date(row.actualDate)}</td>
                   <td className="px-6 py-4">
                     <CirkaBadge
                       status={
@@ -521,23 +529,25 @@ export default function BrandProofViewPage() {
         </Panel>
 
         {(material.writtenOffInTransit > 0 || operational.issuesRaised > 0) && (
-          <NoticeBanner tone="warning" title="Exceptions">
+          <NoticeBanner tone="warning" title={t.exceptions}>
             {material.writtenOffInTransit > 0 && (
-              <p>{formatQuantity(material.writtenOffInTransit, material.unit)} written off in transit</p>
+              <p>{format(t.writtenOffInTransit, { quantity: fmt.quantity(material.writtenOffInTransit, material.unit) })}</p>
             )}
             {operational.issuesRaised > 0 && (
               <p>
-                {operational.issuesResolved} of {operational.issuesRaised} issue
-                {operational.issuesRaised === 1 ? "" : "s"} resolved
+                {format(operational.issuesRaised === 1 ? t.issuesResolvedOne : t.issuesResolvedMany, {
+                  resolved: operational.issuesResolved,
+                  raised: operational.issuesRaised,
+                })}
               </p>
             )}
           </NoticeBanner>
         )}
       </Section>
 
-      <Section title="Production">
+      <Section title={t.production}>
         <div className="space-y-4">
-          {proof.production.length === 0 && <EmptyState title="No production yet" />}
+          {proof.production.length === 0 && <EmptyState title={t.noProduction} />}
           {proof.production.map((entry) => (
             <Panel key={entry.production._id} className="space-y-4 p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -556,10 +566,10 @@ export default function BrandProofViewPage() {
                 <table className="w-full min-w-[30rem] border-collapse text-sm">
                   <thead>
                     <tr className="border-b border-[var(--line)] text-left text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                      <th className="py-3 pr-4">Product</th>
-                      <th className="py-3 pr-4 text-right">Planned</th>
-                      <th className="py-3 pr-4 text-right">Completed</th>
-                      <th className="py-3 text-right">Rejected</th>
+                      <th className="py-3 pr-4">{t.product}</th>
+                      <th className="py-3 pr-4 text-right">{t.planned}</th>
+                      <th className="py-3 pr-4 text-right">{t.completed}</th>
+                      <th className="py-3 text-right">{t.rejected}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -585,104 +595,104 @@ export default function BrandProofViewPage() {
         </div>
       </Section>
 
-      <Section title="Results">
+      <Section title={t.results}>
         <div className="grid gap-6 lg:grid-cols-3">
           <Panel className="p-6">
             <h3 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Operational
+              {t.operational}
             </h3>
             <dl>
               <DataRow
-                label="Time from demand to match"
+                label={t.demandToMatch}
                 value={
                   operational.demandToMatchDays !== undefined
-                    ? `${operational.demandToMatchDays} days`
+                    ? format(t.days, { count: operational.demandToMatchDays })
                     : "-"
                 }
               />
               <DataRow
-                label="Time from match to production"
+                label={t.matchToProduction}
                 value={
                   operational.allocationToProductionDays !== undefined
-                    ? `${operational.allocationToProductionDays} days`
+                    ? format(t.days, { count: operational.allocationToProductionDays })
                     : "-"
                 }
               />
-              <DataRow label="Delivery accuracy" value={formatPercent(operational.deliveryAccuracy)} />
+              <DataRow label={t.deliveryAccuracy} value={fmt.percent(operational.deliveryAccuracy)} />
               <DataRow
-                label="Production completion"
-                value={formatPercent(operational.completionRate)}
+                label={t.completion}
+                value={fmt.percent(operational.completionRate)}
               />
-              <DataRow label="Match success" value={formatPercent(operational.matchSuccess)} />
+              <DataRow label={t.matchSuccess} value={fmt.percent(operational.matchSuccess)} />
               <DataRow
-                label="Issues"
-                value={`${operational.issuesResolved} of ${operational.issuesRaised} resolved`}
-              />
-            </dl>
-          </Panel>
-
-          <Panel className="p-6">
-            <h3 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Social
-            </h3>
-            <dl>
-              <DataRow label="Local makers engaged" value={social.makersEngaged} />
-              <DataRow label="Organisations participating" value={social.organisationsParticipating} />
-              <DataRow label="Production hours generated" value={social.productionHours} />
-              <DataRow
-                label="Units completed"
-                value={`${social.unitsCompleted} of ${social.unitsPlanned} planned`}
+                label={t.issues}
+                value={format(t.issuesValue, { resolved: operational.issuesResolved, raised: operational.issuesRaised })}
               />
             </dl>
           </Panel>
 
           <Panel className="p-6">
             <h3 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-              Commercial
+              {t.social}
+            </h3>
+            <dl>
+              <DataRow label={t.localMakers} value={social.makersEngaged} />
+              <DataRow label={t.organisations} value={social.organisationsParticipating} />
+              <DataRow label={t.hours} value={social.productionHours} />
+              <DataRow
+                label={t.units}
+                value={format(t.unitsValue, { completed: social.unitsCompleted, planned: social.unitsPlanned })}
+              />
+            </dl>
+          </Panel>
+
+          <Panel className="p-6">
+            <h3 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
+              {t.commercial}
             </h3>
             <dl>
               <DataRow
-                label="Production time per unit"
-                value={commercial.hoursPerUnit !== undefined ? `${commercial.hoursPerUnit} h` : "-"}
+                label={t.timePerUnit}
+                value={commercial.hoursPerUnit !== undefined ? format(t.hours_short, { count: commercial.hoursPerUnit }) : "-"}
               />
               {commercial.sharedCosts.map((row) => (
                 <DataRow
                   key={row.productionReference}
-                  label={`Cost per unit · ${row.makerName}`}
-                  value={formatCurrency(row.baseCostPerUnit, row.currency)}
+                  label={format(t.costPerUnitOf, { maker: row.makerName })}
+                  value={fmt.currency(row.baseCostPerUnit, row.currency)}
                 />
               ))}
               {commercial.sharedCosts.length === 0 && (
-                <DataRow label="Cost per unit" value="Not shared" />
+                <DataRow label={t.costPerUnit} value={t.notShared} />
               )}
             </dl>
           </Panel>
         </div>
       </Section>
 
-      <Section title="Evidence">
+      <Section title={t.evidence}>
         <div className="space-y-5">
           <Panel className="p-6">
             <dl className="grid gap-x-8 sm:grid-cols-2">
               <DataRow
-                label="CIRKA reviewed"
-                value={`${assurance.reviewed} of ${proof.production.length} production batches`}
+                label={t.cirkaReviewed}
+                value={format(t.reviewedValue, { reviewed: assurance.reviewed, total: proof.production.length })}
               />
-              <DataRow label="Self-reported" value={assurance.selfReported} />
+              <DataRow label={t.selfReported} value={assurance.selfReported} />
               <DataRow
-                label="Data sources"
+                label={t.dataSources}
                 value={assurance.dataSources
-                  .map((source) => DATA_SOURCE_LABELS[source])
+                  .map((source) => labels.DATA_SOURCE_LABELS[source])
                   .join(", ")}
               />
               <DataRow
-                label="External traceability records"
+                label={t.externalRecords}
                 value={
                   assurance.externalRecords.length > 0
                     ? assurance.externalRecords
                         .map((transfer) => transfer.externalRecordId ?? transfer.externalSystemName)
                         .join(", ")
-                    : "None yet"
+                    : t.noneYet
                 }
               />
             </dl>
@@ -695,7 +705,7 @@ export default function BrandProofViewPage() {
       <ThreadTimelinePanel
         role="brand"
         anchor={{ table: "projects", id: project._id }}
-        title="Activity"
+        title={t.activity}
       />
     </div>
   );

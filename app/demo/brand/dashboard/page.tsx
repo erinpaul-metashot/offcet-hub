@@ -7,11 +7,14 @@ import {
   DashboardHero,
   DashboardSection,
 } from "@/components/dashboard-widgets";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoBrand } from "@/lib/i18n/messages/demo-brand";
 import { getBrandDashboard } from "../../_mock/selectors-brand";
-import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { CirkaBadge, LinkRow, tileHref } from "../../_components/cirka-ui";
 import { RoleActivityFeed } from "../../_components/trace-timeline";
+import { useFormat } from "../../_components/use-format";
 import { classNames } from "@/lib/utils";
 
 function CompactBrandStatsOverview({
@@ -23,6 +26,8 @@ function CompactBrandStatsOverview({
   const incorporated = view.metrics.incorporated;
   const unitsCompleted = view.metrics.unitsCompleted;
   const primaryUnit = view.proofViews[0]?.material.unit ?? "kg";
+  const { dashboard: t } = useMessages(demoBrand);
+  const fmt = useFormat();
 
   const incorporatedPct = activated > 0 ? Math.round((incorporated / activated) * 100) : 0;
   const remainingPct = Math.max(0, 100 - incorporatedPct);
@@ -33,17 +38,17 @@ function CompactBrandStatsOverview({
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-              Material
+              {t.material}
             </p>
             <div className="flex items-baseline gap-2 mt-0.5">
               <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
-                {formatQuantity(activated, primaryUnit)}
+                {fmt.quantity(activated, primaryUnit)}
               </span>
-              <span className="text-xs font-semibold text-[var(--ink-muted)]">activated</span>
+              <span className="text-xs font-semibold text-[var(--ink-muted)]">{t.activated}</span>
             </div>
           </div>
           <p className="text-sm text-[var(--ink-muted)] tabular-nums">
-            <strong className="text-[var(--ink)]">{unitsCompleted.toLocaleString()}</strong> units made
+            {format(t.unitsMade, { count: fmt.number(unitsCompleted) })}
           </p>
         </div>
 
@@ -65,11 +70,11 @@ function CompactBrandStatsOverview({
           <div className="flex flex-wrap gap-x-5 gap-y-1 text-[12px] font-medium text-[var(--ink-muted)] tabular-nums">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-[var(--brand-secondary)]" />
-              Into products · {formatQuantity(incorporated, primaryUnit)} · {incorporatedPct}%
+              {t.intoProducts} · {fmt.quantity(incorporated, primaryUnit)} · {incorporatedPct}%
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-[var(--charcoal)]" />
-              In pipeline · {formatQuantity(Math.max(activated - incorporated, 0), primaryUnit)} · {remainingPct}%
+              {t.inPipeline} · {fmt.quantity(Math.max(activated - incorporated, 0), primaryUnit)} · {remainingPct}%
             </span>
           </div>
         </div>
@@ -91,7 +96,7 @@ function CompactBrandStatsOverview({
           >
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-                Active Projects
+                {t.activeProjects}
               </p>
               <ArrowUpRight size={15} className="text-[var(--ink-muted)] group-hover:text-[var(--ink)] transition-colors shrink-0" />
             </div>
@@ -100,7 +105,7 @@ function CompactBrandStatsOverview({
                 {view.metrics.activeProjects}
               </span>
               <p className="text-[11px] text-[var(--ink-muted)] font-medium mt-0.5">
-                {view.projects.length} total projects
+                {format(t.totalProjects, { count: view.projects.length })}
               </p>
             </div>
           </Panel>
@@ -125,7 +130,7 @@ function CompactBrandStatsOverview({
           >
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)] truncate">
-                Awaiting Approval
+                {t.awaitingApproval}
               </p>
               <ArrowUpRight
                 size={15}
@@ -158,7 +163,7 @@ function CompactBrandStatsOverview({
           >
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)] truncate">
-                Makers Engaged
+                {t.makersEngaged}
               </p>
               <ArrowUpRight size={15} className="text-[var(--ink-muted)] group-hover:text-[var(--ink)] transition-colors shrink-0" />
             </div>
@@ -180,7 +185,7 @@ function CompactBrandStatsOverview({
           >
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)] truncate">
-                Open requests
+                {t.openRequests}
               </p>
               <ArrowUpRight size={15} className="text-[var(--ink-muted)] group-hover:text-[var(--ink)] transition-colors shrink-0" />
             </div>
@@ -200,31 +205,33 @@ export default function BrandDashboardPage() {
   const { db } = useDemoStore();
   const { scope, organisation } = useDemoPersona("brand");
   const view = getBrandDashboard(db, scope);
+  const { dashboard: t } = useMessages(demoBrand);
+  const fmt = useFormat();
 
   return (
     <div className="space-y-6">
-      <DashboardHero title={organisation?.name ?? "Dashboard"} />
+      <DashboardHero title={organisation?.name ?? t.title} />
 
       <CompactBrandStatsOverview view={view} />
 
       <DashboardSection
-        title="Projects"
+        title={t.projects}
         action={
           <Button as={Link} href="/demo/brand/projects/new" size="sm">
-            New brief
+            {t.newBrief}
           </Button>
         }
       >
         <div className="-mx-6 -mb-6">
           {view.proofViews.map((proof) => {
             const tags = [
-              { label: "Ref", value: proof.project.reference },
-              { label: "Activated", value: formatQuantity(proof.material.activated, proof.material.unit) },
-              { label: "Into products", value: formatQuantity(proof.material.incorporated, proof.material.unit) },
+              { label: t.ref, value: proof.project.reference },
+              { label: t.activatedTag, value: fmt.quantity(proof.material.activated, proof.material.unit) },
+              { label: t.intoProducts, value: fmt.quantity(proof.material.incorporated, proof.material.unit) },
             ];
 
             if (proof.material.yield !== undefined) {
-              tags.push({ label: "Yield", value: `${Math.round(proof.material.yield * 100)}%` });
+              tags.push({ label: t.yield, value: `${Math.round(proof.material.yield * 100)}%` });
             }
 
             return (
@@ -239,7 +246,7 @@ export default function BrandDashboardPage() {
           })}
           {view.proofViews.length === 0 && (
             <p className="px-6 pb-6 text-sm text-[var(--ink-muted)]">
-              No projects yet
+              {t.noProjects}
             </p>
           )}
         </div>

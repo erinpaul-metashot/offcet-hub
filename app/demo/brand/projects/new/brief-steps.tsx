@@ -3,14 +3,15 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { CalendarClock, Layers, Sparkles, type LucideIcon } from "lucide-react";
 import { Field, Input, Panel, Select, Textarea } from "@/components/ui";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoBrand } from "@/lib/i18n/messages/demo-brand";
 import {
   MATERIAL_CATEGORIES,
   UNITS,
-  UNIT_LABELS,
   type MaterialCategory,
   type Unit,
 } from "../../../_mock/domain";
-import { categoryLabel } from "../../../_mock/selectors-shared";
+import { useLabels } from "../../../_components/use-labels";
 import {
   BriefResourceDraftList,
   BriefResourcePicker,
@@ -88,6 +89,9 @@ export function MaterialStep({
   errors: BriefErrors;
   onDemandChange: DemandChange;
 }) {
+  const { briefSteps: t } = useMessages(demoBrand);
+  const labels = useLabels();
+
   return (
     <StepPanel
       icon={Layers}
@@ -99,22 +103,22 @@ export function MaterialStep({
             onChange={(event) => onDemandChange({ include: event.target.checked })}
             className="h-4 w-4 rounded border-[var(--line-strong)] accent-[var(--brand-primary)] focus:ring-[var(--brand-primary)]"
           />
-          Request material
+          {t.requestMaterial}
         </label>
       }
     >
       {demand.include && (
         <div className="space-y-5">
-          <Field label="Request title">
+          <Field label={t.requestTitle}>
             <Input
               value={demand.title}
               onChange={(event) => onDemandChange({ title: event.target.value })}
-              placeholder="Named after the brief"
+              placeholder={t.requestTitlePlaceholder}
             />
           </Field>
 
           <div className="grid gap-5 sm:grid-cols-3">
-            <Field label="Material category">
+            <Field label={t.materialCategory}>
               <Select
                 value={demand.materialCategory}
                 onChange={(event) =>
@@ -123,12 +127,12 @@ export function MaterialStep({
               >
                 {MATERIAL_CATEGORIES.map((value) => (
                   <option key={value} value={value}>
-                    {categoryLabel(value)}
+                    {labels.MATERIAL_CATEGORY_LABELS[value]}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Quantity needed" required error={errors.quantityNeeded}>
+            <Field label={t.quantityNeeded} required error={errors.quantityNeeded}>
               <Input
                 id="brief-quantityNeeded"
                 type="number"
@@ -142,41 +146,41 @@ export function MaterialStep({
                 placeholder="300"
               />
             </Field>
-            <Field label="Unit">
+            <Field label={t.unit}>
               <Select
                 value={demand.unit}
                 onChange={(event) => onDemandChange({ unit: event.target.value as Unit })}
               >
                 {UNITS.map((value) => (
                   <option key={value} value={value}>
-                    {UNIT_LABELS[value]}
+                    {labels.UNIT_LABELS[value]}
                   </option>
                 ))}
               </Select>
             </Field>
           </div>
 
-          <Field label="Material requirements">
+          <Field label={t.requirements}>
             <Textarea
               value={demand.materialDescription}
               onChange={(event) => onDemandChange({ materialDescription: event.target.value })}
-              placeholder="Light to mid-weight jersey, undyed or pale, minimum piece size 30 x 30 cm."
+              placeholder={t.requirementsPlaceholder}
             />
           </Field>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Composition requirements">
+            <Field label={t.composition}>
               <Input
                 value={demand.compositionRequirements}
                 onChange={(event) => onDemandChange({ compositionRequirements: event.target.value })}
-                placeholder="Cotton-dominant, no elastane above 3%"
+                placeholder={t.compositionPlaceholder}
               />
             </Field>
-            <Field label="Quality requirements">
+            <Field label={t.quality}>
               <Input
                 value={demand.qualityRequirements}
                 onChange={(event) => onDemandChange({ qualityRequirements: event.target.value })}
-                placeholder="No staining or contamination"
+                placeholder={t.qualityPlaceholder}
               />
             </Field>
           </div>
@@ -199,10 +203,12 @@ export function TimelineStep({
   onProjectChange: ProjectChange;
   onDemandChange: DemandChange;
 }) {
+  const { briefSteps: t } = useMessages(demoBrand);
+
   return (
-    <StepPanel icon={CalendarClock} title="Timeline & location">
+    <StepPanel icon={CalendarClock} title={t.timelineTitle}>
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Target completion">
+        <Field label={t.targetCompletion}>
           <Input
             type="date"
             value={project.targetCompletionDate}
@@ -210,7 +216,7 @@ export function TimelineStep({
           />
         </Field>
         {demand.include && (
-          <Field label="Material needed by">
+          <Field label={t.materialNeededBy}>
             <Input
               type="date"
               value={demand.neededBy}
@@ -222,16 +228,16 @@ export function TimelineStep({
 
       {demand.include && (
         <div className="grid gap-5 border-t border-[var(--line)] pt-5 sm:grid-cols-2">
-          <Field label="Production location preference">
+          <Field label={t.locationPreference}>
             <Input
               value={demand.productionLocationPreference}
               onChange={(event) =>
                 onDemandChange({ productionLocationPreference: event.target.value })
               }
-              placeholder="Within 300 km of Malmö"
+              placeholder={t.locationPlaceholder}
             />
           </Field>
-          <Field label="Maximum distance (km)">
+          <Field label={t.maxDistance}>
             <Input
               type="number"
               min="0"
@@ -265,66 +271,68 @@ export function VisionStep({
   setReferences: Dispatch<SetStateAction<BriefResourceDraft[]>>;
   pending: boolean;
 }) {
+  const { briefSteps: t } = useMessages(demoBrand);
+
   return (
-    <StepPanel icon={Sparkles} title="Project vision">
-      <Field label="Title" required error={errors.title}>
+    <StepPanel icon={Sparkles} title={t.visionTitle}>
+      <Field label={t.title} required error={errors.title}>
         <Input
           id="brief-title"
           required
           aria-invalid={Boolean(errors.title)}
           value={project.title}
           onChange={(event) => onProjectChange({ title: event.target.value })}
-          placeholder="e.g. Reclaimed Jersey Capsule SS26"
+          placeholder={t.titlePlaceholder}
         />
       </Field>
 
-      <Field label="Objective" required error={errors.objective}>
+      <Field label={t.objective} required error={errors.objective}>
         <Textarea
           id="brief-objective"
           required
           aria-invalid={Boolean(errors.objective)}
           value={project.objective}
           onChange={(event) => onProjectChange({ objective: event.target.value })}
-          placeholder="A 150-unit capsule from Swedish offcuts"
+          placeholder={t.objectivePlaceholder}
         />
       </Field>
 
-      <Field label="Intended product">
+      <Field label={t.intendedProduct}>
         <Input
           value={project.intendedProduct}
           onChange={(event) => onProjectChange({ intendedProduct: event.target.value })}
-          placeholder="Everyday tote and pouch set"
+          placeholder={t.intendedProductPlaceholder}
         />
       </Field>
 
-      <Field label="Design intent">
+      <Field label={t.designIntent}>
         <Textarea
           value={project.designIntent}
           onChange={(event) => onProjectChange({ designIntent: event.target.value })}
-          placeholder="Undyed, panelled construction that accepts shade variation rather than hiding it."
+          placeholder={t.designIntentPlaceholder}
         />
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Commercial objectives">
+        <Field label={t.commercialObjectives}>
           <Input
             value={project.commercialObjectives}
             onChange={(event) => onProjectChange({ commercialObjectives: event.target.value })}
-            placeholder="Retail at 690 SEK with a repeatable cost base"
+            placeholder={t.commercialPlaceholder}
           />
         </Field>
-        <Field label="Impact objectives">
+        <Field label={t.impactObjectives}>
           <Input
             value={project.impactObjectives}
             onChange={(event) => onProjectChange({ impactObjectives: event.target.value })}
-            placeholder="Activate 250 kg and keep production within 300 km"
+            placeholder={t.impactPlaceholder}
           />
         </Field>
       </div>
 
       <div className="space-y-4 border-t border-[var(--line)] pt-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-          Brief pack
+          {t.briefPack}
         </p>
 
         <BriefResourceDraftList

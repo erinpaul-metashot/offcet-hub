@@ -5,20 +5,26 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Search, ShieldCheck } from "lucide-react";
 import { Button, EmptyState, Input, Panel, Select } from "@/components/ui";
-import { PROJECT_STATUSES, statusLabel } from "../../_mock/domain";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoBrand } from "@/lib/i18n/messages/demo-brand";
+import { PROJECT_STATUSES } from "../../_mock/domain";
+import { statusLabelIn } from "../../_mock/domain-labels";
 import { getBrandDashboard } from "../../_mock/selectors-brand";
-import { formatPercent, formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import {
   CirkaBadge,
   SectionHeading,
-  formatDate,
 } from "../../_components/cirka-ui";
 import { ProjectJourneyStepper } from "../../_components/project-journey-stepper";
 import { useAction } from "../../_components/use-action";
+import { useFormat } from "../../_components/use-format";
+import { useLabels } from "../../_components/use-labels";
 
 /** What the evidence actually says. Nothing is claimed until a production run exists. */
 function ReviewState({ reviewed, selfReported }: { reviewed: number; selfReported: number }) {
+  const { projects: t } = useMessages(demoBrand);
+  const labels = useLabels();
   const runs = reviewed + selfReported;
   if (runs === 0) {
     return null;
@@ -34,7 +40,7 @@ function ReviewState({ reviewed, selfReported }: { reviewed: number; selfReporte
         }`}
       >
         {allReviewed && <ShieldCheck className="h-3.5 w-3.5" />}
-        {allReviewed ? statusLabel("cirka_reviewed") : `${reviewed} of ${runs} runs reviewed`}
+        {allReviewed ? statusLabelIn(labels, "cirka_reviewed") : format(t.runsReviewed, { reviewed, runs })}
       </span>
     </div>
   );
@@ -45,6 +51,9 @@ export default function BrandProjectsPage() {
   const { scope } = useDemoPersona("brand");
   const { run, pending } = useAction();
   const view = getBrandDashboard(store.db, scope);
+  const { projects: t } = useMessages(demoBrand);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const searchParams = useSearchParams();
 
@@ -102,31 +111,20 @@ export default function BrandProjectsPage() {
     <div className="space-y-6">
       {/* Header */}
       <SectionHeading
-        title="Projects"
+        title={t.title}
         action={
           <Button as={Link} href="/demo/brand/projects/new" size="sm">
-            New brief
+            {t.newBrief}
           </Button>
         }
       />
 
       {view.projects.length > 0 && (
         <p className="flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums text-[var(--ink-muted)]">
-          <span>
-            <strong className="text-[var(--ink)]">{formatQuantity(totalActivated, primaryUnit)}</strong> activated
-          </span>
-          <span>
-            <strong className="text-[var(--ink)]">
-              {overallYield !== undefined ? formatPercent(overallYield) : "-"}
-            </strong>{" "}
-            yield
-          </span>
-          <span>
-            <strong className="text-[var(--ink)]">{totalMakers}</strong> makers
-          </span>
-          <span>
-            <strong className="text-[var(--ink)]">{totalUnits.toLocaleString()}</strong> units
-          </span>
+          <span>{format(t.activated, { quantity: fmt.quantity(totalActivated, primaryUnit) })}</span>
+          <span>{format(t.yield, { value: overallYield !== undefined ? fmt.percent(overallYield) : "-" })}</span>
+          <span>{format(t.makers, { count: totalMakers })}</span>
+          <span>{format(t.units, { count: fmt.number(totalUnits) })}</span>
         </p>
       )}
 
@@ -135,7 +133,7 @@ export default function BrandProjectsPage() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="relative">
             <Input
-              placeholder="Search projects"
+              placeholder={t.search}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -144,25 +142,25 @@ export default function BrandProjectsPage() {
           </div>
 
           <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All statuses</option>
+            <option value="">{t.allStatuses}</option>
             {PROJECT_STATUSES.map((value) => (
               <option key={value} value={value}>
-                {statusLabel(value)}
+                {statusLabelIn(labels, value)}
               </option>
             ))}
           </Select>
 
-          <Select aria-label="Sort" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="newest">Newest</option>
-            <option value="target">Target date</option>
-            <option value="yield">Yield</option>
+          <Select aria-label={t.sort} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <option value="newest">{t.sortNewest}</option>
+            <option value="target">{t.sortTarget}</option>
+            <option value="yield">{t.sortYield}</option>
           </Select>
         </div>
       </Panel>
 
       {/* Project Cards (Hybrid Master Variant) */}
       {filteredProjects.length === 0 ? (
-        <EmptyState title={view.projects.length === 0 ? "No projects yet" : "No matches"} />
+        <EmptyState title={view.projects.length === 0 ? t.noProjects : t.noMatches} />
       ) : (
         <div className="space-y-6">
           {filteredProjects.map((project) => {
@@ -180,11 +178,11 @@ export default function BrandProjectsPage() {
                     
                     <div className="relative z-10 space-y-1">
                       <h4 className="text-xs font-bold text-white leading-snug">
-                        {proof?.production[0]?.makerName ?? "No maker yet"}
+                        {proof?.production[0]?.makerName ?? t.noMaker}
                       </h4>
                       {proof && proof.material.activated > 0 && (
                         <p className="text-[10px] text-white/80 leading-relaxed">
-                          {formatQuantity(proof.material.activated, proof.material.unit)} activated
+                          {format(t.activated, { quantity: fmt.quantity(proof.material.activated, proof.material.unit) })}
                         </p>
                       )}
                     </div>
@@ -205,17 +203,17 @@ export default function BrandProjectsPage() {
                         {proof && (
                           <div className="text-right">
                             <span className="text-xl font-bold tracking-[-0.04em] text-[var(--ink)]">
-                              {formatQuantity(proof.material.incorporated, proof.material.unit)}
+                              {fmt.quantity(proof.material.incorporated, proof.material.unit)}
                             </span>
                             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              incorporated
+                              {t.incorporated}
                             </p>
                           </div>
                         )}
                       </div>
 
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)] mt-1">
-                        {project.reference} · Target: {formatDate(project.targetCompletionDate)}
+                        {format(t.target, { reference: project.reference, date: fmt.date(project.targetCompletionDate) })}
                       </p>
 
                       <p className="text-sm leading-relaxed text-[var(--ink-muted)] mt-2">
@@ -226,9 +224,9 @@ export default function BrandProjectsPage() {
                       {proof && (
                         <dl className="mt-4 grid grid-cols-3 gap-3 p-3 rounded-xl bg-[var(--surface)] border border-[var(--line)]">
                           {[
-                            ["Yield", proof.material.yield !== undefined ? formatPercent(proof.material.yield) : "-"],
-                            ["Units", String(proof.social.unitsCompleted)],
-                            ["Makers", String(proof.social.makersEngaged)],
+                            [t.metricYield, proof.material.yield !== undefined ? fmt.percent(proof.material.yield) : "-"],
+                            [t.metricUnits, fmt.number(proof.social.unitsCompleted)],
+                            [t.metricMakers, String(proof.social.makersEngaged)],
                           ].map(([label, value]) => (
                             <div key={label}>
                               <dt className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
@@ -251,14 +249,18 @@ export default function BrandProjectsPage() {
 
                       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[var(--line)]">
                         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                          {proof?.requests.length ?? 0} request{(proof?.requests.length ?? 0) === 1 ? "" : "s"} ·{" "}
-                          {proof?.matches.length ?? 0} match{(proof?.matches.length ?? 0) === 1 ? "" : "es"} ·{" "}
-                          {proof?.production.length ?? 0} production run{(proof?.production.length ?? 0) === 1 ? "" : "s"}
+                          {[
+                            [proof?.requests.length ?? 0, t.requestOne, t.requestMany],
+                            [proof?.matches.length ?? 0, t.matchOne, t.matchMany],
+                            [proof?.production.length ?? 0, t.runOne, t.runMany],
+                          ]
+                            .map(([count, one, many]) => format(count === 1 ? String(one) : String(many), { count }))
+                            .join(" · ")}
                         </p>
 
                         <div className="flex flex-wrap items-center gap-2">
                           <Button as={Link} href={`/demo/brand/projects/${project._id}`} size="sm">
-                            Open
+                            {t.open}
                           </Button>
                           {project.status === "draft" && (
                             <Button
@@ -269,7 +271,7 @@ export default function BrandProjectsPage() {
                                 run(() => store.activateProject("brand", { projectId: project._id }))
                               }
                             >
-                              Activate project
+                              {t.activate}
                             </Button>
                           )}
                         </div>

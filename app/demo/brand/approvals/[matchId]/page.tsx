@@ -5,10 +5,16 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button, EmptyState, Field, Input } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoBrand } from "@/lib/i18n/messages/demo-brand";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import { getPendingApprovalDetail } from "../../../_mock/selectors-brand";
-import { categoryLabel, formatQuantity, orgName } from "../../../_mock/selectors-shared";
+import { orgName } from "../../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../../_mock/store";
 import { useAction } from "../../../_components/use-action";
+import { useFormat } from "../../../_components/use-format";
+import { useLabels } from "../../../_components/use-labels";
 import {
   CirkaBadge,
   DataRow,
@@ -16,7 +22,6 @@ import {
   NoticeBanner,
   ProvenanceChip,
   SectionHeading,
-  formatDate,
 } from "../../../_components/cirka-ui";
 
 export default function BrandApprovalDetailPage() {
@@ -26,6 +31,10 @@ export default function BrandApprovalDetailPage() {
   const { scope } = useDemoPersona("brand");
   const { run, error, pending } = useAction();
   const [note, setNote] = useState("");
+  const { approvals: t } = useMessages(demoBrand);
+  const { ui } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const detail = getPendingApprovalDetail(store.db, scope, params.matchId);
 
@@ -33,7 +42,7 @@ export default function BrandApprovalDetailPage() {
     return (
       <div className="space-y-6">
         <BackLink />
-        <EmptyState title="Match not found" />
+        <EmptyState title={t.notFound} />
       </div>
     );
   }
@@ -62,25 +71,25 @@ export default function BrandApprovalDetailPage() {
 
       <SectionHeading
         eyebrow={project ? `${project.title} · ${request?.reference}` : request?.reference}
-        title={batch?.name ?? "Unknown batch"}
+        title={batch?.name ?? ui.unknownBatch}
         action={<CirkaBadge status={match.status} />}
       />
 
       {error && (
-        <NoticeBanner tone="blocking" title="That step was refused">
+        <NoticeBanner tone="blocking" title={ui.stepRefused}>
           {error}
         </NoticeBanner>
       )}
 
       <div className="space-y-2 rounded-2xl border border-[var(--line)] bg-[var(--paper)] px-5 py-4">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-          Quantity
+          {t.quantity}
         </p>
         <FlowBar
           segments={[
             {
               key: "proposed",
-              label: "Proposed",
+              label: t.proposed,
               value: match.quantityProposed,
               colourClass: "bg-[var(--brand-primary)]",
             },
@@ -89,34 +98,34 @@ export default function BrandApprovalDetailPage() {
           unit={match.unit}
         />
         <p className="text-sm text-[var(--ink-muted)]">
-          {formatQuantity(match.quantityProposed, match.unit)} proposed
+          {format(t.proposedQuantity, { quantity: fmt.quantity(match.quantityProposed, match.unit) })}
           {request &&
             (match.quantityProposed >= request.quantityNeeded
-              ? " · full request"
-              : ` of ${formatQuantity(request.quantityNeeded, request.unit)} needed`)}
+              ? t.fullRequest
+              : format(t.ofNeededFull, { quantity: fmt.quantity(request.quantityNeeded, request.unit) }))}
         </p>
       </div>
 
-      <NoticeBanner tone="info" title="Rationale">
+      <NoticeBanner tone="info" title={t.rationale}>
         {match.rationale}
       </NoticeBanner>
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-1 rounded-2xl border border-[var(--line)] bg-[var(--paper)] px-5 py-4">
           <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Resource
+            {t.resource}
           </p>
           <dl>
             <DataRow
-              label="Category"
-              value={batch ? categoryLabel(batch.materialCategory) : "-"}
+              label={t.category}
+              value={batch ? labels.MATERIAL_CATEGORY_LABELS[batch.materialCategory] ?? batch.materialCategory : "-"}
             />
-            <DataRow label="Composition" value={batch?.composition ?? "Not recorded"} />
-            <DataRow label="Source" value={batch ? orgName(store.db, batch.ownerOrgId) : "-"} />
-            <DataRow label="Location" value={batch?.locationText ?? "Not recorded"} />
+            <DataRow label={t.composition} value={batch?.composition ?? ui.notRecorded} />
+            <DataRow label={t.source} value={batch ? orgName(store.db, batch.ownerOrgId) : "-"} />
+            <DataRow label={t.location} value={batch?.locationText ?? ui.notRecorded} />
             {batch && (
               <DataRow
-                label="Provenance"
+                label={t.provenance}
                 value={
                   <ProvenanceChip
                     dataSource={batch.dataSource}
@@ -130,58 +139,58 @@ export default function BrandApprovalDetailPage() {
 
         <div className="space-y-1 rounded-2xl border border-[var(--line)] bg-[var(--paper)] px-5 py-4">
           <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Route
+            {t.route}
           </p>
           <dl>
             <DataRow
-              label="Custodian"
+              label={t.custodian}
               value={
                 match.suggestedCustodianOrgId
                   ? orgName(store.db, match.suggestedCustodianOrgId)
-                  : "Not yet chosen"
+                  : t.notChosen
               }
             />
             <DataRow
-              label="Maker"
+              label={t.maker}
               value={
                 match.suggestedMakerOrgId
                   ? orgName(store.db, match.suggestedMakerOrgId)
-                  : "Not yet chosen"
+                  : t.notChosen
               }
             />
             <DataRow
-              label="Distance"
+              label={t.distance}
               value={match.distanceKm !== undefined ? `${match.distanceKm} km` : "-"}
             />
-            <DataRow label="Proposed" value={formatDate(match.proposedAt)} />
+            <DataRow label={t.proposed} value={fmt.date(match.proposedAt)} />
           </dl>
         </div>
       </div>
 
       {isPending ? (
         <div className="space-y-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] px-5 py-5">
-          <Field label="Note (optional)">
+          <Field label={t.note}>
             <Input
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder="Good fit for the winter accessories line"
+              placeholder={t.notePlaceholder}
             />
           </Field>
           <div className="flex flex-wrap gap-3">
             <Button disabled={pending} onClick={() => handleDecision(true)}>
-              Approve
+              {t.approve}
             </Button>
             <Button variant="secondary" disabled={pending} onClick={() => handleDecision(false)}>
-              Reject
+              {t.reject}
             </Button>
           </div>
         </div>
       ) : (
         <NoticeBanner
           tone="info"
-          title={`${match.status === "approved" ? "Approved" : "Rejected"}${
-            match.decidedAt ? ` ${formatDate(match.decidedAt)}` : ""
-          }`}
+          title={format(match.status === "approved" ? t.approvedOn : t.rejectedOn, {
+            date: match.decidedAt ? fmt.date(match.decidedAt) : "",
+          }).trim()}
         >
           {match.decisionNote}
         </NoticeBanner>
@@ -191,13 +200,15 @@ export default function BrandApprovalDetailPage() {
 }
 
 function BackLink() {
+  const { approvals: t } = useMessages(demoBrand);
+
   return (
     <Link
       href="/demo/brand/approvals"
       className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--ink-muted)] transition-colors duration-150 ease-[var(--ease-out)] hover:text-[var(--ink)]"
     >
       <ArrowLeft size={16} />
-      Back to approvals
+      {t.back}
     </Link>
   );
 }

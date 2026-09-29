@@ -4,6 +4,9 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button, Panel } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoBrand } from "@/lib/i18n/messages/demo-brand";
 import { useDemoStore } from "../../../_mock/store";
 import { NoticeBanner, SectionHeading } from "../../../_components/cirka-ui";
 import { FormStepper, type FormStep } from "../../../_components/form-stepper";
@@ -21,25 +24,22 @@ import {
 } from "./brief-steps";
 import { BriefPreview, BriefReview } from "./brief-preview";
 
-const BRIEF_STEPS: FormStep[] = [
-  { id: "material", label: "Material" },
-  { id: "timeline", label: "Timeline & location" },
-  { id: "vision", label: "Project vision" },
-  { id: "review", label: "Review" },
-];
+const BRIEF_STEP_IDS = ["material", "timeline", "vision", "review"] as const;
 
-const REVIEW_STEP = BRIEF_STEPS.length - 1;
+const REVIEW_STEP = BRIEF_STEP_IDS.length - 1;
+
+type BriefMessages = (typeof demoBrand)["en"]["newBrief"];
 
 /** What stops a step from advancing. Empty object means the step is complete. */
-function validateStep(index: number, project: ProjectDraft, demand: DemandDraft): BriefErrors {
+function validateStep(index: number, project: ProjectDraft, demand: DemandDraft, t: BriefMessages): BriefErrors {
   if (index === 0 && demand.include && !(Number(demand.quantityNeeded) > 0)) {
-    return { quantityNeeded: "Enter a quantity greater than zero." };
+    return { quantityNeeded: t.errorQuantity };
   }
 
   if (index === 2) {
     return {
-      ...(project.title.trim() ? {} : { title: "Give the brief a title." }),
-      ...(project.objective.trim() ? {} : { objective: "Say what this project has to prove." }),
+      ...(project.title.trim() ? {} : { title: t.errorTitle }),
+      ...(project.objective.trim() ? {} : { objective: t.errorObjective }),
     };
   }
 
@@ -47,9 +47,9 @@ function validateStep(index: number, project: ProjectDraft, demand: DemandDraft)
 }
 
 /** The first step in [from, to) that is incomplete, with its messages. */
-function firstBlockedStep(from: number, to: number, project: ProjectDraft, demand: DemandDraft) {
+function firstBlockedStep(from: number, to: number, project: ProjectDraft, demand: DemandDraft, t: BriefMessages) {
   for (let index = from; index < to; index += 1) {
-    const errors = validateStep(index, project, demand);
+    const errors = validateStep(index, project, demand, t);
     if (Object.keys(errors).length > 0) {
       return { index, errors };
     }
@@ -62,6 +62,8 @@ export default function NewBriefPage() {
   const store = useDemoStore();
   const { run, error, pending } = useAction();
   const topRef = useRef<HTMLDivElement>(null);
+  const { newBrief: t } = useMessages(demoBrand);
+  const briefSteps: FormStep[] = BRIEF_STEP_IDS.map((id) => ({ id, label: t.steps[id] }));
 
   const [project, setProject] = useState<ProjectDraft>({
     title: "",
@@ -131,7 +133,7 @@ export default function NewBriefPage() {
   /** Backwards is always allowed; forwards only past steps that are complete. */
   const moveTo = (target: number) => {
     if (target > step) {
-      const blocked = firstBlockedStep(step, target, project, demand);
+      const blocked = firstBlockedStep(step, target, project, demand, t);
       if (blocked) {
         showBlocked(blocked);
         return;
@@ -150,7 +152,7 @@ export default function NewBriefPage() {
       return;
     }
 
-    const blocked = firstBlockedStep(0, REVIEW_STEP, project, demand);
+    const blocked = firstBlockedStep(0, REVIEW_STEP, project, demand, t);
     if (blocked) {
       showBlocked(blocked);
       return;
@@ -176,7 +178,7 @@ export default function NewBriefPage() {
       if (demand.include) {
         await store.createResourceRequest("brand", {
           projectId,
-          title: demand.title || `${project.title}: material request`,
+          title: demand.title || format(t.defaultRequestTitle, { project: project.title }),
           materialCategory: demand.materialCategory,
           materialDescription: demand.materialDescription || undefined,
           compositionRequirements: demand.compositionRequirements || undefined,
@@ -221,13 +223,13 @@ export default function NewBriefPage() {
 
   return (
     <div ref={topRef} className="scroll-mt-6 space-y-6">
-      <SectionHeading title="Create New Brief" />
+      <SectionHeading title={t.title} />
 
       <Panel className="p-5 sm:p-6">
-        <FormStepper steps={BRIEF_STEPS} current={step} visited={visited} onJump={moveTo} />
+        <FormStepper steps={briefSteps} current={step} visited={visited} onJump={moveTo} />
       </Panel>
 
-      {error && <NoticeBanner tone="blocking" title="The brief was not created">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={t.notCreated}>{error}</NoticeBanner>}
 
       <form noValidate onSubmit={submit} className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
         <div className={isReview ? "lg:col-span-12" : "lg:col-span-7"}>
@@ -239,7 +241,7 @@ export default function NewBriefPage() {
             {step > 0 && (
               <Button key="back" type="button" variant="secondary" onClick={() => goTo(step - 1)}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
+                {t.back}
               </Button>
             )}
 
@@ -248,11 +250,11 @@ export default function NewBriefPage() {
                   button mid-click, or the browser submits the form on the same click. */}
               {isReview ? (
                 <Button key="submit" type="submit" disabled={pending}>
-                  {pending ? "Creating brief…" : "Create brief"}
+                  {pending ? t.creating : t.create}
                 </Button>
               ) : (
                 <Button key="next" type="button" onClick={() => moveTo(step + 1)}>
-                  Next
+                  {t.next}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               )}
