@@ -4,24 +4,32 @@ import { useParams, useRouter } from "next/navigation";
 import { useDemoStore } from "../../../_mock/store";
 import { getOrganisationDetails } from "../../../_mock/selectors-admin";
 import { Button, Panel, EmptyState } from "@/components/ui";
-import { SectionHeading, CirkaBadge, DataRow, formatDate } from "../../../_components/cirka-ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
+import { SectionHeading, CirkaBadge, DataRow } from "../../../_components/cirka-ui";
 import { OrganisationFacilities } from "../../../_components/organisation-facilities";
 import { OrganisationPeople } from "../../../_components/organisation-people";
-import { ORGANISATION_TYPE_LABELS } from "../../../_mock/domain";
+import { useFormat } from "../../../_components/use-format";
+import { useLabels } from "../../../_components/use-labels";
 
 export default function OrganisationDetailPage() {
   const { orgId } = useParams() as { orgId: string };
   const router = useRouter();
   const store = useDemoStore();
   const details = getOrganisationDetails(store.db, orgId);
+  const { orgDetail: t, orgForm: f } = useMessages(demoAdmin);
+  const labels = useLabels();
+  const fmt = useFormat();
+  const plural = (count: number, one: string, many: string) => format(count === 1 ? one : many, { count });
 
   if (!details) {
     return (
       <div className="space-y-6">
         <Button variant="secondary" onClick={() => router.back()}>
-          &larr; Back
+          {t.back}
         </Button>
-        <EmptyState title="Organisation not found" />
+        <EmptyState title={t.notFound} />
       </div>
     );
   }
@@ -32,7 +40,7 @@ export default function OrganisationDetailPage() {
     <div className="space-y-10">
       <div>
         <Button variant="secondary" size="sm" onClick={() => router.back()} className="mb-6">
-          &larr; Organisations
+          {t.backToList}
         </Button>
         <SectionHeading
           title={organisation.name}
@@ -40,40 +48,42 @@ export default function OrganisationDetailPage() {
         <div className="mt-4 flex flex-wrap gap-2 items-center">
           <CirkaBadge status={organisation.status} />
           <span className="text-sm text-[var(--ink-muted)] bg-[var(--surface)] px-2 py-1 rounded-md">
-            {ORGANISATION_TYPE_LABELS[organisation.type]}
+            {labels.ORGANISATION_TYPE_LABELS[organisation.type]}
           </span>
           <span className="text-sm text-[var(--ink-muted)] bg-[var(--surface)] px-2 py-1 rounded-md">
             {organisation.city ? `${organisation.city}, ` : ""}{organisation.country}
           </span>
           <span className="text-sm text-[var(--ink-muted)]">
-            Joined {formatDate(organisation.createdAt)}
+            {format(t.joined, { date: fmt.date(organisation.createdAt) })}
           </span>
           <span className="text-sm tabular-nums text-[var(--ink-muted)]">
-            · {facilities.length} site{facilities.length === 1 ? "" : "s"} · {batches.length} batch{batches.length === 1 ? "" : "es"} ·{" "}
-            {projects.length} project{projects.length === 1 ? "" : "s"} · {allocations.length + requests.length} transactions
+            {plural(facilities.length, t.sitesOne, t.sitesMany)}
+            {plural(batches.length, t.batchesOne, t.batchesMany)}
+            {plural(projects.length, t.projectsOne, t.projectsMany)}
+            {format(t.transactions, { count: allocations.length + requests.length })}
           </span>
         </div>
       </div>
 
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-[var(--ink)] border-b border-[var(--line)] pb-2">
-          Record
+          {t.record}
         </h3>
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel className="p-6">
             <dl>
               <DataRow
-                label="Company number"
+                label={f.companyNumber}
                 value={organisation.registrationNumber ?? "-"}
-                hint="Protected"
+                hint={f.protected}
               />
               <DataRow
-                label="Tax / VAT reference"
+                label={f.taxReference}
                 value={organisation.taxId ?? "-"}
-                hint="Protected"
+                hint={f.protected}
               />
               <DataRow
-                label="Website"
+                label={f.website}
                 value={
                   organisation.websiteUrl ? (
                     <a
@@ -90,19 +100,19 @@ export default function OrganisationDetailPage() {
                 }
               />
               <DataRow
-                label="Last updated"
-                value={organisation.updatedAt ? formatDate(organisation.updatedAt) : "-"}
+                label={t.lastUpdated}
+                value={organisation.updatedAt ? fmt.date(organisation.updatedAt) : "-"}
               />
             </dl>
           </Panel>
           <Panel className="p-6">
             <dl>
-              <DataRow label="Address" value={organisation.addressLine ?? "-"} />
-              <DataRow label="City" value={organisation.city ?? "-"} />
-              <DataRow label="Postcode" value={organisation.postcode ?? "-"} />
-              <DataRow label="Country" value={organisation.country} />
+              <DataRow label={f.address} value={organisation.addressLine ?? "-"} />
+              <DataRow label={f.city} value={organisation.city ?? "-"} />
+              <DataRow label={f.postcode} value={organisation.postcode ?? "-"} />
+              <DataRow label={f.country} value={organisation.country} />
               <DataRow
-                label="Coordinates"
+                label={f.coordinates}
                 value={
                   organisation.latitude !== undefined && organisation.longitude !== undefined
                     ? `${organisation.latitude.toFixed(4)}, ${organisation.longitude.toFixed(4)}`
@@ -110,7 +120,7 @@ export default function OrganisationDetailPage() {
                 }
               />
               <DataRow
-                label="Capability tags"
+                label={f.capabilityTags}
                 value={
                   organisation.capabilityTags.length > 0 ? (
                     <span className="flex flex-wrap justify-end gap-1.5">

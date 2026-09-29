@@ -2,11 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { Button, EmptyState, Panel, Select } from "@/components/ui";
-import { REQUEST_STATUSES, statusLabel } from "../../_mock/domain";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
+import { REQUEST_STATUSES } from "../../_mock/domain";
+import { statusLabelIn } from "../../_mock/domain-labels";
 import { getRequestsOverview, listRequests } from "../../_mock/selectors-admin";
-import { categoryLabel, formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoStore } from "../../_mock/store";
-import { CirkaBadge, LinkRow, SectionHeading, formatDate } from "../../_components/cirka-ui";
+import { CirkaBadge, LinkRow, SectionHeading } from "../../_components/cirka-ui";
+import { useFormat } from "../../_components/use-format";
+import { useLabels } from "../../_components/use-labels";
 
 function OverviewStat({
   label,
@@ -59,6 +64,9 @@ function OverviewStat({
 export default function AdminRequestsPage() {
   const { db } = useDemoStore();
   const [status, setStatus] = useState("");
+  const { requests: t } = useMessages(demoAdmin);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const allRows = listRequests(db);
   const overview = getRequestsOverview(db);
@@ -90,30 +98,32 @@ export default function AdminRequestsPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        title="Requests & matching"
+        title={t.title}
         action={
           <div className="flex items-center gap-2">
             <Select
-                aria-label="Filter requests"
+                aria-label={t.filterLabel}
                 value={status}
                 onChange={(event) => setStatus(event.target.value)}
                 className="w-60"
               >
-                <option value="">All requests ({allRows.length})</option>
-                <option value="awaiting_match">Awaiting match ({overview.awaitingMatch})</option>
-                <option value="matched_group">Matched requests ({overview.matched})</option>
-                <option value="has_matches">Has matches ({allRows.filter((r) => r.matches.length > 0).length})</option>
-                <optgroup label="By status">
+                <option value="">{format(t.allRequests, { count: allRows.length })}</option>
+                <option value="awaiting_match">{format(t.awaitingMatchOption, { count: overview.awaitingMatch })}</option>
+                <option value="matched_group">{format(t.matchedOption, { count: overview.matched })}</option>
+                <option value="has_matches">
+                  {format(t.hasMatchesOption, { count: allRows.filter((r) => r.matches.length > 0).length })}
+                </option>
+                <optgroup label={t.byStatus}>
                   {REQUEST_STATUSES.map((value) => (
                     <option key={value} value={value}>
-                      {statusLabel(value)} ({statusCounts.get(value) ?? 0})
+                      {format(t.statusOption, { label: statusLabelIn(labels, value), count: statusCounts.get(value) ?? 0 })}
                     </option>
                   ))}
                 </optgroup>
               </Select>
             {status && (
               <Button variant="ghost" size="sm" onClick={() => setStatus("")}>
-                Clear
+                {t.clear}
               </Button>
             )}
           </div>
@@ -122,27 +132,27 @@ export default function AdminRequestsPage() {
 
       <dl className="grid grid-cols-2 gap-2 border-y border-[var(--line)] py-2 sm:grid-cols-4">
         <OverviewStat
-          label="Total requests"
+          label={t.totalRequests}
           value={overview.totalRequests}
           active={status === ""}
           onClick={() => setStatus("")}
         />
         <OverviewStat
-          label="Awaiting match"
+          label={t.awaitingMatch}
           value={overview.awaitingMatch}
           tone={overview.awaitingMatch > 0 ? "warn" : undefined}
           active={status === "awaiting_match"}
           onClick={() => setStatus(status === "awaiting_match" ? "" : "awaiting_match")}
         />
         <OverviewStat
-          label="Matched requests"
+          label={t.matchedRequests}
           value={overview.matched}
           tone={overview.matched > 0 ? "positive" : undefined}
           active={status === "matched_group"}
           onClick={() => setStatus(status === "matched_group" ? "" : "matched_group")}
         />
         <OverviewStat
-          label="Matches recorded"
+          label={t.matchesRecorded}
           value={overview.totalMatches}
           active={status === "has_matches"}
           onClick={() => setStatus(status === "has_matches" ? "" : "has_matches")}
@@ -152,10 +162,10 @@ export default function AdminRequestsPage() {
       {rows.length === 0 ? (
         status ? (
           <EmptyState
-            title="No matches"
+            title={t.noMatches}
           />
         ) : (
-          <EmptyState title="No requests" />
+          <EmptyState title={t.noRequests} />
         )
       ) : (
         <Panel className="overflow-hidden">
@@ -167,12 +177,12 @@ export default function AdminRequestsPage() {
               meta={
                 <>
                   {request.reference} · {requesterName} ·{" "}
-                  {formatQuantity(request.quantityNeeded, request.unit)}{" "}
-                  {categoryLabel(request.materialCategory)}
+                  {fmt.quantity(request.quantityNeeded, request.unit)}{" "}
+                  {labels.MATERIAL_CATEGORY_LABELS[request.materialCategory]}
                   {project ? ` · ${project.title}` : ""}
-                  {request.neededBy ? ` · needed by ${formatDate(request.neededBy)}` : ""}
+                  {request.neededBy ? format(t.neededBy, { date: fmt.date(request.neededBy) }) : ""}
                   {matches.length > 0
-                    ? ` · ${matches.length} match${matches.length === 1 ? "" : "es"}`
+                    ? format(matches.length === 1 ? t.matchesOne : t.matchesMany, { count: matches.length })
                     : ""}
                 </>
               }

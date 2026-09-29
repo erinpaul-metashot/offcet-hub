@@ -12,7 +12,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button, Panel, Input } from "@/components/ui";
-import { ORGANISATION_TYPE_LABELS } from "../../_mock/domain";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
 import type { OrganisationInput } from "../../_mock/operations/admin";
 import { listOrganisations } from "../../_mock/selectors-admin";
 import { useDemoStore } from "../../_mock/store";
@@ -24,10 +26,11 @@ import {
   NoticeBanner,
   SectionHeading,
   ViewModeToggle,
-  formatDate,
 } from "../../_components/cirka-ui";
 import { OrganisationForm } from "../../_components/organisation-form";
 import { useAction } from "../../_components/use-action";
+import { useFormat } from "../../_components/use-format";
+import { useLabels } from "../../_components/use-labels";
 
 /** First letter of the first two words, so "Atelier Rask" reads as "AR". */
 function orgInitials(name: string): string {
@@ -82,12 +85,13 @@ function OrganisationActions({
   const showApprove = organisation.type !== "cirka" && organisation.status !== "approved";
   const showSuspend = organisation.type !== "cirka" && organisation.status === "approved";
   const showDelete = organisation.type !== "cirka";
+  const { organisations: t } = useMessages(demoAdmin);
 
   return (
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-2">
         <Button as={Link} href={`/demo/admin/organisations/${organisation._id}`} size="sm">
-          View
+          {t.view}
         </Button>
         {/* Fixed-width slot: reserved whether Approve, Suspend, or nothing renders, so
             the rail's total width: and therefore the View button's position: never
@@ -100,7 +104,7 @@ function OrganisationActions({
               onClick={onApprove}
               className="inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--brand-secondary)] bg-[var(--brand-secondary-muted)] px-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--brand-secondary)] transition-[transform,opacity] duration-[160ms] ease-[var(--ease-out)] hover:opacity-80 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Approve
+              {t.approve}
             </button>
           )}
           {showSuspend && (
@@ -110,7 +114,7 @@ function OrganisationActions({
               onClick={onSuspend}
               className="inline-flex min-h-9 items-center justify-center rounded-full border border-[#B4531A] bg-[#FBE9DC] px-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[#8A3D11] transition-[transform,opacity] duration-[160ms] ease-[var(--ease-out)] hover:opacity-80 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Suspend
+              {t.suspend}
             </button>
           )}
         </div>
@@ -121,7 +125,7 @@ function OrganisationActions({
           type="button"
           onClick={onEdit}
           disabled={pending}
-          aria-label="Edit organisation"
+          aria-label={t.edit}
           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--line-strong)] text-[var(--ink-muted)] transition-colors duration-200 ease-[var(--ease-out)] hover:bg-[var(--surface)] hover:text-[var(--ink)] active:scale-[0.94] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Pencil size={15} />
@@ -134,7 +138,7 @@ function OrganisationActions({
               type="button"
               onClick={onRemove}
               disabled={pending}
-              aria-label="Delete organisation"
+              aria-label={t.delete}
               className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line-strong)] text-[var(--ink-muted)] transition-colors duration-200 ease-[var(--ease-out)] hover:border-[#E4A9A9] hover:bg-[#FBE2E2] hover:text-[#B93A3A] active:scale-[0.94] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Trash2 size={15} />
@@ -155,6 +159,9 @@ export default function AdminOrganisationsPage() {
   const allRows = listOrganisations(store.db);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const { organisations: t } = useMessages(demoAdmin);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const rows = allRows.filter(({ organisation }) => {
     if (!searchQuery.trim()) return true;
@@ -165,7 +172,7 @@ export default function AdminOrganisationsPage() {
       organisation.country.toLowerCase().includes(query) ||
       (organisation.registrationNumber ?? "").toLowerCase().includes(query) ||
       organisation.capabilityTags.some((tag) => tag.includes(query)) ||
-      ORGANISATION_TYPE_LABELS[organisation.type].toLowerCase().includes(query) ||
+      labels.ORGANISATION_TYPE_LABELS[organisation.type].toLowerCase().includes(query) ||
       (organisation.description && organisation.description.toLowerCase().includes(query))
     );
   });
@@ -238,17 +245,17 @@ export default function AdminOrganisationsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Organisations" />
+      <SectionHeading title={t.title} />
 
-      {error && <NoticeBanner tone="blocking" title="That change was refused">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={t.refused}>{error}</NoticeBanner>}
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--line)] pb-4">
         <div className="flex items-center gap-4 flex-1">
-          <Button onClick={() => setEditing({})}>Add Organisation</Button>
+          <Button onClick={() => setEditing({})}>{t.add}</Button>
           <div className="relative max-w-sm w-full">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)] w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <Input
-              placeholder="Search organisations..."
+              placeholder={t.search}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -272,7 +279,7 @@ export default function AdminOrganisationsPage() {
                       {organisation.name}
                     </h2>
                     <p className="text-xs uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                      {ORGANISATION_TYPE_LABELS[organisation.type]} · {organisation.city ?? ""}{" "}
+                      {labels.ORGANISATION_TYPE_LABELS[organisation.type]} · {organisation.city ?? ""}{" "}
                       {organisation.country}
                     </p>
                   </div>
@@ -287,10 +294,10 @@ export default function AdminOrganisationsPage() {
               )}
 
               <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--line)] sm:grid-cols-4">
-                <MetricCell icon={Users} value={userCount} label="People" />
-                <MetricCell icon={Building2} value={facilityCount} label="Facilities" />
-                <MetricCell icon={Package} value={batchCount} label="Batches" />
-                <MetricCell icon={ArrowLeftRight} value={allocationCount} label="Allocations" />
+                <MetricCell icon={Users} value={userCount} label={t.people} />
+                <MetricCell icon={Building2} value={facilityCount} label={t.facilities} />
+                <MetricCell icon={Package} value={batchCount} label={t.batches} />
+                <MetricCell icon={ArrowLeftRight} value={allocationCount} label={t.allocations} />
               </div>
 
               {organisation.capabilityTags.length > 0 && (
@@ -308,15 +315,15 @@ export default function AdminOrganisationsPage() {
 
               <div className="flex flex-wrap justify-between gap-x-6 gap-y-1 border-t border-[var(--line)] pt-3 text-xs text-[var(--ink-muted)]">
                 <span>
-                  Co. no.{" "}
+                  {t.companyNumber}{" "}
                   <span className="font-semibold text-[var(--ink)]">
-                    {organisation.registrationNumber ?? "Not recorded"}
+                    {organisation.registrationNumber ?? t.notRecorded}
                   </span>
                 </span>
                 <span>
-                  Registered{" "}
+                  {t.registered}{" "}
                   <span className="font-semibold text-[var(--ink)]">
-                    {formatDate(organisation.createdAt)}
+                    {fmt.date(organisation.createdAt)}
                   </span>
                 </span>
               </div>
@@ -346,26 +353,26 @@ export default function AdminOrganisationsPage() {
                     <CirkaBadge status={organisation.status} />
                   </div>
                   <p className="truncate text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                    {ORGANISATION_TYPE_LABELS[organisation.type]} · {organisation.city ?? ""}{" "}
+                    {labels.ORGANISATION_TYPE_LABELS[organisation.type]} · {organisation.city ?? ""}{" "}
                     {organisation.country}
                   </p>
                 </div>
               </div>
 
               <div className="hidden shrink-0 items-center gap-4 text-xs text-[var(--ink-muted)] xl:flex">
-                <span className="flex items-center gap-1.5" title="People">
+                <span className="flex items-center gap-1.5" title={t.people}>
                   <Users size={13} />
                   {userCount}
                 </span>
-                <span className="flex items-center gap-1.5" title="Facilities">
+                <span className="flex items-center gap-1.5" title={t.facilities}>
                   <Building2 size={13} />
                   {facilityCount}
                 </span>
-                <span className="flex items-center gap-1.5" title="Batches">
+                <span className="flex items-center gap-1.5" title={t.batches}>
                   <Package size={13} />
                   {batchCount}
                 </span>
-                <span className="flex items-center gap-1.5" title="Allocations">
+                <span className="flex items-center gap-1.5" title={t.allocations}>
                   <ArrowLeftRight size={13} />
                   {allocationCount}
                 </span>
@@ -379,8 +386,8 @@ export default function AdminOrganisationsPage() {
 
       {editing && (
         <Modal
-          eyebrow={editing.organisation ? "Edit organisation" : undefined}
-          title={editing.organisation?.name ?? "New organisation"}
+          eyebrow={editing.organisation ? t.editEyebrow : undefined}
+          title={editing.organisation?.name ?? t.newTitle}
           onClose={closeForm}
         >
           <OrganisationForm
@@ -396,13 +403,13 @@ export default function AdminOrganisationsPage() {
 
       {removing && (
         <ConfirmDialog
-          title={`Remove ${removing.name}?`}
-          confirmLabel="Remove it"
+          title={format(t.removeTitle, { name: removing.name })}
+          confirmLabel={t.removeConfirm}
           error={removal.error}
           pending={removal.pending}
           onCancel={closeRemoval}
           onConfirm={() => handleRemove(removing)}
-          body="People and sites go with it. Ledger history stays."
+          body={t.removeBody}
         />
       )}
     </div>

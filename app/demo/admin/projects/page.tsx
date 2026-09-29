@@ -2,11 +2,15 @@
 
 import { useState } from "react";
 import { Input, Panel, Select } from "@/components/ui";
-import { PROJECT_STATUSES, statusLabel } from "../../_mock/domain";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
+import { PROJECT_STATUSES } from "../../_mock/domain";
+import { statusLabelIn } from "../../_mock/domain-labels";
 import { getProjectsOverview, listProjects } from "../../_mock/selectors-admin";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { ProjectTable } from "../../_components/project-table";
 import { SectionHeading } from "../../_components/cirka-ui";
+import { useLabels } from "../../_components/use-labels";
 
 function OverviewStat({
   label,
@@ -43,6 +47,8 @@ export default function AdminProjectsPage() {
   const { scope } = useDemoPersona("admin");
 
   const [search, setSearch] = useState("");
+  const { projects: t } = useMessages(demoAdmin);
+  const labels = useLabels();
   const [status, setStatus] = useState("");
   const [brandOrgId, setBrandOrgId] = useState("");
 
@@ -59,32 +65,32 @@ export default function AdminProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Projects" />
+      <SectionHeading title={t.title} />
 
       <dl className="grid grid-cols-2 divide-[var(--line)] border-y border-[var(--line)] sm:grid-cols-4 sm:divide-x">
-        <OverviewStat label="Active" value={overview.activeProjects} of={overview.totalProjects} />
-        <OverviewStat label="Overdue" value={overview.overdueProjects} tone="warn" />
-        <OverviewStat label="Open requests" value={overview.openRequests} />
-        <OverviewStat label="In production" value={overview.inProduction} />
+        <OverviewStat label={t.active} value={overview.activeProjects} of={overview.totalProjects} />
+        <OverviewStat label={t.overdue} value={overview.overdueProjects} tone="warn" />
+        <OverviewStat label={t.openRequests} value={overview.openRequests} />
+        <OverviewStat label={t.inProduction} value={overview.inProduction} />
       </dl>
 
       <Panel className="p-5">
         <div className="grid gap-4 sm:grid-cols-3">
           <Input
-            placeholder="Search title, reference or brand"
+            placeholder={t.search}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
           <Select value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="">All statuses</option>
+            <option value="">{t.allStatuses}</option>
             {PROJECT_STATUSES.map((value) => (
               <option key={value} value={value}>
-                {statusLabel(value)}
+                {statusLabelIn(labels, value)}
               </option>
             ))}
           </Select>
           <Select value={brandOrgId} onChange={(event) => setBrandOrgId(event.target.value)}>
-            <option value="">All brands</option>
+            <option value="">{t.allBrands}</option>
             {brands.map((brand) => (
               <option key={brand._id} value={brand._id}>
                 {brand.name}

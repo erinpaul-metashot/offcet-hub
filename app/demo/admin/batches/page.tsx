@@ -2,18 +2,23 @@
 
 import { useState } from "react";
 import { Input, Panel, Select } from "@/components/ui";
-import { BATCH_STATUSES, MATERIAL_CATEGORIES, statusLabel } from "../../_mock/domain";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
+import { BATCH_STATUSES, MATERIAL_CATEGORIES } from "../../_mock/domain";
+import { statusLabelIn } from "../../_mock/domain-labels";
 import { listBatches } from "../../_mock/selectors-batches";
-import { categoryLabel } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { BatchTable } from "../../_components/batch-table";
 import { SectionHeading } from "../../_components/cirka-ui";
+import { useLabels } from "../../_components/use-labels";
 
 export default function AdminBatchesPage() {
   const { db } = useDemoStore();
   const { scope } = useDemoPersona("admin");
 
   const [search, setSearch] = useState("");
+  const { batches: t } = useMessages(demoAdmin);
+  const labels = useLabels();
   const [status, setStatus] = useState("");
   const [category, setCategory] = useState("");
 
@@ -25,28 +30,28 @@ export default function AdminBatchesPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Resource Batches" />
+      <SectionHeading title={t.title} />
 
       <Panel className="p-5">
         <div className="grid gap-4 sm:grid-cols-3">
           <Input
-            placeholder="Search name, reference or location"
+            placeholder={t.search}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
           <Select value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="">All statuses</option>
+            <option value="">{t.allStatuses}</option>
             {BATCH_STATUSES.map((value) => (
               <option key={value} value={value}>
-                {statusLabel(value)}
+                {statusLabelIn(labels, value)}
               </option>
             ))}
           </Select>
           <Select value={category} onChange={(event) => setCategory(event.target.value)}>
-            <option value="">All categories</option>
+            <option value="">{t.allCategories}</option>
             {MATERIAL_CATEGORIES.map((value) => (
               <option key={value} value={value}>
-                {categoryLabel(value)}
+                {labels.MATERIAL_CATEGORY_LABELS[value]}
               </option>
             ))}
           </Select>

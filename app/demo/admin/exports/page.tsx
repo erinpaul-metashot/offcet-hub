@@ -1,6 +1,9 @@
 "use client";
 
 import { Button, Panel } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
 import { EXPORTS, downloadCsv, downloadJson } from "../../_mock/exports";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { NoticeBanner, SectionHeading } from "../../_components/cirka-ui";
@@ -10,12 +13,13 @@ export default function AdminExportsPage() {
   const store = useDemoStore();
   const { scope } = useDemoPersona("admin");
   const { run, error } = useAction();
+  const { exports: t } = useMessages(demoAdmin);
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Exports" />
+      <SectionHeading title={t.title} />
 
-      {error && <NoticeBanner tone="blocking" title="Export failed">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={t.failed}>{error}</NoticeBanner>}
 
       <div className="grid gap-5 lg:grid-cols-2">
         {EXPORTS.map((definition) => {
@@ -26,15 +30,15 @@ export default function AdminExportsPage() {
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                    {definition.label}
+                    {t.labels[definition.key as keyof typeof t.labels] ?? definition.label}
                   </h2>
                   <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                    {rows.length} row{rows.length === 1 ? "" : "s"}
+                    {format(rows.length === 1 ? t.rowsOne : t.rowsMany, { count: rows.length })}
                   </span>
                 </div>
                 {definition.restricted && (
                   <p className="inline-flex rounded-full border border-dashed border-[var(--line-strong)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                    Restricted
+                    {t.restricted}
                   </p>
                 )}
               </div>

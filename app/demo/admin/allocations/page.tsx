@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import { Button, EmptyState, Panel, Select } from "@/components/ui";
-import { ALLOCATION_STATUSES, statusLabel } from "../../_mock/domain";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
+import { ALLOCATION_STATUSES } from "../../_mock/domain";
+import { statusLabelIn } from "../../_mock/domain-labels";
 import { listAllocationsOverview, listCustodianStock } from "../../_mock/selectors-admin";
-import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoStore } from "../../_mock/store";
-import { CirkaBadge, LinkRow, SectionHeading, formatDate } from "../../_components/cirka-ui";
+import { CirkaBadge, LinkRow, SectionHeading } from "../../_components/cirka-ui";
+import { useFormat } from "../../_components/use-format";
+import { useLabels } from "../../_components/use-labels";
 import { AssignHoldingForm } from "../../_components/assign-holding-form";
 import { useAction } from "../../_components/use-action";
 
@@ -16,6 +21,9 @@ export default function AdminAllocationsPage() {
   const { run, error, pending, clearError } = useAction();
   const [status, setStatus] = useState("");
   const [assigning, setAssigning] = useState<string | null>(null);
+  const { allocations: t } = useMessages(demoAdmin);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const rows = listAllocationsOverview(db).filter((row) =>
     status ? row.allocation.status === status : true,
@@ -29,13 +37,13 @@ export default function AdminAllocationsPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        title="Allocations"
+        title={t.title}
         action={
           <Select value={status} onChange={(event) => setStatus(event.target.value)} className="w-56">
-            <option value="">All statuses</option>
+            <option value="">{t.allStatuses}</option>
             {ALLOCATION_STATUSES.map((value) => (
               <option key={value} value={value}>
-                {statusLabel(value)}
+                {statusLabelIn(labels, value)}
               </option>
             ))}
           </Select>
@@ -44,10 +52,10 @@ export default function AdminAllocationsPage() {
 
       {/* The second hop is CIRKA's decision: custodians store, they do not choose. */}
       <section className="space-y-3">
-        <SectionHeading title="Custodian stock" />
+        <SectionHeading title={t.custodianStock} />
         {stock.length === 0 ? (
           <EmptyState
-            title="No stock at a custodian"
+            title={t.noStock}
           />
         ) : (
           <Panel className="overflow-hidden">
@@ -66,16 +74,17 @@ export default function AdminAllocationsPage() {
                         {row.holding.batch.name}
                       </p>
                       <p className="text-xs text-[var(--ink-muted)]">
-                        {formatQuantity(row.holding.held, row.holding.batch.unit)} held ·{" "}
-                        {formatQuantity(row.holding.promised, row.holding.batch.unit)} already
-                        assigned
+                        {format(t.heldAssigned, {
+                          held: fmt.quantity(row.holding.held, row.holding.batch.unit),
+                          assigned: fmt.quantity(row.holding.promised, row.holding.batch.unit),
+                        })}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-4">
                       <p className="text-right text-lg font-extrabold tabular-nums tracking-[-0.03em] text-[var(--brand-primary)]">
-                        {formatQuantity(row.holding.uncommitted, row.holding.batch.unit)}
+                        {fmt.quantity(row.holding.uncommitted, row.holding.batch.unit)}
                         <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                          Unassigned
+                          {t.unassigned}
                         </span>
                       </p>
                       <Button
@@ -87,7 +96,7 @@ export default function AdminAllocationsPage() {
                           setAssigning(open ? null : key);
                         }}
                       >
-                        {open ? "Close" : "Assign to Maker"}
+                        {open ? t.close : t.assignToMaker}
                       </Button>
                     </div>
                   </div>
@@ -111,7 +120,7 @@ export default function AdminAllocationsPage() {
       </section>
 
       {rows.length === 0 ? (
-        <EmptyState title="No allocations" />
+        <EmptyState title={t.noAllocations} />
       ) : (
         <Panel className="overflow-hidden">
           {rows.map(({ allocation, batch, fromName, toName, project }) => (
@@ -123,8 +132,8 @@ export default function AdminAllocationsPage() {
                 <>
                   {batch?.name ?? "-"}
                   {project ? ` · ${project.title}` : ""} ·{" "}
-                  {formatQuantity(allocation.quantityAllocated, allocation.unit)} ·{" "}
-                  {formatDate(allocation.updatedAt)}
+                  {fmt.quantity(allocation.quantityAllocated, allocation.unit)} ·{" "}
+                  {fmt.date(allocation.updatedAt)}
                 </>
               }
               right={<CirkaBadge status={allocation.status} />}

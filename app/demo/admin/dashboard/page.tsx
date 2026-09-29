@@ -13,14 +13,18 @@ import {
 } from "lucide-react";
 import { Button, Field, Input, Panel } from "@/components/ui";
 import { DashboardHero, HorizontalBarChart } from "@/components/dashboard-widgets";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
 import { getAdminDashboard } from "../../_mock/selectors-admin";
-import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoStore } from "../../_mock/store";
-import { NoticeBanner, SectionHeading, formatDate } from "../../_components/cirka-ui";
+import { NoticeBanner, SectionHeading } from "../../_components/cirka-ui";
+import { useFormat } from "../../_components/use-format";
+import { useLabels } from "../../_components/use-labels";
 import { NetworkLedgerNodes } from "../../_components/network-ledger-nodes";
 import { RoleActivityFeed } from "../../_components/trace-timeline";
 import { useAction } from "../../_components/use-action";
-import type { QueueRow } from "../../_mock/selectors-actions";
+import type { QueuePhrase, QueueRow } from "../../_mock/selectors-actions";
 
 const SEVERITY_BORDER_STYLES = {
   blocking: "border-l-4 border-l-[#D14343]",
@@ -32,6 +36,32 @@ export default function AdminDashboardPage() {
   const store = useDemoStore();
   const { run, error, pending } = useAction();
   const view = getAdminDashboard(store.db);
+  const { dashboard: t, queuePhrase } = useMessages(demoAdmin);
+  const labels = useLabels();
+  const fmt = useFormat();
+
+  /** Renders a queue phrase in the viewer's language; `fallback` is the English text the selector built. */
+  const phrase = (value: QueuePhrase | undefined, fallback: string) => {
+    const template = value ? queuePhrase[value.key as keyof typeof queuePhrase] : undefined;
+    if (!value || !template) {
+      return fallback;
+    }
+    const params = Object.fromEntries(
+      Object.entries(value.params ?? {}).map(([name, param]) => [
+        name,
+        typeof param !== "object"
+          ? param
+          : "role" in param
+            ? labels.ROLE_LABELS[param.role]
+            : fmt.quantity(param.quantity, param.unit),
+      ]),
+    );
+    return format(template, params);
+  };
+  const rowText = (row: QueueRow) => ({
+    title: phrase(row.titlePhrase, row.title),
+    detail: phrase(row.detailPhrase, row.detail),
+  });
 
   const [resolution, setResolution] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -44,7 +74,7 @@ export default function AdminDashboardPage() {
   /* Helper to classify items into domain buckets */
   const getDomainInfo = (row: QueueRow) => {
     if (row.kind === "awaiting_match" || (row.kind === "awaiting_review" && row.id.startsWith("decision_"))) {
-      return { key: "matching" as const, label: "Matching", badgeClass: "bg-[#FF5C00]/10 text-[#FF5C00] border-[#FF5C00]/30" };
+      return { key: "matching" as const, badgeClass: "bg-[#FF5C00]/10 text-[#FF5C00] border-[#FF5C00]/30" };
     }
     if (
       row.kind.includes("acceptance") ||
@@ -55,7 +85,7 @@ export default function AdminDashboardPage() {
       row.id.startsWith("dispatch_") ||
       row.id.startsWith("receipt_")
     ) {
-      return { key: "allocation" as const, label: "Allocation", badgeClass: "bg-[var(--surface)] text-[var(--charcoal)] border-[var(--charcoal)]/30" };
+      return { key: "allocation" as const, badgeClass: "bg-[var(--surface)] text-[var(--charcoal)] border-[var(--charcoal)]/30" };
     }
     if (
       row.kind.includes("production") ||
@@ -64,9 +94,9 @@ export default function AdminDashboardPage() {
       row.id.startsWith("review_") ||
       row.id.startsWith("evidence_")
     ) {
-      return { key: "production" as const, label: "Production", badgeClass: "bg-[#8CC63F]/10 text-[#8CC63F] border-[#8CC63F]/30" };
+      return { key: "production" as const, badgeClass: "bg-[#8CC63F]/10 text-[#8CC63F] border-[#8CC63F]/30" };
     }
-    return { key: "system" as const, label: "System", badgeClass: "bg-[var(--surface)] text-[var(--ink-muted)] border-[var(--line-strong)]" };
+    return { key: "system" as const, badgeClass: "bg-[var(--surface)] text-[var(--ink-muted)] border-[var(--line-strong)]" };
   };
 
   /* Filtered Queue */
@@ -83,8 +113,9 @@ export default function AdminDashboardPage() {
 
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
-        const matchesTitle = row.title.toLowerCase().includes(query);
-        const matchesDetail = row.detail.toLowerCase().includes(query);
+        const text = rowText(row);
+        const matchesTitle = text.title.toLowerCase().includes(query) || row.title.toLowerCase().includes(query);
+        const matchesDetail = text.detail.toLowerCase().includes(query) || row.detail.toLowerCase().includes(query);
         const matchesKind = row.kind.toLowerCase().includes(query);
         if (!matchesTitle && !matchesDetail && !matchesKind) {
           return false;
@@ -93,6 +124,7 @@ export default function AdminDashboardPage() {
 
       return true;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rowText only changes with the locale, which re-renders anyway
   }, [view.queue, severityFilter, domainFilter, searchQuery]);
 
   /* Category Counts */
@@ -115,15 +147,15 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       {/* Top Banner / Hero Header */}
-      <DashboardHero title="Action queue" />
+      <DashboardHero title={t.title} />
 
-      {error && <NoticeBanner tone="blocking" title="That action was refused">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={t.refused}>{error}</NoticeBanner>}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Panel className="p-5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-              Pending review
+              {t.pendingReview}
             </span>
             <Clock size={16} className="text-[var(--brand-secondary)]" />
           </div>
@@ -131,18 +163,18 @@ export default function AdminDashboardPage() {
             {view.metrics.pendingUsers + view.metrics.pendingOrganisations + view.metrics.productionAwaitingReview}
           </p>
           <div className="mt-4 flex items-center gap-2 border-t border-[var(--line)] pt-3 text-xs text-[var(--ink-muted)]">
-            <span>Users <strong className="text-[var(--ink)]">{view.metrics.pendingUsers}</strong></span>
+            <span>{t.users} <strong className="text-[var(--ink)]">{view.metrics.pendingUsers}</strong></span>
             <span className="text-[var(--line-strong)]">•</span>
-            <span>Orgs <strong className="text-[var(--ink)]">{view.metrics.pendingOrganisations}</strong></span>
+            <span>{t.orgs} <strong className="text-[var(--ink)]">{view.metrics.pendingOrganisations}</strong></span>
             <span className="text-[var(--line-strong)]">•</span>
-            <span>Evidence <strong className="text-[var(--ink)]">{view.metrics.productionAwaitingReview}</strong></span>
+            <span>{t.evidence} <strong className="text-[var(--ink)]">{view.metrics.productionAwaitingReview}</strong></span>
           </div>
         </Panel>
 
         <Panel className="p-5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-              Active projects
+              {t.activeProjects}
             </span>
             <Activity size={16} className="text-[var(--brand-primary)]" />
           </div>
@@ -150,12 +182,14 @@ export default function AdminDashboardPage() {
             {view.metrics.activeProjects}
           </p>
           <div className="mt-4 flex items-center gap-2 border-t border-[var(--line)] pt-3 text-xs text-[var(--ink-muted)]">
-            <span>Open requests <strong className="text-[var(--ink)]">{view.metrics.openRequests}</strong></span>
+            <span>{t.openRequests} <strong className="text-[var(--ink)]">{view.metrics.openRequests}</strong></span>
             {view.metrics.failedTransfers > 0 && (
               <>
                 <span className="text-[var(--line-strong)]">•</span>
                 <span className="font-bold text-[#D14343]">
-                  {view.metrics.failedTransfers} failed transfer{view.metrics.failedTransfers === 1 ? "" : "s"}
+                  {format(view.metrics.failedTransfers === 1 ? t.failedTransfersOne : t.failedTransfersMany, {
+                    count: view.metrics.failedTransfers,
+                  })}
                 </span>
               </>
             )}
@@ -166,22 +200,22 @@ export default function AdminDashboardPage() {
       <section className="space-y-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink)]">
-            Ledger · {view.metrics.batchCount} batches
+            {format(t.ledger, { count: view.metrics.batchCount })}
           </p>
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm tabular-nums text-[var(--ink-muted)]">
             <span>
-              Total <strong className="text-[var(--ink)]">{formatQuantity(view.metrics.recorded, "kg")}</strong>
+              {t.total} <strong className="text-[var(--ink)]">{fmt.quantity(view.metrics.recorded, "kg")}</strong>
             </span>
             <span>
-              In motion <strong className="text-[var(--ink)]">{formatQuantity(view.metrics.inMotion, "kg")}</strong>
+              {t.inMotion} <strong className="text-[var(--ink)]">{fmt.quantity(view.metrics.inMotion, "kg")}</strong>
             </span>
             {view.metrics.unexplained > 0 ? (
               <span className="inline-flex items-center gap-1 font-bold text-[#D14343]">
-                <AlertTriangle size={12} /> {formatQuantity(view.metrics.unexplained, "kg")} unexplained
+                <AlertTriangle size={12} /> {format(t.unexplained, { quantity: fmt.quantity(view.metrics.unexplained, "kg") })}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 font-semibold text-[var(--brand-secondary)]">
-                <CheckCircle2 size={12} /> Balanced
+                <CheckCircle2 size={12} /> {t.balanced}
               </span>
             )}
           </p>
@@ -194,11 +228,11 @@ export default function AdminDashboardPage() {
         {/* Left Column: Action Queue */}
         <div className="space-y-5">
           <SectionHeading
-            title="Open actions"
+            title={t.openActions}
             action={
               filteredQueue.length !== view.queue.length ? (
                 <span className="text-xs font-medium tabular-nums text-[var(--ink-muted)]">
-                  {filteredQueue.length} of {view.queue.length}
+                  {format(t.filteredCount, { shown: filteredQueue.length, total: view.queue.length })}
                 </span>
               ) : undefined
             }
@@ -215,7 +249,7 @@ export default function AdminDashboardPage() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search queue"
+                placeholder={t.search}
                 className="pl-9 text-sm"
               />
               {searchQuery && (
@@ -224,7 +258,7 @@ export default function AdminDashboardPage() {
                   onClick={() => setSearchQuery("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)]"
                 >
-                  Clear
+                  {t.clear}
                 </button>
               )}
             </div>
@@ -233,7 +267,7 @@ export default function AdminDashboardPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-3 text-xs">
               {/* Severity Pills */}
               <div className="flex flex-wrap items-center gap-1.5">
-                <SlidersHorizontal size={12} className="mr-1 text-[var(--ink-muted)]" aria-label="Filter" />
+                <SlidersHorizontal size={12} className="mr-1 text-[var(--ink-muted)]" aria-label={t.filter} />
                 <button
                   type="button"
                   onClick={() => setSeverityFilter("all")}
@@ -243,7 +277,7 @@ export default function AdminDashboardPage() {
                       : "bg-[var(--surface)] text-[var(--ink-muted)] hover:bg-[var(--line)] hover:text-[var(--ink)]"
                   }`}
                 >
-                  All ({counts.total})
+                  {format(t.severity.all, { count: counts.total })}
                 </button>
                 <button
                   type="button"
@@ -254,7 +288,7 @@ export default function AdminDashboardPage() {
                       : "bg-[#D14343]/10 text-[#D14343] hover:bg-[#D14343]/20"
                   }`}
                 >
-                  Blocking ({counts.blocking})
+                  {format(t.severity.blocking, { count: counts.blocking })}
                 </button>
                 <button
                   type="button"
@@ -265,7 +299,7 @@ export default function AdminDashboardPage() {
                       : "bg-[#FF5C00]/10 text-[#FF5C00] hover:bg-[#FF5C00]/20"
                   }`}
                 >
-                  Warning ({counts.warning})
+                  {format(t.severity.warning, { count: counts.warning })}
                 </button>
                 <button
                   type="button"
@@ -276,7 +310,7 @@ export default function AdminDashboardPage() {
                       : "bg-[var(--surface)] text-[var(--ink-muted)] hover:bg-[var(--line)] hover:text-[var(--ink)]"
                   }`}
                 >
-                  Info ({counts.info})
+                  {format(t.severity.info, { count: counts.info })}
                 </button>
               </div>
 
@@ -285,11 +319,11 @@ export default function AdminDashboardPage() {
                 {(["all", "matching", "allocation", "production", "system"] as const).map((domain) => {
                   const active = domainFilter === domain;
                   const labelMap = {
-                    all: "All",
-                    matching: `Matching (${counts.matching})`,
-                    allocation: `Allocation (${counts.allocation})`,
-                    production: `Production (${counts.production})`,
-                    system: `System (${counts.system})`,
+                    all: t.domainAll,
+                    matching: format(t.domainCount, { label: t.domains.matching, count: counts.matching }),
+                    allocation: format(t.domainCount, { label: t.domains.allocation, count: counts.allocation }),
+                    production: format(t.domainCount, { label: t.domains.production, count: counts.production }),
+                    system: format(t.domainCount, { label: t.domains.system, count: counts.system }),
                   };
 
                   return (
@@ -317,6 +351,7 @@ export default function AdminDashboardPage() {
               {filteredQueue.map((row) => {
                 const isExpanded = expandedId === row.id;
                 const domain = getDomainInfo(row);
+                const text = rowText(row);
 
                 return (
                   <Panel
@@ -331,22 +366,22 @@ export default function AdminDashboardPage() {
                           <span
                             className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] ${domain.badgeClass}`}
                           >
-                            {domain.label}
+                            {t.domains[domain.key]}
                           </span>
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ink-muted)]">
-                            <Clock size={12} /> Open since {formatDate(row.since)}
-                            {row.dueDate ? ` · due ${formatDate(row.dueDate)}` : ""}
+                            <Clock size={12} /> {format(t.openSince, { date: fmt.date(row.since) })}
+                            {row.dueDate ? format(t.due, { date: fmt.date(row.dueDate) }) : ""}
                           </span>
                         </div>
 
                         {/* Title */}
                         <h3 className="text-base font-semibold text-[var(--ink)] leading-snug">
-                          {row.title}
+                          {text.title}
                         </h3>
 
                         {/* Context Detail */}
                         <p className="text-xs text-[var(--ink-muted)] leading-relaxed">
-                          {row.detail}
+                          {text.detail}
                         </p>
                       </div>
 
@@ -360,7 +395,7 @@ export default function AdminDashboardPage() {
                             variant="secondary"
                             className="inline-flex items-center gap-1"
                           >
-                            Open <ArrowUpRight size={14} />
+                            {t.open} <ArrowUpRight size={14} />
                           </Button>
                         )}
                         {row.stored && row.actionItemId && (
@@ -370,7 +405,7 @@ export default function AdminDashboardPage() {
                             onClick={() => setExpandedId(isExpanded ? null : row.id)}
                             className={!isExpanded ? "bg-[#FF5C00] text-white hover:bg-[#E05200]" : ""}
                           >
-                            {isExpanded ? "Cancel" : "Respond"}
+                            {isExpanded ? t.cancel : t.respond}
                           </Button>
                         )}
                       </div>
@@ -380,7 +415,7 @@ export default function AdminDashboardPage() {
                     {isExpanded && row.stored && row.actionItemId && (
                       <div className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 animate-stagger-in">
                         <div className="min-w-[16rem] flex-1">
-                          <Field label="Note">
+                          <Field label={t.note}>
                             <Input
                               value={resolution[row.actionItemId] ?? ""}
                               onChange={(event) =>
@@ -389,7 +424,7 @@ export default function AdminDashboardPage() {
                                   [row.actionItemId as string]: event.target.value,
                                 }))
                               }
-                              placeholder="What was done"
+                              placeholder={t.notePlaceholder}
                               autoFocus
                             />
                           </Field>
@@ -407,7 +442,7 @@ export default function AdminDashboardPage() {
                             )
                           }
                         >
-                          Resolve
+                          {t.resolve}
                         </Button>
                         <Button
                           size="sm"
@@ -423,7 +458,7 @@ export default function AdminDashboardPage() {
                             )
                           }
                         >
-                          Dismiss
+                          {t.dismiss}
                         </Button>
                       </div>
                     )}
@@ -435,7 +470,7 @@ export default function AdminDashboardPage() {
             <Panel className="p-8 text-center">
               <CheckCircle2 size={32} className="mx-auto text-[#8CC63F]" />
               <p className="mt-3 text-base font-semibold text-[var(--ink)]">
-                {isFiltered ? "No matches" : "Queue clear"}
+                {isFiltered ? t.noMatches : t.queueClear}
               </p>
               {isFiltered && (
                 <Button
@@ -448,7 +483,7 @@ export default function AdminDashboardPage() {
                     setDomainFilter("all");
                   }}
                 >
-                  Reset filters
+                  {t.resetFilters}
                 </Button>
               )}
             </Panel>
@@ -460,9 +495,15 @@ export default function AdminDashboardPage() {
           {/* Material Categories Chart */}
           <Panel className="space-y-4 p-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--ink-muted)]">
-              Material Categories
+              {t.materialCategories}
             </p>
-            <HorizontalBarChart items={view.categories} emptyLabel="Nothing recorded yet." />
+            <HorizontalBarChart
+              items={view.categories.map((item) => ({
+                ...item,
+                label: labels.MATERIAL_CATEGORY_LABELS[item.key] ?? item.label,
+              }))}
+              emptyLabel={t.nothingRecorded}
+            />
           </Panel>
 
           {/* Recent Audit Timeline */}

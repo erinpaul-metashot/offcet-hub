@@ -4,8 +4,11 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Mail, Pencil, Phone, X } from "lucide-react";
 import { Button, EmptyState, Field, Input, Panel, Select } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
 import { classNames } from "@/lib/utils";
-import { ROLE_LABELS, CIRKA_ROLES, ORG_ROLES, type CirkaRole, type OrgRole } from "../../_mock/domain";
+import { CIRKA_ROLES, ORG_ROLES, type CirkaRole, type OrgRole } from "../../_mock/domain";
 import { getUserManagementView, listOrganisations } from "../../_mock/selectors-admin";
 import { useDemoStore } from "../../_mock/store";
 import {
@@ -13,11 +16,14 @@ import {
   NoticeBanner,
   SectionHeading,
   ViewModeToggle,
-  formatDate,
 } from "../../_components/cirka-ui";
 import { useAction } from "../../_components/use-action";
+import { useFormat } from "../../_components/use-format";
+import { useLabels } from "../../_components/use-labels";
 
-const TAB_TITLES = ["Awaiting review", "Approved", "Disabled", "Rejected"];
+/** Tab names live in `demoAdmin.users.tabs`; `?tab=` takes the key. */
+const TAB_KEYS = ["pending", "approved", "disabled", "rejected"] as const;
+type TabKey = (typeof TAB_KEYS)[number];
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -32,12 +38,15 @@ export default function AdminUsersPage() {
   const { run, error, pending } = useAction();
   const view = getUserManagementView(store.db);
   const organisations = listOrganisations(store.db);
+  const { users: t } = useMessages(demoAdmin);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [activeAction, setActiveAction] = useState<Record<string, "reject" | "disable" | null>>({});
-  const [activeTab, setActiveTab] = useState(() => {
-    const requested = searchParams.get("tab");
-    return TAB_TITLES.find((title) => title.toLowerCase() === requested?.toLowerCase()) ?? "Awaiting review";
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    const requested = searchParams.get("tab")?.toLowerCase();
+    return TAB_KEYS.find((key) => key === requested) ?? "pending";
   });
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
@@ -86,7 +95,7 @@ export default function AdminUsersPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.orgId) {
-      alert("Please select an organisation.");
+      alert(t.selectOrg);
       return;
     }
     
@@ -107,41 +116,41 @@ export default function AdminUsersPage() {
       return (
         user.name.toLowerCase().includes(query) ||
         user.email.toLowerCase().includes(query) ||
-        ROLE_LABELS[user.role].toLowerCase().includes(query) ||
+        labels.ROLE_LABELS[user.role].toLowerCase().includes(query) ||
         (organisation?.name && organisation.name.toLowerCase().includes(query))
       );
     });
   };
 
   const groups = [
-    { title: "Awaiting review", rows: filterRows(view.pending) },
-    { title: "Approved", rows: filterRows(view.approved) },
-    { title: "Disabled", rows: filterRows(view.disabled) },
-    { title: "Rejected", rows: filterRows(view.rejected) },
+    { key: "pending" as const, rows: filterRows(view.pending) },
+    { key: "approved" as const, rows: filterRows(view.approved) },
+    { key: "disabled" as const, rows: filterRows(view.disabled) },
+    { key: "rejected" as const, rows: filterRows(view.rejected) },
   ];
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="People" />
+      <SectionHeading title={t.title} />
 
-      {error && <NoticeBanner tone="blocking" title="That change was refused">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={t.refused}>{error}</NoticeBanner>}
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--line)]">
         <div className="flex gap-6 overflow-x-auto w-full md:w-auto">
           {groups.map((group) => (
             <button
-              key={group.title}
-              onClick={() => setActiveTab(group.title)}
+              key={group.key}
+              onClick={() => setActiveTab(group.key)}
               className={classNames(
                 "pb-3 text-[11px] font-bold uppercase tracking-[0.16em] transition-[border-color,color] border-b-2 whitespace-nowrap",
-                activeTab === group.title
+                activeTab === group.key
                   ? "border-[var(--brand-primary)] text-[var(--ink)]"
                   : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong)]"
               )}
             >
-              {group.title} <span className={classNames(
+              {t.tabs[group.key]} <span className={classNames(
                 "ml-1.5 rounded-full px-2 py-0.5",
-                activeTab === group.title ? "bg-[var(--brand-primary-muted)] text-[var(--brand-primary)]" : "bg-[var(--surface)]"
+                activeTab === group.key ? "bg-[var(--brand-primary-muted)] text-[var(--brand-primary)]" : "bg-[var(--surface)]"
               )}>{group.rows.length}</span>
             </button>
           ))}
@@ -151,23 +160,23 @@ export default function AdminUsersPage() {
           <div className="relative max-w-sm w-full md:w-64">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)] w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <Input 
-              placeholder="Search people..." 
+              placeholder={t.search}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9 text-sm"
             />
           </div>
-          <Button onClick={openAddModal} size="sm">Add Person</Button>
+          <Button onClick={openAddModal} size="sm">{t.addPerson}</Button>
           <div className="border-l border-[var(--line)] pl-4">
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
           </div>
         </div>
       </div>
 
-      {groups.filter(g => g.title === activeTab).map((group) => (
-        <div key={group.title} className="space-y-4 pt-2">
+      {groups.filter(g => g.key === activeTab).map((group) => (
+        <div key={group.key} className="space-y-4 pt-2">
           {group.rows.length === 0 ? (
-            <EmptyState title={searchQuery ? "No matches" : "Nobody here"} />
+            <EmptyState title={searchQuery ? t.noMatches : t.nobodyHere} />
           ) : (
             <div className={classNames("grid gap-4", viewMode === "grid" ? "lg:grid-cols-2" : "grid-cols-1")}>
               {group.rows.map(({ user, organisation, reviewerName }) => {
@@ -203,7 +212,8 @@ export default function AdminUsersPage() {
                           <div className="min-w-0">
                             <p className="truncate text-[15.5px] font-semibold text-[var(--ink)]">{user.name}</p>
                             <p className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              {ROLE_LABELS[user.role]} · {organisation?.name ?? "No organisation"} · {user.orgRole}
+                              {labels.ROLE_LABELS[user.role]} · {organisation?.name ?? t.noOrganisation} ·{" "}
+                              {labels.ORG_ROLE_LABELS[user.orgRole]}
                             </p>
                           </div>
                           {stacked && <CirkaBadge status={user.status} />}
@@ -246,13 +256,13 @@ export default function AdminUsersPage() {
                       )}
                     >
                       {editing && (
-                        <Field label={activeAction[user._id] === "reject" ? "Reason for rejection" : "Reason for disabling"}>
+                        <Field label={activeAction[user._id] === "reject" ? t.rejectReason : t.disableReason}>
                           <Input
                             value={notes[user._id] ?? ""}
                             onChange={(event) =>
                               setNotes((current) => ({ ...current, [user._id]: event.target.value }))
                             }
-                            placeholder="Required"
+                            placeholder={t.required}
                             autoFocus
                           />
                         </Field>
@@ -261,10 +271,10 @@ export default function AdminUsersPage() {
                       <div className={classNames("flex items-center gap-2", viewMode === "grid" && "justify-between")}>
                         {viewMode === "grid" && !editing && (
                           <span className="text-xs text-[var(--ink-muted)]">
-                            Registered {formatDate(user.createdAt)}
-                            {user.reviewedAt ? ` · reviewed ${formatDate(user.reviewedAt)}` : ""}
-                            {reviewerName ? ` by ${reviewerName}` : ""}
-                            {user.lastActiveAt ? ` · last active ${formatDate(user.lastActiveAt)}` : ""}
+                            {format(t.registered, { date: fmt.date(user.createdAt) })}
+                            {user.reviewedAt ? format(t.reviewed, { date: fmt.date(user.reviewedAt) }) : ""}
+                            {reviewerName ? format(t.by, { name: reviewerName }) : ""}
+                            {user.lastActiveAt ? format(t.lastActive, { date: fmt.date(user.lastActiveAt) }) : ""}
                           </span>
                         )}
 
@@ -274,8 +284,8 @@ export default function AdminUsersPage() {
                               <button
                                 type="button"
                                 onClick={() => openEditModal(user)}
-                                aria-label={`Edit ${user.name}`}
-                                title="Edit"
+                                aria-label={format(t.editPerson, { name: user.name })}
+                                title={t.edit}
                                 className={iconButtonClass}
                               >
                                 <Pencil size={16} />
@@ -286,8 +296,8 @@ export default function AdminUsersPage() {
                                   type="button"
                                   disabled={pending}
                                   onClick={() => setActiveAction(s => ({ ...s, [user._id]: "reject" }))}
-                                  aria-label={`Reject ${user.name}`}
-                                  title="Reject"
+                                  aria-label={format(t.rejectPerson, { name: user.name })}
+                                  title={t.reject}
                                   className={classNames(
                                     iconButtonClass,
                                     "hover:border-[#D14343] hover:bg-[#FBE2E2] hover:text-[#8A1F1F]",
@@ -304,7 +314,7 @@ export default function AdminUsersPage() {
                                   disabled={pending}
                                   onClick={() => setActiveAction(s => ({ ...s, [user._id]: "disable" }))}
                                 >
-                                  Disable
+                                  {t.disable}
                                 </Button>
                               )}
 
@@ -323,7 +333,7 @@ export default function AdminUsersPage() {
                                     )
                                   }
                                 >
-                                  Approve
+                                  {t.approve}
                                 </Button>
                               )}
                             </>
@@ -342,7 +352,7 @@ export default function AdminUsersPage() {
                                   setNotes(s => ({ ...s, [user._id]: "" }));
                                 }}
                               >
-                                Confirm
+                                {t.confirm}
                               </Button>
                               <Button
                                 size="sm"
@@ -353,7 +363,7 @@ export default function AdminUsersPage() {
                                   setNotes(s => ({ ...s, [user._id]: "" }));
                                 }}
                               >
-                                Cancel
+                                {t.cancel}
                               </Button>
                             </>
                           )}
@@ -372,70 +382,70 @@ export default function AdminUsersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--ink)]/40 backdrop-blur-sm">
           <Panel className="w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-6 text-[var(--ink)]">
-              {modalMode === "add" ? "Add Person" : "Edit Person"}
+              {modalMode === "add" ? t.addPerson : t.editTitle}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <Field label="Full Name" required>
+              <Field label={t.fullName} required>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Jane Doe"
+                  placeholder={t.namePlaceholder}
                   required
                 />
               </Field>
               
-              <Field label="Email" required>
+              <Field label={t.email} required>
                 <Input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="e.g. jane@example.com"
+                  placeholder={t.emailPlaceholder}
                   required
                 />
               </Field>
 
-              <Field label="Phone">
+              <Field label={t.phone}>
                 <Input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="e.g. +44 123 456 789"
+                  placeholder={t.phonePlaceholder}
                 />
               </Field>
               
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Role" required>
+                <Field label={t.role} required>
                   <Select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as CirkaRole })}
                     required
                   >
                     {CIRKA_ROLES.map((role) => (
-                      <option key={role} value={role}>{ROLE_LABELS[role]}</option>
+                      <option key={role} value={role}>{labels.ROLE_LABELS[role]}</option>
                     ))}
                   </Select>
                 </Field>
 
-                <Field label="Org Role" required>
+                <Field label={t.orgRole} required>
                   <Select
                     value={formData.orgRole}
                     onChange={(e) => setFormData({ ...formData, orgRole: e.target.value as OrgRole })}
                     required
                   >
                     {ORG_ROLES.map((role) => (
-                      <option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</option>
+                      <option key={role} value={role}>{labels.ORG_ROLE_LABELS[role]}</option>
                     ))}
                   </Select>
                 </Field>
               </div>
 
-              <Field label="Organisation" required>
+              <Field label={t.organisation} required>
                 <Select
                   value={formData.orgId}
                   onChange={(e) => setFormData({ ...formData, orgId: e.target.value })}
                   required
                 >
-                  <option value="" disabled>Select an organisation...</option>
+                  <option value="" disabled>{t.chooseOrg}</option>
                   {organisations.map(({ organisation }) => (
                     <option key={organisation._id} value={organisation._id}>
                       {organisation.name}
@@ -446,10 +456,10 @@ export default function AdminUsersPage() {
 
               <div className="flex justify-end gap-3 pt-4 border-t border-[var(--line)] mt-6">
                 <Button variant="secondary" onClick={() => setIsModalOpen(false)} type="button">
-                  Cancel
+                  {t.cancel}
                 </Button>
                 <Button type="submit" disabled={pending}>
-                  {modalMode === "add" ? "Add Person" : "Save Changes"}
+                  {modalMode === "add" ? t.addPerson : t.saveChanges}
                 </Button>
               </div>
             </form>

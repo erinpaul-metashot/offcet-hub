@@ -6,17 +6,30 @@
  * resolution note.
  */
 
-import { ACTION_KIND_LABELS, type ActionKind, type ActionSeverity } from "./domain";
+import { ACTION_KIND_LABELS, type ActionKind, type ActionSeverity, type CirkaRole, type Unit } from "./domain";
 import type { Id, MockDatabase } from "./types";
 import { formatQuantity, isOverdue, orgName } from "./selectors-shared";
 import { now as currentTime } from "./clock";
+
+/**
+ * A phrase the screen renders in the viewer's language: `key` names an entry in
+ * `demoAdmin.queuePhrase`, quantities and roles stay raw so they can be formatted there.
+ */
+export type QueuePhraseParam = string | number | { quantity: number; unit: Unit } | { role: CirkaRole };
+export interface QueuePhrase {
+  key: string;
+  params?: Record<string, QueuePhraseParam>;
+}
 
 export interface QueueRow {
   id: string;
   kind: ActionKind;
   severity: ActionSeverity;
+  /** English rendering; also the fallback when there is no phrase (record data such as request titles). */
   title: string;
   detail: string;
+  titlePhrase?: QueuePhrase;
+  detailPhrase?: QueuePhrase;
   href: string;
   since: number;
   dueDate?: number;
@@ -25,6 +38,10 @@ export interface QueueRow {
 }
 
 const STALE_PRODUCTION_DAYS = 7;
+
+function orgProductPhrase(db: MockDatabase, orgId: Id, product: string): QueuePhrase {
+  return { key: "orgProduct", params: { org: orgName(db, orgId), product } };
+}
 
 export function buildActionQueue(db: MockDatabase): QueueRow[] {
   const rows: QueueRow[] = [];
@@ -43,6 +60,13 @@ export function buildActionQueue(db: MockDatabase): QueueRow[] {
         severity: "info",
         title: request.title,
         detail: `${orgName(db, request.requesterOrgId)} · ${formatQuantity(request.quantityNeeded, request.unit)} needed`,
+        detailPhrase: {
+          key: "matchNeeded",
+          params: {
+            org: orgName(db, request.requesterOrgId),
+            quantity: { quantity: request.quantityNeeded, unit: request.unit },
+          },
+        },
         href: `/demo/admin/matching/${request._id}`,
         since: request.submittedAt ?? request.createdAt,
         dueDate: request.neededBy,
@@ -60,6 +84,13 @@ export function buildActionQueue(db: MockDatabase): QueueRow[] {
       severity: "info",
       title: `Match awaiting a decision on ${request?.reference ?? "a request"}`,
       detail: `${formatQuantity(match.quantityProposed, match.unit)} reserved since the match was proposed`,
+      titlePhrase: request
+        ? { key: "matchAwaitingDecision", params: { reference: request.reference } }
+        : { key: "matchAwaitingDecisionNoRef" },
+      detailPhrase: {
+        key: "reservedSinceProposed",
+        params: { quantity: { quantity: match.quantityProposed, unit: match.unit } },
+      },
       href: `/demo/admin/matching/${match.requestId}`,
       since: match.proposedAt,
     });
@@ -74,6 +105,14 @@ export function buildActionQueue(db: MockDatabase): QueueRow[] {
         severity: "info",
         title: `${allocation.reference} awaiting acceptance`,
         detail: `${orgName(db, allocation.toOrgId)} · ${formatQuantity(allocation.quantityAllocated, allocation.unit)}`,
+        titlePhrase: { key: "awaitingAcceptance", params: { reference: allocation.reference } },
+        detailPhrase: {
+          key: "orgQuantity",
+          params: {
+            org: orgName(db, allocation.toOrgId),
+            quantity: { quantity: allocation.quantityAllocated, unit: allocation.unit },
+          },
+        },
         href: `/demo/admin/allocations`,
         since: allocation.createdAt,
       });
@@ -86,6 +125,15 @@ export function buildActionQueue(db: MockDatabase): QueueRow[] {
         severity: isOverdue(allocation.expectedDispatchDate) ? "warning" : "info",
         title: `${allocation.reference} awaiting dispatch`,
         detail: `${orgName(db, allocation.fromOrgId)} → ${orgName(db, allocation.toOrgId)} · ${formatQuantity(allocation.quantityAllocated, allocation.unit)}`,
+        titlePhrase: { key: "awaitingDispatch", params: { reference: allocation.reference } },
+        detailPhrase: {
+          key: "route",
+          params: {
+            from: orgName(db, allocation.fromOrgId),
+            to: orgName(db, allocation.toOrgId),
+            quantity: { quantity: allocation.quantityAllocated, unit: allocation.unit },
+          },
+        },
         href: `/demo/admin/allocations`,
         since: allocation.respondedAt ?? allocation.createdAt,
         dueDate: allocation.expectedDispatchDate,
@@ -99,6 +147,17 @@ export function buildActionQueue(db: MockDatabase): QueueRow[] {
         severity: isOverdue(allocation.expectedArrivalDate) ? "warning" : "info",
         title: `${allocation.reference} awaiting receipt confirmation`,
         detail: `${orgName(db, allocation.toOrgId)} · ${formatQuantity(allocation.quantityDispatched ?? allocation.quantityAllocated, allocation.unit)} in transit`,
+        titlePhrase: { key: "awaitingReceipt", params: { reference: allocation.reference } },
+        detailPhrase: {
+          key: "inTransit",
+          params: {
+            org: orgName(db, allocation.toOrgId),
+            quantity: {
+              quantity: allocation.quantityDispatched ?? allocation.quantityAllocated,
+              unit: allocation.unit,
+            },
+          },
+        },
         href: `/demo/admin/allocations`,
         since: allocation.dispatchedAt ?? allocation.updatedAt,
         dueDate: allocation.expectedArrivalDate,
@@ -120,6 +179,11 @@ export function buildActionQueue(db: MockDatabase): QueueRow[] {
         severity: "warning",
         title: `${production.reference} has had no update in ${Math.floor(staleFor)} days`,
         detail: `${orgName(db, production.makerOrgId)} · ${production.productName}`,
+        titlePhrase: {
+          key: Math.floor(staleFor) === 1 ? "stalledOne" : "stalledMany",
+          params: { reference: production.reference, days: Math.floor(staleFor) },
+        },
+        detailPhrase: orgProductPhrase(db, production.makerOrgId, production.productName),
         href: `/demo/admin/production/${production._id}`,
         since: production.updatedAt,
         dueDate: production.plannedCompletionDate,
@@ -133,6 +197,8 @@ export function buildActionQueue(db: MockDatabase): QueueRow[] {
         severity: "info",
         title: `${production.reference} evidence awaiting CIRKA review`,
         detail: `${orgName(db, production.makerOrgId)} · ${production.productName}`,
+        titlePhrase: { key: "evidenceAwaitingReview", params: { reference: production.reference } },
+        detailPhrase: orgProductPhrase(db, production.makerOrgId, production.productName),
         href: `/demo/admin/production/${production._id}`,
         since: production.evidenceSubmittedAt ?? production.updatedAt,
       });
@@ -150,6 +216,8 @@ export function buildActionQueue(db: MockDatabase): QueueRow[] {
         severity: "warning",
         title: `${production.reference} completed without evidence`,
         detail: `${orgName(db, production.makerOrgId)} · ${production.productName}`,
+        titlePhrase: { key: "completedWithoutEvidence", params: { reference: production.reference } },
+        detailPhrase: orgProductPhrase(db, production.makerOrgId, production.productName),
         href: `/demo/admin/production/${production._id}`,
         since: production.actualCompletionDate ?? production.updatedAt,
       });
@@ -164,6 +232,8 @@ export function buildActionQueue(db: MockDatabase): QueueRow[] {
       severity: "blocking",
       title: `Transfer to ${transfer.externalSystemName} failed`,
       detail: transfer.errorMessage ?? "No error message recorded.",
+      titlePhrase: { key: "transferFailed", params: { system: transfer.externalSystemName } },
+      detailPhrase: transfer.errorMessage ? undefined : { key: "noErrorMessage" },
       href: "/demo/admin/integrations",
       since: transfer.lastAttemptAt ?? transfer.createdAt,
     });
@@ -179,6 +249,14 @@ export function buildActionQueue(db: MockDatabase): QueueRow[] {
       detail: item.assignedToOrgId
         ? `Assigned to ${orgName(db, item.assignedToOrgId)}`
         : `Assigned to ${item.assignedToRole}`,
+      detailPhrase: {
+        key: "assignedTo",
+        params: {
+          assignee: item.assignedToOrgId
+            ? orgName(db, item.assignedToOrgId)
+            : { role: item.assignedToRole },
+        },
+      },
       href:
         item.entityTable === "allocations"
           ? "/demo/admin/allocations"

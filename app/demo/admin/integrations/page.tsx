@@ -16,56 +16,50 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Button, EmptyState, Input, Panel, Select } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoAdmin } from "@/lib/i18n/messages/demo-admin";
 import { listTransfers } from "../../_mock/selectors-admin";
-import { useDemoPersona, useDemoStore } from "../../_mock/store";
-import { NoticeBanner, SectionHeading, formatDate } from "../../_components/cirka-ui";
+import { useDemoStore } from "../../_mock/store";
+import { NoticeBanner, SectionHeading } from "../../_components/cirka-ui";
 import { useAction } from "../../_components/use-action";
+import { useFormat } from "../../_components/use-format";
 import { classNames } from "@/lib/utils";
 
+/** Badge text lives in `demoAdmin.integrations.direction` / `.status`, keyed like these maps. */
 const DIRECTION_BADGES = {
   inbound: {
-    label: "Inbound",
     icon: ArrowDownLeft,
     className: "bg-[#8CC63F]/15 text-[#8CC63F] border-[#8CC63F]/30",
   },
   outbound: {
-    label: "Outbound",
     icon: ArrowUpRight,
     className: "bg-[var(--surface)] text-[var(--charcoal)] border-[var(--charcoal)]/30",
   },
 } as const;
 
-const STATUS_BADGES: Record<
-  string,
-  { label: string; icon: typeof CheckCircle2; className: string }
-> = {
+const STATUS_BADGES: Record<string, { icon: typeof CheckCircle2; className: string }> = {
   success: {
-    label: "Success",
     icon: CheckCircle2,
     className: "bg-[#8CC63F]/15 text-[#8CC63F] border-[#8CC63F]/30",
   },
   failed: {
-    label: "Failed",
     icon: AlertTriangle,
     className: "bg-[#D14343]/15 text-[#D14343] border-[#D14343]/30",
   },
   pending: {
-    label: "Pending",
     icon: Clock,
     className: "bg-[#FF5C00]/15 text-[#FF5C00] border-[#FF5C00]/30",
   },
   in_progress: {
-    label: "In progress",
     icon: Clock,
     className: "bg-[#FF5C00]/15 text-[#FF5C00] border-[#FF5C00]/30",
   },
   cancelled: {
-    label: "Cancelled",
     icon: AlertTriangle,
     className: "bg-[var(--surface)] text-[var(--ink-muted)] border-[var(--line-strong)]",
   },
   skipped: {
-    label: "Skipped",
     icon: Clock,
     className: "bg-[var(--surface)] text-[var(--ink-muted)] border-[var(--line-strong)]",
   },
@@ -75,6 +69,8 @@ export default function AdminIntegrationsPage() {
   const store = useDemoStore();
   const searchParams = useSearchParams();
   const { run, pending, error } = useAction();
+  const { integrations: t } = useMessages(demoAdmin);
+  const fmt = useFormat();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>(() => searchParams.get("status") ?? "all");
@@ -86,9 +82,9 @@ export default function AdminIntegrationsPage() {
   const connections = useMemo(() => {
     return store.db.integrationConnections.map((conn) => {
       const org = store.db.organisations.find((o) => o._id === conn.orgId);
-      return { conn, orgName: org?.name ?? "CIRKA Network" };
+      return { conn, orgName: org?.name ?? t.cirkaNetwork };
     });
-  }, [store.db]);
+  }, [store.db, t.cirkaNetwork]);
 
   const filteredTransfers = useMemo(() => {
     return transfers.filter(({ transfer, entityLabel }) => {
@@ -123,16 +119,16 @@ export default function AdminIntegrationsPage() {
       {/* Header with back navigation to dashboard */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <SectionHeading
-          eyebrow="System Console"
-          title="Integrations & System Transfers"
+          eyebrow={t.eyebrow}
+          title={t.title}
         />
         <Button as={Link} href="/demo/admin/dashboard" variant="secondary" size="sm">
-          ← Back to Action Queue
+          {t.back}
         </Button>
       </div>
 
       {error && (
-        <NoticeBanner tone="blocking" title="Action failed">
+        <NoticeBanner tone="blocking" title={t.actionFailed}>
           {error}
         </NoticeBanner>
       )}
@@ -140,7 +136,7 @@ export default function AdminIntegrationsPage() {
       {/* Integration Connections Grid */}
       <div className="space-y-3">
         <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-          Connected Systems & Services
+          {t.connectedSystems}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {/* Retexcir Connector Card */}
@@ -151,19 +147,19 @@ export default function AdminIntegrationsPage() {
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-primary-muted)] text-[var(--brand-primary)]">
                     <Plug size={14} />
                   </span>
-                  <h3 className="font-semibold text-sm text-[var(--ink)]">Retexcir Hub</h3>
+                  <h3 className="font-semibold text-sm text-[var(--ink)]">{t.retexcirTitle}</h3>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#8CC63F]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8CC63F] border border-[#8CC63F]/30">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#8CC63F]" />
-                  Active
+                  {t.active}
                 </span>
               </div>
               <p className="text-xs text-[var(--ink-muted)] leading-relaxed">
-                Automated textile intake sync and digital passport record exchange.
+                {t.retexcirBody}
               </p>
             </div>
             <div className="border-t border-[var(--line)] pt-3 text-[11px] text-[var(--ink-muted)] flex items-center justify-between">
-              <span>Connected accounts:</span>
+              <span>{t.connectedAccounts}</span>
               <strong className="text-[var(--ink)]">{connections.length || 1}</strong>
             </div>
           </Panel>
@@ -176,19 +172,19 @@ export default function AdminIntegrationsPage() {
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--charcoal)]">
                     <ExternalLink size={14} />
                   </span>
-                  <h3 className="font-semibold text-sm text-[var(--ink)]">Traceability Partner</h3>
+                  <h3 className="font-semibold text-sm text-[var(--ink)]">{t.partnerTitle}</h3>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#8CC63F]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8CC63F] border border-[#8CC63F]/30">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#8CC63F]" />
-                  Active
+                  {t.active}
                 </span>
               </div>
               <p className="text-xs text-[var(--ink-muted)] leading-relaxed">
-                Outbound chain-of-custody proofs and ESG verification reporting.
+                {t.partnerBody}
               </p>
             </div>
             <div className="border-t border-[var(--line)] pt-3 text-[11px] text-[var(--ink-muted)] flex items-center justify-between">
-              <span>Endpoint status:</span>
+              <span>{t.endpointStatus}</span>
               <span className="text-[#8CC63F] font-semibold">200 OK</span>
             </div>
           </Panel>
@@ -201,18 +197,18 @@ export default function AdminIntegrationsPage() {
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--charcoal)]">
                     <ShieldCheck size={14} />
                   </span>
-                  <h3 className="font-semibold text-sm text-[var(--ink)]">Custom Webhooks</h3>
+                  <h3 className="font-semibold text-sm text-[var(--ink)]">{t.webhooksTitle}</h3>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] border border-[var(--line-strong)]">
-                  Configured
+                  {t.configured}
                 </span>
               </div>
               <p className="text-xs text-[var(--ink-muted)] leading-relaxed">
-                Inbound surplus dumps from factory ERP systems (Västkust ERP).
+                {t.webhooksBody}
               </p>
             </div>
             <div className="border-t border-[var(--line)] pt-3 text-[11px] text-[var(--ink-muted)] flex items-center justify-between">
-              <span>Format supported:</span>
+              <span>{t.formatSupported}</span>
               <span className="text-[var(--ink)] font-mono">JSON / CSV</span>
             </div>
           </Panel>
@@ -223,12 +219,12 @@ export default function AdminIntegrationsPage() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-            Transfer Event Log
+            {t.eventLog}
           </h2>
           {failedCount > 0 && (
             <span className="inline-flex items-center gap-1 text-xs font-bold text-[#D14343]">
               <AlertTriangle size={13} />
-              {failedCount} failed transfer{failedCount === 1 ? "" : "s"} requiring attention
+              {format(failedCount === 1 ? t.failedAttentionOne : t.failedAttentionMany, { count: failedCount })}
             </span>
           )}
         </div>
@@ -242,7 +238,7 @@ export default function AdminIntegrationsPage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search system, entity, or error message..."
+                placeholder={t.search}
                 className="pl-10 h-11 py-0 text-sm"
               />
               {search && (
@@ -251,7 +247,7 @@ export default function AdminIntegrationsPage() {
                   onClick={() => setSearch("")}
                   className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)]"
                 >
-                  Clear
+                  {t.clear}
                 </button>
               )}
             </div>
@@ -262,10 +258,10 @@ export default function AdminIntegrationsPage() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="h-11 py-0 text-sm"
               >
-                <option value="all">All statuses ({transfers.length})</option>
-                <option value="failed">Failed ({failedCount})</option>
-                <option value="success">Success ({successCount})</option>
-                <option value="pending">Pending ({pendingCount})</option>
+                <option value="all">{format(t.allStatuses, { count: transfers.length })}</option>
+                <option value="failed">{format(t.statusCount, { label: t.status.failed, count: failedCount })}</option>
+                <option value="success">{format(t.statusCount, { label: t.status.success, count: successCount })}</option>
+                <option value="pending">{format(t.statusCount, { label: t.status.pending, count: pendingCount })}</option>
               </Select>
             </div>
 
@@ -275,9 +271,9 @@ export default function AdminIntegrationsPage() {
                 onChange={(e) => setDirectionFilter(e.target.value)}
                 className="h-11 py-0 text-sm"
               >
-                <option value="all">All directions</option>
-                <option value="inbound">Inbound</option>
-                <option value="outbound">Outbound</option>
+                <option value="all">{t.allDirections}</option>
+                <option value="inbound">{t.direction.inbound}</option>
+                <option value="outbound">{t.direction.outbound}</option>
               </Select>
             </div>
           </div>
@@ -286,12 +282,13 @@ export default function AdminIntegrationsPage() {
 
       {/* Transfers Table / List */}
       {filteredTransfers.length === 0 ? (
-        <EmptyState title="No integration transfers found" />
+        <EmptyState title={t.empty} />
       ) : (
         <div className="space-y-3">
           {filteredTransfers.map(({ transfer, entityLabel }) => {
             const isTarget = targetTransferId === transfer._id;
-            const statusConfig = STATUS_BADGES[transfer.status] ?? STATUS_BADGES.pending;
+            const statusKey = transfer.status in STATUS_BADGES ? transfer.status : "pending";
+            const statusConfig = STATUS_BADGES[statusKey];
             const StatusIcon = statusConfig.icon;
             const directionConfig = DIRECTION_BADGES[transfer.direction];
             const DirectionIcon = directionConfig.icon;
@@ -318,7 +315,7 @@ export default function AdminIntegrationsPage() {
                         )}
                       >
                         <DirectionIcon size={12} />
-                        {directionConfig.label}
+                        {t.direction[transfer.direction]}
                       </span>
 
                       <span
@@ -328,7 +325,7 @@ export default function AdminIntegrationsPage() {
                         )}
                       >
                         <StatusIcon size={12} />
-                        {statusConfig.label}
+                        {t.status[statusKey as keyof typeof t.status]}
                       </span>
 
                       <span className="text-xs font-semibold text-[var(--ink)]">
@@ -337,7 +334,7 @@ export default function AdminIntegrationsPage() {
 
                       {entityLabel && (
                         <span className="text-xs text-[var(--ink-muted)]">
-                          · Entity: <strong className="text-[var(--ink)]">{entityLabel}</strong>
+                          {t.entity} <strong className="text-[var(--ink)]">{entityLabel}</strong>
                         </span>
                       )}
                     </div>
@@ -347,7 +344,7 @@ export default function AdminIntegrationsPage() {
                       <div className="rounded-xl border border-[#D14343]/30 bg-[#D14343]/10 p-3 text-xs text-[#8A1F1F]">
                         <p className="font-semibold flex items-center gap-1.5 mb-1">
                           <AlertTriangle size={13} className="shrink-0" />
-                          Failure reason:
+                          {t.failureReason}
                         </p>
                         <p className="font-mono text-[11px] leading-relaxed break-words">
                           {transfer.errorMessage}
@@ -363,14 +360,14 @@ export default function AdminIntegrationsPage() {
 
                     {/* Metadata strip */}
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-[11px] text-[var(--ink-muted)]">
-                      <span>Created: {formatDate(transfer.createdAt)}</span>
+                      <span>{format(t.created, { date: fmt.date(transfer.createdAt) })}</span>
                       {transfer.lastAttemptAt && (
-                        <span>Last attempt: {formatDate(transfer.lastAttemptAt)}</span>
+                        <span>{format(t.lastAttempt, { date: fmt.date(transfer.lastAttemptAt) })}</span>
                       )}
-                      <span>Attempts: {transfer.attemptCount}</span>
+                      <span>{format(t.attempts, { count: transfer.attemptCount })}</span>
                       {transfer.externalRecordId && (
                         <span>
-                          Record ID:{" "}
+                          {t.recordId}{" "}
                           <strong className="font-mono text-[var(--ink)]">
                             {transfer.externalRecordId}
                           </strong>
@@ -391,7 +388,7 @@ export default function AdminIntegrationsPage() {
                         variant="ghost"
                         className="inline-flex items-center gap-1 text-xs"
                       >
-                        External Record <ExternalLink size={13} />
+                        {t.externalRecord} <ExternalLink size={13} />
                       </Button>
                     )}
 
@@ -407,7 +404,7 @@ export default function AdminIntegrationsPage() {
                         className="gap-1.5 bg-[#FF5C00] text-white hover:bg-[#E05200] shadow-xs font-semibold"
                       >
                         <RefreshCw size={13} className={pending ? "animate-spin" : ""} />
-                        Retry Transfer
+                        {t.retry}
                       </Button>
                     )}
                   </div>
