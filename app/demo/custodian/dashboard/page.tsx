@@ -8,10 +8,13 @@ import {
   DashboardHero,
   DashboardSection,
 } from "@/components/dashboard-widgets";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCustodian } from "@/lib/i18n/messages/demo-custodian";
 import { getCustodianDashboard } from "../../_mock/selectors-custodian";
-import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
-import { CirkaBadge, LinkRow, NoticeBanner, formatDate, tileHref } from "../../_components/cirka-ui";
+import { CirkaBadge, LinkRow, NoticeBanner, tileHref } from "../../_components/cirka-ui";
+import { useFormat } from "../../_components/use-format";
 import { RoleActivityFeed } from "../../_components/trace-timeline";
 import { classNames } from "@/lib/utils";
 import { DiscrepancyModal } from "../../_components/discrepancy-analysis";
@@ -33,6 +36,8 @@ function CompactCustodianStatsOverview({
 
   const uncommittedPct = totalHeld > 0 ? (uncommitted / totalHeld) * 100 : 0;
   const promisedPct = totalHeld > 0 ? (promised / totalHeld) * 100 : 0;
+  const { dashboard: t } = useMessages(demoCustodian);
+  const fmt = useFormat();
 
   return (
     <div className="grid gap-4 lg:grid-cols-12 items-stretch">
@@ -40,10 +45,10 @@ function CompactCustodianStatsOverview({
       <Panel className="lg:col-span-7 p-5 flex flex-col justify-between space-y-4">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-            Held
+            {t.held}
           </p>
           <p className="mt-0.5 text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
-            {formatQuantity(totalHeld, "kg")}
+            {fmt.quantity(totalHeld, "kg")}
           </p>
         </div>
 
@@ -54,14 +59,14 @@ function CompactCustodianStatsOverview({
               <div
                 className="h-full bg-[#8CC63F] transition-all duration-700 ease-out"
                 style={{ width: `${uncommittedPct}%` }}
-                title={`Unassigned: ${formatQuantity(uncommitted, "kg")} (${Math.round(uncommittedPct)}%)`}
+                title={format(t.barTitle, { label: t.unassigned, quantity: fmt.quantity(uncommitted, "kg"), percent: Math.round(uncommittedPct) })}
               />
             )}
             {promised > 0 && (
               <div
                 className="h-full bg-[#FF5C00] transition-all duration-700 ease-out border-l border-white/20"
                 style={{ width: `${promisedPct}%` }}
-                title={`Assigned: ${formatQuantity(promised, "kg")} (${Math.round(promisedPct)}%)`}
+                title={format(t.barTitle, { label: t.assigned, quantity: fmt.quantity(promised, "kg"), percent: Math.round(promisedPct) })}
               />
             )}
           </div>
@@ -72,10 +77,10 @@ function CompactCustodianStatsOverview({
           <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
               <span className="w-2 h-2 rounded-full bg-[#8CC63F] shrink-0" />
-              Unassigned
+              {t.unassigned}
             </div>
             <p className="text-sm sm:text-base font-bold text-[var(--ink)] tabular-nums">
-              {formatQuantity(uncommitted, "kg")}
+              {fmt.quantity(uncommitted, "kg")}
               <span className="ml-1 text-xs font-medium text-[var(--ink-muted)]">{Math.round(uncommittedPct)}%</span>
             </p>
           </div>
@@ -83,10 +88,10 @@ function CompactCustodianStatsOverview({
           <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
               <span className="w-2 h-2 rounded-full bg-[#FF5C00] shrink-0" />
-              Assigned
+              {t.assigned}
             </div>
             <p className="text-sm sm:text-base font-bold text-[var(--ink)] tabular-nums">
-              {formatQuantity(promised, "kg")}
+              {fmt.quantity(promised, "kg")}
               <span className="ml-1 text-xs font-medium text-[var(--ink-muted)]">{Math.round(promisedPct)}%</span>
             </p>
           </div>
@@ -94,10 +99,10 @@ function CompactCustodianStatsOverview({
           <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
               <span className="w-2 h-2 rounded-full bg-[#545454] shrink-0" />
-              In Transit
+              {t.inTransit}
             </div>
             <p className="text-sm sm:text-base font-bold text-[var(--ink)] tabular-nums">
-              {formatQuantity(inTransit, "kg")}
+              {fmt.quantity(inTransit, "kg")}
             </p>
           </div>
         </div>
@@ -124,7 +129,7 @@ function CompactCustodianStatsOverview({
           >
             <div className="flex items-start justify-between gap-2">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-                Awaiting Acceptance
+                {t.awaitingAcceptance}
               </p>
               <ArrowUpRight
                 size={15}
@@ -166,7 +171,7 @@ function CompactCustodianStatsOverview({
           >
             <div className="flex items-start justify-between gap-2">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-                Overdue Arrivals
+                {t.overdueArrivals}
               </p>
               <ArrowUpRight
                 size={15}
@@ -203,7 +208,7 @@ function CompactCustodianStatsOverview({
           >
             <div className="flex items-start justify-between gap-2">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-                Awaiting Receipt
+                {t.awaitingReceipt}
               </p>
               <ArrowUpRight size={15} className="text-[var(--ink-muted)] group-hover:text-[var(--ink)] transition-colors shrink-0" />
             </div>
@@ -225,7 +230,7 @@ function CompactCustodianStatsOverview({
           >
             <div className="flex items-start justify-between gap-2">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-                Makers Served
+                {t.makersServed}
               </p>
               <ArrowUpRight size={15} className="text-[var(--ink-muted)] group-hover:text-[var(--ink)] transition-colors shrink-0" />
             </div>
@@ -245,6 +250,8 @@ export default function CustodianDashboardPage() {
   const { db } = useDemoStore();
   const { scope, organisation } = useDemoPersona("custodian");
   const view = getCustodianDashboard(db, scope);
+  const { dashboard: t } = useMessages(demoCustodian);
+  const fmt = useFormat();
 
   const [activeModalAllocation, setActiveModalAllocation] = useState<{
     allocation: Allocation;
@@ -271,14 +278,16 @@ export default function CustodianDashboardPage() {
         />
       )}
 
-      <DashboardHero title={organisation?.name ?? "Dashboard"} />
+      <DashboardHero title={organisation?.name ?? t.title} />
 
       <CompactCustodianStatsOverview view={view} />
 
       {discrepancyEntries.length > 0 && (
         <NoticeBanner
           tone="blocking"
-          title={`${discrepancyEntries.length} open discrepanc${discrepancyEntries.length === 1 ? "y" : "ies"} with CIRKA`}
+          title={format(discrepancyEntries.length === 1 ? t.discrepancyOne : t.discrepancyMany, {
+            count: discrepancyEntries.length,
+          })}
         >
           <div className="space-y-3 pt-1">
             {discrepancyEntries.map((entry) => {
@@ -296,14 +305,17 @@ export default function CustodianDashboardPage() {
                   <div>
                     <p className="text-xs font-semibold text-[#2A2A2A]">
                       <span className="font-bold text-[#FF5C00]">{entry.allocation.reference}</span> ·{" "}
-                      {entry.batch?.name ?? `Batch ${entry.allocation.batchId}`}
+                      {entry.batch?.name ?? format(t.batchFallback, { id: entry.allocation.batchId })}
                     </p>
                     <p className="text-xs text-[#545454] mt-0.5">
-                      From <strong>{entry.fromName}</strong> ·{" "}
-                      {formatQuantity(received, entry.allocation.unit)} of{" "}
-                      {formatQuantity(dispatched, entry.allocation.unit)} received (
+                      {t.from} <strong>{entry.fromName}</strong> ·{" "}
+                      {format(t.receivedOf, {
+                        received: fmt.quantity(received, entry.allocation.unit),
+                        dispatched: fmt.quantity(dispatched, entry.allocation.unit),
+                      })}{" "}
+                      (
                       <span className="font-semibold text-[#FF5C00]">
-                        -{formatQuantity(shortfall, entry.allocation.unit)} short
+                        {format(t.short, { quantity: fmt.quantity(shortfall, entry.allocation.unit) })}
                       </span>
                       )
                     </p>
@@ -326,14 +338,14 @@ export default function CustodianDashboardPage() {
                       }
                       className="inline-flex items-center gap-1 rounded-full bg-[#FF5C00] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#e05200] transition-colors shadow-xs"
                     >
-                      <span>Analyze Discrepancy</span>
+                      <span>{t.analyze}</span>
                       <ArrowUpRight size={13} />
                     </button>
                     <Link
                       href={`/demo/custodian/arrivals?id=${entry.allocation._id}`}
                       className="inline-flex items-center gap-1 rounded-full border border-[var(--line-strong)] bg-[var(--paper)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors"
                     >
-                      <span>Open in Arrivals</span>
+                      <span>{t.openInArrivals}</span>
                       <ArrowUpRight size={13} />
                     </Link>
                   </div>
@@ -346,27 +358,27 @@ export default function CustodianDashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <DashboardSection
-          title="Expected arrivals"
+          title={t.expectedArrivals}
           action={
             <Button as={Link} href="/demo/custodian/arrivals" variant="secondary" size="sm">
-              Open arrivals
+              {t.openArrivals}
             </Button>
           }
         >
           <div className="-mx-6 -mb-6">
             {view.arrivals.length === 0 ? (
-              <p className="px-6 pb-6 text-sm text-[var(--ink-muted)]">Nothing expected.</p>
+              <p className="px-6 pb-6 text-sm text-[var(--ink-muted)]">{t.nothingExpected}</p>
             ) : (
               view.arrivals.slice(0, 5).map((entry) => (
                 <LinkRow
                   key={entry.allocation._id}
                   href={`/demo/custodian/arrivals?id=${entry.allocation._id}`}
-                  title={`${entry.allocation.reference} · ${entry.batch?.name ?? "Resource batch"}`}
-                  meta={`${entry.fromName} · ${formatQuantity(entry.allocation.quantityAllocated, entry.allocation.unit)}${
+                  title={`${entry.allocation.reference} · ${entry.batch?.name ?? t.resourceBatch}`}
+                  meta={`${entry.fromName} · ${fmt.quantity(entry.allocation.quantityAllocated, entry.allocation.unit)}${
                     entry.allocation.expectedArrivalDate
-                      ? ` · expected ${formatDate(entry.allocation.expectedArrivalDate)}`
+                      ? format(t.expected, { date: fmt.date(entry.allocation.expectedArrivalDate) })
                       : ""
-                  }${entry.late ? " · overdue" : ""}`}
+                  }${entry.late ? t.overdue : ""}`}
                   right={<CirkaBadge status={entry.allocation.status} />}
                 />
               ))
@@ -375,26 +387,30 @@ export default function CustodianDashboardPage() {
         </DashboardSection>
 
         <DashboardSection
-          title="Stock held"
+          title={t.stockHeld}
           action={
             <Button as={Link} href="/demo/custodian/stock" variant="secondary" size="sm">
-              Open stock
+              {t.openStock}
             </Button>
           }
         >
           <div className="-mx-6 -mb-6">
             {view.holdings.length === 0 ? (
-              <p className="px-6 pb-6 text-sm text-[var(--ink-muted)]">Nothing held right now.</p>
+              <p className="px-6 pb-6 text-sm text-[var(--ink-muted)]">{t.nothingHeld}</p>
             ) : (
               view.holdings.map((holding) => (
                 <LinkRow
                   key={holding.batch._id}
                   href={`/demo/custodian/stock?batchId=${holding.batch._id}`}
                   title={holding.batch.name}
-                  meta={`${holding.batch.reference} · owned by ${holding.ownerName} · ${formatQuantity(holding.uncommitted, holding.batch.unit)} uncommitted`}
+                  meta={format(t.holdingMeta, {
+                    reference: holding.batch.reference,
+                    owner: holding.ownerName,
+                    quantity: fmt.quantity(holding.uncommitted, holding.batch.unit),
+                  })}
                   right={
                     <span className="text-sm font-medium text-[var(--ink)]">
-                      {formatQuantity(holding.held, holding.batch.unit)}
+                      {fmt.quantity(holding.held, holding.batch.unit)}
                     </span>
                   }
                 />
@@ -405,17 +421,17 @@ export default function CustodianDashboardPage() {
       </div>
 
       <DashboardSection
-        title="Out to makers"
+        title={t.outToMakers}
         action={
           <Button as={Link} href="/demo/custodian/dispatches" variant="secondary" size="sm">
-            Open dispatches
+            {t.openDispatches}
           </Button>
         }
       >
         <div className="-mx-6 -mb-6">
           {view.outgoing.length === 0 ? (
             <p className="px-6 pb-6 text-sm text-[var(--ink-muted)]">
-              Nothing has been passed on yet.
+              {t.nothingPassed}
             </p>
           ) : (
             view.outgoing.slice(0, 6).map((entry) => (
@@ -423,7 +439,7 @@ export default function CustodianDashboardPage() {
                 key={entry.allocation._id}
                 href={`/demo/custodian/dispatches?id=${entry.allocation._id}`}
                 title={`${entry.allocation.reference} · ${entry.makerName}`}
-                meta={`${entry.batch?.name ?? "Resource batch"} · ${formatQuantity(entry.allocation.quantityAllocated, entry.allocation.unit)}`}
+                meta={`${entry.batch?.name ?? t.resourceBatch} · ${fmt.quantity(entry.allocation.quantityAllocated, entry.allocation.unit)}`}
                 right={<CirkaBadge status={entry.allocation.status} />}
               />
             ))

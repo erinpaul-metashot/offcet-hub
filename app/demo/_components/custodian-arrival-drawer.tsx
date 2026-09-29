@@ -3,13 +3,18 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button, Field, Input, Select } from "@/components/ui";
-import { ARRIVAL_ISSUES, ARRIVAL_ISSUE_LABELS, type ArrivalIssue } from "../_mock/domain";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { demoCustodian } from "@/lib/i18n/messages/demo-custodian";
+import { ARRIVAL_ISSUES, type ArrivalIssue, type Unit } from "../_mock/domain";
 import type { ExpectedArrival } from "../_mock/selectors-custodian";
-import { formatQuantity } from "../_mock/selectors-shared";
 import type { useAction } from "./use-action";
 import type { useDemoStore } from "../_mock/store";
 import { AllocationJourney } from "./allocation-journey";
-import { CirkaBadge, DataRow, NoticeBanner, formatDate } from "./cirka-ui";
+import { CirkaBadge, DataRow, NoticeBanner } from "./cirka-ui";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 interface Draft {
   received: string;
@@ -24,8 +29,12 @@ function ScaleComparison({
 }: {
   dispatched: number;
   received: number | null;
-  unit: string;
+  unit: Unit;
 }) {
+  const { arrivalDrawer: t } = useMessages(demoCustodian);
+  const labels = useLabels();
+  const fmt = useFormat();
+  const unitLabel = labels.UNIT_LABELS[unit];
   const hasReceived = received !== null && !isNaN(received);
   const delta = hasReceived ? Math.round((dispatched - received!) * 1000) / 1000 : null;
 
@@ -35,11 +44,11 @@ function ScaleComparison({
         {/* Dispatch note side */}
         <div className="rounded-xl bg-[var(--charcoal,#545454)] px-4 py-3 text-center text-white">
           <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/60">
-            Dispatch note
+            {t.dispatchNote}
           </p>
           <p className="text-2xl font-extrabold tabular-nums tracking-tight">
-            {dispatched}
-            <span className="ml-1 text-sm font-semibold">{unit}</span>
+            {fmt.number(dispatched)}
+            <span className="ml-1 text-sm font-semibold">{unitLabel}</span>
           </p>
         </div>
 
@@ -55,7 +64,7 @@ function ScaleComparison({
           ].join(" ")}
         >
           <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-muted)]">
-            Your weigh-in
+            {t.weighIn}
           </p>
           <p
             className={[
@@ -67,8 +76,8 @@ function ScaleComparison({
                   : "text-[var(--brand-primary)]",
             ].join(" ")}
           >
-            {hasReceived ? received : "-"}
-            <span className="ml-1 text-sm font-semibold">{unit}</span>
+            {hasReceived ? fmt.number(received!) : "-"}
+            <span className="ml-1 text-sm font-semibold">{unitLabel}</span>
           </p>
         </div>
       </div>
@@ -85,10 +94,10 @@ function ScaleComparison({
           ].join(" ")}
         >
           {delta > 0
-            ? `${delta} ${unit} short · held as unexplained`
+            ? format(t.short, { quantity: fmt.quantity(delta, unit) })
             : delta < 0
-              ? `${Math.abs(delta)} ${unit} over · flagged`
-              : "Matches"}
+              ? format(t.over, { quantity: fmt.quantity(Math.abs(delta), unit) })
+              : t.matches}
         </p>
       )}
     </div>
@@ -120,12 +129,16 @@ export function CustodianArrivalDrawer({
     !openIssue && ["in_transit", "received", "discrepancy"].includes(allocation.status);
   const [issueForm, setIssueForm] = useState<{ issue: ArrivalIssue; note: string } | null>(null);
   const receivedNum = draft.received !== "" ? Number(draft.received) : null;
+  const { arrivalDrawer: t } = useMessages(demoCustodian);
+  const { ui } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
   const respond = (accept: boolean) =>
     run(() =>
       store.respondToAllocation("custodian", {
         allocationId: allocation._id,
         accept,
-        note: accept ? "Space confirmed." : "No capacity for this quantity.",
+        note: accept ? t.acceptNote : t.declineNote,
       }),
     );
 
@@ -171,7 +184,7 @@ export function CustodianArrivalDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close drawer"
+            aria-label={t.closeDrawer}
             className="shrink-0 rounded-full p-2 text-[var(--ink-muted)] transition-colors duration-150 hover:bg-[var(--surface)] hover:text-[var(--ink)]"
           >
             <X size={20} />
@@ -181,7 +194,7 @@ export function CustodianArrivalDrawer({
         {/* ── Scrollable body ── */}
         <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
           {error && (
-            <NoticeBanner tone="blocking" title="That step was refused">
+            <NoticeBanner tone="blocking" title={ui.stepRefused}>
               {error}
             </NoticeBanner>
           )}
@@ -206,55 +219,55 @@ export function CustodianArrivalDrawer({
           {/* Data rows */}
           <dl>
             <DataRow
-              label="Allocated"
-              value={formatQuantity(allocation.quantityAllocated, allocation.unit)}
+              label={t.allocated}
+              value={fmt.quantity(allocation.quantityAllocated, allocation.unit)}
             />
-            <DataRow label="From" value={fromName} />
+            <DataRow label={t.from} value={fromName} />
             {batch && (
-              <DataRow label="Batch" value={`${batch.name} · ${batch.reference}`} />
+              <DataRow label={t.batch} value={`${batch.name} · ${batch.reference}`} />
             )}
             {allocation.status === "in_transit" && (
               <>
                 <DataRow
-                  label="Consignment ref"
+                  label={t.consignmentRef}
                   value={allocation.dispatchReference ?? "-"}
                 />
                 <DataRow
-                  label="Dispatched"
+                  label={t.dispatched}
                   value={
                     allocation.quantityDispatched !== undefined
-                      ? `${formatQuantity(allocation.quantityDispatched, allocation.unit)} · ${formatDate(allocation.dispatchedAt)}`
+                      ? `${fmt.quantity(allocation.quantityDispatched, allocation.unit)} · ${fmt.date(allocation.dispatchedAt)}`
                       : "-"
                   }
                 />
                 <DataRow
-                  label="Expected arrival"
-                  value={formatDate(allocation.expectedArrivalDate)}
+                  label={t.expectedArrival}
+                  value={fmt.date(allocation.expectedArrivalDate)}
                 />
               </>
             )}
             {allocation.status === "discrepancy" && (
               <>
                 <DataRow
-                  label="Consignment ref"
+                  label={t.consignmentRef}
                   value={allocation.dispatchReference ?? "-"}
                 />
                 <DataRow
-                  label="Dispatched"
-                  value={formatQuantity(
+                  label={t.dispatched}
+                  value={fmt.quantity(
                     allocation.quantityDispatched ?? allocation.quantityAllocated,
                     allocation.unit,
                   )}
                 />
                 <DataRow
-                  label="Received"
-                  value={`${formatQuantity(allocation.quantityReceived ?? 0, allocation.unit)} · ${formatDate(allocation.receivedAt)}`}
+                  label={t.received}
+                  value={`${fmt.quantity(allocation.quantityReceived ?? 0, allocation.unit)} · ${fmt.date(allocation.receivedAt)}`}
                 />
                 <DataRow
-                  label="Unexplained"
+                  label={t.unexplained}
                   value={
                     <span className="font-semibold text-[var(--brand-primary)]">
-                      {allocation.quantityDiscrepancy} {allocation.unit}
+                      {fmt.quantity(allocation.quantityDiscrepancy ?? 0, allocation.unit)}
                     </span>
                   }
                 />
@@ -264,13 +277,13 @@ export function CustodianArrivalDrawer({
               allocation.status === "awaiting_dispatch") && (
               <>
                 <DataRow
-                  label="Expected arrival"
-                  value={formatDate(allocation.expectedArrivalDate)}
+                  label={t.expectedArrival}
+                  value={fmt.date(allocation.expectedArrivalDate)}
                 />
               </>
             )}
             {allocation.notes && (
-              <DataRow label="Notes" value={allocation.notes} />
+              <DataRow label={t.notes} value={allocation.notes} />
             )}
           </dl>
 
@@ -278,7 +291,7 @@ export function CustodianArrivalDrawer({
           {allocation.status === "in_transit" && (
             <div className="rounded-2xl bg-[var(--surface)] p-5">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={`Quantity received (${allocation.unit})`}>
+                <Field label={format(t.quantityReceived, { unit: labels.UNIT_LABELS[allocation.unit] })}>
                   <Input
                     type="number"
                     min="0"
@@ -289,13 +302,13 @@ export function CustodianArrivalDrawer({
                     }
                   />
                 </Field>
-                <Field label="Note (optional)">
+                <Field label={t.noteOptional}>
                   <Input
                     value={draft.note}
                     onChange={(e) =>
                       onDraftChange({ ...draft, note: e.target.value })
                     }
-                    placeholder="Weighed on the pallet scale"
+                    placeholder={t.notePlaceholder}
                   />
                 </Field>
               </div>
@@ -303,7 +316,7 @@ export function CustodianArrivalDrawer({
           )}
 
           {allocation.status === "discrepancy" && (
-            <NoticeBanner tone="blocking" title="Open with CIRKA" />
+            <NoticeBanner tone="blocking" title={t.openWithCirka} />
           )}
 
           {/* Reported issue: open with CIRKA, no quantity moved */}
@@ -314,7 +327,7 @@ export function CustodianArrivalDrawer({
             >
               <p>{allocation.arrivalIssueNote}</p>
               <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.14em]">
-                Reported {formatDate(allocation.arrivalIssueReportedAt)} · with CIRKA
+                {format(t.reported, { date: fmt.date(allocation.arrivalIssueReportedAt) })}
               </p>
             </NoticeBanner>
           )}
@@ -327,14 +340,14 @@ export function CustodianArrivalDrawer({
                 onClick={() => setIssueForm({ issue: "damaged", note: "" })}
                 className="w-full rounded-2xl border border-dashed border-[var(--line-strong)] px-5 py-3 text-left text-sm font-semibold text-[var(--ink-muted)] transition-colors duration-150 ease-[var(--ease-out)] hover:border-[var(--brand-primary)] hover:text-[var(--ink)]"
               >
-                Report an issue
+                {t.reportIssue}
               </button>
             ) : (
               <div className="space-y-4 rounded-2xl border border-[var(--line-strong)] bg-[var(--surface)] p-5">
                 <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  Report an issue
+                  {t.reportIssue}
                 </p>
-                <Field label="Issue">
+                <Field label={t.issue}>
                   <Select
                     value={issueForm.issue}
                     onChange={(e) =>
@@ -343,16 +356,16 @@ export function CustodianArrivalDrawer({
                   >
                     {ARRIVAL_ISSUES.map((issue) => (
                       <option key={issue} value={issue}>
-                        {ARRIVAL_ISSUE_LABELS[issue]}
+                        {labels.ARRIVAL_ISSUE_LABELS[issue]}
                       </option>
                     ))}
                   </Select>
                 </Field>
-                <Field label="Details">
+                <Field label={t.details}>
                   <Input
                     value={issueForm.note}
                     onChange={(e) => setIssueForm({ ...issueForm, note: e.target.value })}
-                    placeholder="Two bales soaked through on the top layer"
+                    placeholder={t.detailsPlaceholder}
                   />
                 </Field>
                 <div className="flex flex-wrap gap-3">
@@ -370,7 +383,7 @@ export function CustodianArrivalDrawer({
                       if (ok) setIssueForm(null);
                     }}
                   >
-                    Report issue
+                    {t.submitIssue}
                   </Button>
                   <Button
                     size="sm"
@@ -378,7 +391,7 @@ export function CustodianArrivalDrawer({
                     disabled={pending}
                     onClick={() => setIssueForm(null)}
                   >
-                    Cancel
+                    {t.cancel}
                   </Button>
                 </div>
               </div>
@@ -400,21 +413,21 @@ export function CustodianArrivalDrawer({
                 )
               }
             >
-              Confirm receipt
+              {t.confirmReceipt}
             </Button>
           )}
           {allocation.status === "proposed" && (
             <>
               <Button disabled={pending} onClick={() => respond(true)}>
-                Accept
+                {t.accept}
               </Button>
               <Button variant="secondary" disabled={pending} onClick={() => respond(false)}>
-                Decline
+                {t.decline}
               </Button>
             </>
           )}
           <Button variant="ghost" className="ml-auto" onClick={onClose}>
-            Close
+            {t.close}
           </Button>
         </div>
       </div>

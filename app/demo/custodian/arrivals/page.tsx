@@ -4,12 +4,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertTriangle, Clock, Zap } from "lucide-react";
 import { EmptyState } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { demoCustodian } from "@/lib/i18n/messages/demo-custodian";
 import { getCustodianDashboard } from "../../_mock/selectors-custodian";
 import type { ExpectedArrival } from "../../_mock/selectors-custodian";
-import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { CirkaBadge, SectionHeading, NoticeBanner } from "../../_components/cirka-ui";
 import { useAction } from "../../_components/use-action";
+import { useFormat } from "../../_components/use-format";
 import { CustodianArrivalDrawer } from "../../_components/custodian-arrival-drawer";
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -26,22 +30,17 @@ function groupOf(entry: ExpectedArrival): GroupKey {
   return "waiting";
 }
 
-const GROUP_META: Record<
-  GroupKey,
-  { label: string; Icon: typeof Zap; iconBg: string }
-> = {
+/** Group names live in `demoCustodian.arrivals.groups`, keyed like this map. */
+const GROUP_META: Record<GroupKey, { Icon: typeof Zap; iconBg: string }> = {
   action: {
-    label: "Needs your action",
     Icon: Zap,
     iconBg: "bg-[var(--brand-primary)]",
   },
   waiting: {
-    label: "Waiting on others",
     Icon: Clock,
     iconBg: "bg-[var(--charcoal,#545454)]",
   },
   issue: {
-    label: "Open with CIRKA",
     Icon: AlertTriangle,
     iconBg: "bg-[#C8A96B]",
   },
@@ -60,6 +59,7 @@ function ArrivalRow({
   onClick: () => void;
 }) {
   const { allocation, batch, fromName, late, openIssue } = entry;
+  const fmt = useFormat();
 
   return (
     <button
@@ -91,7 +91,7 @@ function ArrivalRow({
         {/* Right: qty + badges */}
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <p className="text-xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--ink)]">
-            {formatQuantity(allocation.quantityAllocated, allocation.unit)}
+            {fmt.quantity(allocation.quantityAllocated, allocation.unit)}
           </p>
           <div className="flex flex-wrap justify-end gap-1">
             <CirkaBadge status={allocation.status} />
@@ -110,6 +110,9 @@ export default function CustodianArrivalsPage() {
   const store = useDemoStore();
   const { scope } = useDemoPersona("custodian");
   const { run, error, pending, clearError } = useAction();
+  const { arrivals: t } = useMessages(demoCustodian);
+  const { ui } = useMessages(demoCommon);
+  const fmt = useFormat();
 
   const view = useMemo(
     () => getCustodianDashboard(store.db, scope),
@@ -194,21 +197,20 @@ export default function CustodianArrivalsPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading title="Expected arrivals" />
+      <SectionHeading title={t.title} />
 
       {error && (
-        <NoticeBanner tone="blocking" title="That step was refused">
+        <NoticeBanner tone="blocking" title={ui.stepRefused}>
           {error}
         </NoticeBanner>
       )}
 
       {view.arrivals.length === 0 ? (
-        <EmptyState title="Nothing expected" />
+        <EmptyState title={t.nothingExpected} />
       ) : (
         <>
           <p className="text-sm tabular-nums text-[var(--ink-muted)]">
-            <strong className="text-[var(--ink)]">{view.arrivals.length}</strong> expected ·{" "}
-            <strong className="text-[var(--ink)]">{totalKg} kg</strong>
+            {format(t.summary, { count: view.arrivals.length, quantity: fmt.quantity(totalKg, "kg") })}
           </p>
 
           {/* ── Action groups ── */}
@@ -236,7 +238,7 @@ export default function CustodianArrivalsPage() {
                       id={`group-${key}`}
                       className="text-base font-semibold text-[var(--ink)]"
                     >
-                      {meta.label}
+                      {t.groups[key]}
                     </h2>
                     <span className="ml-auto rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">
                       {items.length}
@@ -246,7 +248,7 @@ export default function CustodianArrivalsPage() {
                   {/* Cards */}
                   {items.length === 0 ? (
                     <p className="rounded-2xl border border-dashed border-[var(--line)] px-5 py-5 text-sm text-[var(--ink-muted)]">
-                      None
+                      {t.none}
                     </p>
                   ) : (
                     <div className="space-y-3">

@@ -3,12 +3,17 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import { Button, Field, Input } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { demoCustodian } from "@/lib/i18n/messages/demo-custodian";
 import type { Allocation, ResourceBatch } from "../_mock/types";
-import { formatQuantity } from "../_mock/selectors-shared";
 import type { useAction } from "./use-action";
 import type { useDemoStore } from "../_mock/store";
 import { AllocationJourney } from "./allocation-journey";
-import { CirkaBadge, DataRow, NoticeBanner, formatDate } from "./cirka-ui";
+import { CirkaBadge, DataRow, NoticeBanner } from "./cirka-ui";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 export interface OutgoingEntry {
   allocation: Allocation;
@@ -41,6 +46,10 @@ export function CustodianDispatchDrawer({
   onClose: () => void;
 }) {
   const { allocation, batch, makerName } = entry;
+  const { dispatchDrawer: t } = useMessages(demoCustodian);
+  const { ui } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   // Escape key & body overflow lock
   useEffect(() => {
@@ -91,7 +100,7 @@ export function CustodianDispatchDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close drawer"
+            aria-label={t.closeDrawer}
             className="shrink-0 rounded-full p-2 text-[var(--ink-muted)] transition-colors duration-150 hover:bg-[var(--surface)] hover:text-[var(--ink)]"
           >
             <X size={20} />
@@ -101,7 +110,7 @@ export function CustodianDispatchDrawer({
         {/* Scrollable Body */}
         <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
           {error && (
-            <NoticeBanner tone="blocking" title="That step was refused">
+            <NoticeBanner tone="blocking" title={ui.stepRefused}>
               {error}
             </NoticeBanner>
           )}
@@ -112,47 +121,50 @@ export function CustodianDispatchDrawer({
           {/* Quantity Callout */}
           <div className="flex items-baseline justify-between rounded-2xl bg-[var(--surface)] px-5 py-4">
             <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-              Quantity
+              {t.quantity}
             </span>
             <span className="text-2xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--ink)]">
-              {formatQuantity(allocation.quantityAllocated, allocation.unit)}
+              {fmt.quantity(allocation.quantityAllocated, allocation.unit)}
             </span>
           </div>
 
           {/* Timeline & Metadata */}
           <dl>
-            <DataRow label="Proposed" value={formatDate(allocation.createdAt)} />
+            <DataRow label={t.proposed} value={fmt.date(allocation.createdAt)} />
             <DataRow
-              label="Maker response"
+              label={t.makerResponse}
               value={
                 allocation.respondedAt
-                  ? `${formatDate(allocation.respondedAt)}${allocation.responseNote ? ` · ${allocation.responseNote}` : ""}`
+                  ? `${fmt.date(allocation.respondedAt)}${allocation.responseNote ? ` · ${allocation.responseNote}` : ""}`
                   : "-"
               }
             />
             <DataRow
-              label="Dispatched"
+              label={t.dispatched}
               value={
                 allocation.dispatchedAt
-                  ? `${formatDate(allocation.dispatchedAt)}${allocation.dispatchReference ? ` (${allocation.dispatchReference})` : ""}`
+                  ? `${fmt.date(allocation.dispatchedAt)}${allocation.dispatchReference ? ` (${allocation.dispatchReference})` : ""}`
                   : "-"
               }
             />
             <DataRow
-              label="Received by maker"
+              label={t.receivedByMaker}
               value={
                 allocation.receivedAt
-                  ? `${formatQuantity(allocation.quantityReceived ?? 0, allocation.unit)} on ${formatDate(allocation.receivedAt)}`
+                  ? format(t.receivedOn, {
+                      quantity: fmt.quantity(allocation.quantityReceived ?? 0, allocation.unit),
+                      date: fmt.date(allocation.receivedAt),
+                    })
                   : "-"
               }
             />
-            {allocation.notes && <DataRow label="Note" value={allocation.notes} />}
+            {allocation.notes && <DataRow label={t.note} value={allocation.notes} />}
           </dl>
 
           {isAwaitingDispatch && (
             <div className="rounded-2xl bg-[var(--surface)] p-5">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={`Quantity handed over (${allocation.unit})`}>
+                <Field label={format(t.quantityHandedOver, { unit: labels.UNIT_LABELS[allocation.unit] })}>
                   <Input
                     type="number"
                     min="0"
@@ -163,13 +175,13 @@ export function CustodianDispatchDrawer({
                     }
                   />
                 </Field>
-                <Field label="Reference">
+                <Field label={t.reference}>
                   <Input
                     value={draft.reference}
                     onChange={(e) =>
                       onDraftChange({ ...draft, reference: e.target.value })
                     }
-                    placeholder="Collected in person"
+                    placeholder={t.referencePlaceholder}
                   />
                 </Field>
               </div>
@@ -191,7 +203,7 @@ export function CustodianDispatchDrawer({
                 })
               }
             >
-              Ready for hand-over
+              {t.ready}
             </Button>
           )}
 
@@ -209,12 +221,12 @@ export function CustodianDispatchDrawer({
                 })
               }
             >
-              Record hand-over
+              {t.record}
             </Button>
           )}
 
           <Button variant="ghost" className="ml-auto" onClick={onClose}>
-            Close
+            {t.close}
           </Button>
         </div>
       </div>

@@ -3,9 +3,11 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import { Button, Field, Input } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCustodian } from "@/lib/i18n/messages/demo-custodian";
 import type { Holding } from "../_mock/selectors-custodian";
 import { potSlices } from "../_mock/selectors-batches";
-import { categoryLabel, formatQuantity } from "../_mock/selectors-shared";
 import type { useAction } from "./use-action";
 import type { useDemoStore } from "../_mock/store";
 import {
@@ -14,8 +16,9 @@ import {
   NoticeBanner,
   ProvenanceChip,
   QuantityPotsBar,
-  formatDate,
 } from "./cirka-ui";
+import { useFormat } from "./use-format";
+import { useLabels } from "./use-labels";
 
 export interface DamageDraft {
   quantity: string;
@@ -51,6 +54,9 @@ export function CustodianStockDrawer({
     receivedFromName,
     outgoing,
   } = holding;
+  const { stockDrawer: t } = useMessages(demoCustodian);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   // Keypress listener for Escape & Body Scroll-lock
   useEffect(() => {
@@ -86,7 +92,7 @@ export function CustodianStockDrawer({
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--line)] px-6 py-5">
           <div className="space-y-1.5">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-              {batch.reference} · {categoryLabel(batch.materialCategory)}
+              {batch.reference} · {labels.MATERIAL_CATEGORY_LABELS[batch.materialCategory]}
             </p>
             <h2 className="text-lg font-semibold leading-snug tracking-[-0.02em] text-[var(--ink)]">
               {batch.name}
@@ -102,7 +108,7 @@ export function CustodianStockDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close drawer"
+            aria-label={t.closeDrawer}
             className="shrink-0 rounded-full p-2 text-[var(--ink-muted)] transition-colors duration-150 hover:bg-[var(--surface)] hover:text-[var(--ink)]"
           >
             <X size={20} />
@@ -112,7 +118,7 @@ export function CustodianStockDrawer({
         {/* Scrollable Body */}
         <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
           {error && (
-            <NoticeBanner tone="blocking" title="That adjustment was refused">
+            <NoticeBanner tone="blocking" title={t.refused}>
               {error}
             </NoticeBanner>
           )}
@@ -121,18 +127,18 @@ export function CustodianStockDrawer({
           <div className="grid grid-cols-2 gap-3 rounded-2xl bg-[var(--surface)] p-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                Physically Held
+                {t.physicallyHeld}
               </p>
               <p className="mt-0.5 text-2xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--ink)]">
-                {formatQuantity(held, batch.unit)}
+                {fmt.quantity(held, batch.unit)}
               </p>
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                Not yet assigned
+                {t.notAssigned}
               </p>
               <p className="mt-0.5 text-2xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--brand-primary)]">
-                {formatQuantity(uncommitted, batch.unit)}
+                {fmt.quantity(uncommitted, batch.unit)}
               </p>
             </div>
           </div>
@@ -148,22 +154,22 @@ export function CustodianStockDrawer({
 
           {/* Batch Details */}
           <dl>
-            <DataRow label="Owned by" value={ownerName} />
-            <DataRow label="Received from" value={receivedFromName} />
-            <DataRow label="Received at site" value={formatDate(receivedAt)} />
+            <DataRow label={t.ownedBy} value={ownerName} />
+            <DataRow label={t.receivedFrom} value={receivedFromName} />
+            <DataRow label={t.receivedAt} value={fmt.date(receivedAt)} />
             <DataRow
-              label="Assigned to makers"
-              value={formatQuantity(promised, batch.unit)}
+              label={t.assignedToMakers}
+              value={fmt.quantity(promised, batch.unit)}
             />
           </dl>
 
           {/* Where CIRKA has sent it on */}
           <div className="space-y-3 rounded-2xl border border-[var(--line)] p-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Sent to makers
+              {t.sentToMakers}
             </p>
             {outgoing.length === 0 ? (
-              <p className="text-sm text-[var(--ink-muted)]">None yet</p>
+              <p className="text-sm text-[var(--ink-muted)]">{t.noneYet}</p>
             ) : (
               <ul className="space-y-2">
                 {outgoing.map(({ allocation, makerName }) => (
@@ -175,7 +181,7 @@ export function CustodianStockDrawer({
                       {makerName}
                       <span className="text-[var(--ink-muted)]">
                         {" "}
-                        · {formatQuantity(allocation.quantityAllocated, allocation.unit)}
+                        · {fmt.quantity(allocation.quantityAllocated, allocation.unit)}
                       </span>
                     </span>
                     <CirkaBadge status={allocation.status} />
@@ -188,12 +194,12 @@ export function CustodianStockDrawer({
           {/* Damage report */}
           <div className="space-y-4 rounded-2xl bg-[var(--surface)] p-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-              Report damage
+              {t.reportDamage}
             </p>
 
             <Field
-              label={`Quantity damaged (${batch.unit})`}
-              hint={`Held at your site: ${formatQuantity(held, batch.unit)}`}
+              label={format(t.quantityDamaged, { unit: labels.UNIT_LABELS[batch.unit] })}
+              hint={format(t.heldHint, { quantity: fmt.quantity(held, batch.unit) })}
             >
               <Input
                 type="number"
@@ -205,17 +211,17 @@ export function CustodianStockDrawer({
               />
             </Field>
 
-            <Field label="What happened">
+            <Field label={t.whatHappened}>
               <Input
                 value={draft.reason}
                 onChange={(e) => onDraftChange({ ...draft, reason: e.target.value })}
-                placeholder="Roof leak during the storm: two bales soaked through"
+                placeholder={t.whatHappenedPlaceholder}
               />
             </Field>
 
             {isOverLimit && (
-              <NoticeBanner tone="warning" title="More than you hold">
-                You cannot write off more than {formatQuantity(held, batch.unit)}.
+              <NoticeBanner tone="warning" title={t.moreThanHeld}>
+                {format(t.cannotWriteOff, { quantity: fmt.quantity(held, batch.unit) })}
               </NoticeBanner>
             )}
           </div>
@@ -242,10 +248,10 @@ export function CustodianStockDrawer({
               })
             }
           >
-            Report Damage
+            {t.submit}
           </Button>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t.cancel}
           </Button>
         </div>
       </div>

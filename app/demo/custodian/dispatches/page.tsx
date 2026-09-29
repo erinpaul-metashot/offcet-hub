@@ -4,9 +4,12 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, Zap } from "lucide-react";
 import { EmptyState } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { demoCustodian } from "@/lib/i18n/messages/demo-custodian";
 import { getCustodianDashboard } from "../../_mock/selectors-custodian";
 import type { OutgoingEntry } from "../../_components/custodian-dispatch-drawer";
-import { formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import {
   CirkaBadge,
@@ -14,6 +17,7 @@ import {
   SectionHeading,
 } from "../../_components/cirka-ui";
 import { useAction } from "../../_components/use-action";
+import { useFormat } from "../../_components/use-format";
 import { CustodianDispatchDrawer } from "../../_components/custodian-dispatch-drawer";
 
 type GroupKey = "action" | "waiting" | "completed";
@@ -25,22 +29,17 @@ function groupOf(entry: OutgoingEntry): GroupKey {
   return "completed";
 }
 
-const GROUP_META: Record<
-  GroupKey,
-  { label: string; Icon: typeof Zap; iconBg: string }
-> = {
+/** Group names live in `demoCustodian.dispatches.groups`, keyed like this map. */
+const GROUP_META: Record<GroupKey, { Icon: typeof Zap; iconBg: string }> = {
   action: {
-    label: "Needs your action",
     Icon: Zap,
     iconBg: "bg-[var(--brand-primary)]",
   },
   waiting: {
-    label: "Waiting on maker",
     Icon: Clock,
     iconBg: "bg-[var(--charcoal,#545454)]",
   },
   completed: {
-    label: "Completed hand-overs",
     Icon: CheckCircle2,
     iconBg: "bg-[var(--brand-secondary)]",
   },
@@ -56,6 +55,7 @@ function DispatchRow({
   onClick: () => void;
 }) {
   const { allocation, batch, makerName } = entry;
+  const fmt = useFormat();
 
   return (
     <button
@@ -84,7 +84,7 @@ function DispatchRow({
         {/* Right status */}
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <p className="text-xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--ink)]">
-            {formatQuantity(allocation.quantityAllocated, allocation.unit)}
+            {fmt.quantity(allocation.quantityAllocated, allocation.unit)}
           </p>
           <CirkaBadge status={allocation.status} />
         </div>
@@ -97,6 +97,8 @@ export default function CustodianDispatchesPage() {
   const store = useDemoStore();
   const { scope } = useDemoPersona("custodian");
   const { run, error, pending, clearError } = useAction();
+  const { dispatches: t } = useMessages(demoCustodian);
+  const { ui } = useMessages(demoCommon);
 
   const view = useMemo(
     () => getCustodianDashboard(store.db, scope),
@@ -179,21 +181,20 @@ export default function CustodianDispatchesPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading title="Out to makers" />
+      <SectionHeading title={t.title} />
 
       {error && (
-        <NoticeBanner tone="blocking" title="That step was refused">
+        <NoticeBanner tone="blocking" title={ui.stepRefused}>
           {error}
         </NoticeBanner>
       )}
 
       {view.outgoing.length === 0 ? (
-        <EmptyState title="Nothing assigned to makers" />
+        <EmptyState title={t.nothingAssigned} />
       ) : (
         <>
           <p className="text-sm tabular-nums text-[var(--ink-muted)]">
-            <strong className="text-[var(--ink)]">{view.outgoing.length}</strong> out ·{" "}
-            <strong className="text-[var(--ink)]">{inTransitCount}</strong> in transit
+            {format(t.summary, { out: view.outgoing.length, transit: inTransitCount })}
           </p>
 
           {/* Group sections */}
@@ -219,7 +220,7 @@ export default function CustodianDispatchesPage() {
                       id={`group-${key}`}
                       className="text-base font-semibold text-[var(--ink)]"
                     >
-                      {meta.label}
+                      {t.groups[key]}
                     </h2>
                     <span className="ml-auto rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">
                       {items.length}
@@ -229,7 +230,7 @@ export default function CustodianDispatchesPage() {
                   {/* Cards */}
                   {items.length === 0 ? (
                     <p className="rounded-2xl border border-dashed border-[var(--line)] px-5 py-5 text-sm text-[var(--ink-muted)]">
-                      None
+                      {t.none}
                     </p>
                   ) : (
                     <div className="space-y-3">

@@ -4,12 +4,14 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, ShieldAlert, Filter, Layers, PackageCheck, Check } from "lucide-react";
 import { Button, EmptyState } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCustodian } from "@/lib/i18n/messages/demo-custodian";
 import { classNames } from "@/lib/utils";
-import { statusLabel } from "../../_mock/domain";
+import { statusLabelIn } from "../../_mock/domain-labels";
 import { getCustodianDashboard } from "../../_mock/selectors-custodian";
 import type { Holding } from "../../_mock/selectors-custodian";
 import { potSlices } from "../../_mock/selectors-batches";
-import { categoryLabel, formatQuantity } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import {
   BUCKET_COLOUR,
@@ -19,6 +21,8 @@ import {
   ViewModeToggle,
 } from "../../_components/cirka-ui";
 import { useAction } from "../../_components/use-action";
+import { useFormat } from "../../_components/use-format";
+import { useLabels } from "../../_components/use-labels";
 import { CustodianStockDrawer } from "../../_components/custodian-stock-drawer";
 import type { DamageDraft } from "../../_components/custodian-stock-drawer";
 
@@ -26,6 +30,8 @@ import type { DamageDraft } from "../../_components/custodian-stock-drawer";
 function MiniPotsBar({ holding }: { holding: Holding }) {
   const slices = potSlices(holding.batch);
   const total = holding.batch.quantityOriginal || 1;
+  const labels = useLabels();
+  const fmt = useFormat();
 
   return (
     <div className="w-full">
@@ -35,7 +41,7 @@ function MiniPotsBar({ holding }: { holding: Holding }) {
             key={slice.bucket}
             className={BUCKET_COLOUR[slice.bucket] ?? "bg-[var(--line-strong)]"}
             style={{ width: `${Math.max((slice.quantity / total) * 100, 2)}%` }}
-            title={`${slice.label}: ${formatQuantity(slice.quantity, holding.batch.unit)}`}
+            title={`${labels.BUCKET_LABELS[slice.bucket] ?? slice.label}: ${fmt.quantity(slice.quantity, holding.batch.unit)}`}
           />
         ))}
       </div>
@@ -50,6 +56,8 @@ function CustodyNodeChain({ holding }: { holding: Holding }) {
   const hasMultiple = outgoing.length > 2;
   const visibleOutgoing = expanded ? outgoing : outgoing.slice(0, 2);
   const hiddenCount = outgoing.length - 2;
+  const { stock: t } = useMessages(demoCustodian);
+  const labels = useLabels();
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -64,7 +72,7 @@ function CustodyNodeChain({ holding }: { holding: Holding }) {
       {outgoing.length === 0 ? (
         <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--line-strong)] bg-[var(--paper)] px-3 py-1 text-[11px] text-[var(--ink-muted)] font-medium">
           <span className="h-2 w-2 rounded-full bg-[#8CC63F]" />
-          No maker yet
+          {t.noMaker}
         </span>
       ) : (
         <>
@@ -76,7 +84,7 @@ function CustodyNodeChain({ holding }: { holding: Holding }) {
               <span className="h-2 w-2 rounded-full bg-[#FF5C00]" />
               <span className="font-semibold">{makerName}</span>
               <span className="text-[10px] text-[var(--ink-muted)] font-medium">
-                ({statusLabel(allocation.status)})
+                ({statusLabelIn(labels, allocation.status)})
               </span>
             </span>
           ))}
@@ -90,7 +98,7 @@ function CustodyNodeChain({ holding }: { holding: Holding }) {
               }}
               className="inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--brand-primary)] hover:bg-[var(--line)] transition-colors"
             >
-              +{hiddenCount} more
+              {format(t.more, { count: hiddenCount })}
             </button>
           )}
         </>
@@ -110,6 +118,9 @@ function CustodianStockCard({
   onOpenDrawer: (batchId: string) => void;
 }) {
   const { batch, held, uncommitted, promised, ownerName } = holding;
+  const { stock: t } = useMessages(demoCustodian);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   return (
     <div
@@ -126,7 +137,7 @@ function CustodianStockCard({
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
             <span className="rounded-md bg-[var(--surface)] px-2 py-0.5 border border-[var(--line)] text-[var(--ink)]">
-              {categoryLabel(batch.materialCategory)}
+              {labels.MATERIAL_CATEGORY_LABELS[batch.materialCategory]}
             </span>
             <span>·</span>
             <span className="font-mono text-[var(--ink-muted)]">{batch.reference}</span>
@@ -135,7 +146,7 @@ function CustodianStockCard({
             {batch.name}
           </h3>
           <p className="text-xs text-[var(--ink-muted)]">
-            Owner: <span className="font-semibold text-[var(--ink)]">{ownerName}</span>
+            {t.owner} <span className="font-semibold text-[var(--ink)]">{ownerName}</span>
           </p>
         </div>
 
@@ -151,7 +162,7 @@ function CustodianStockCard({
             }}
           >
             <ShieldAlert size={14} className="mr-1.5 text-[#FF5C00]" />
-            Report Damage
+            {t.reportDamage}
           </Button>
         </div>
       </div>
@@ -160,30 +171,30 @@ function CustodianStockCard({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-4">
         <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
-            Held
+            {t.held}
           </p>
           <p className="text-xl font-bold tabular-nums text-[var(--ink)]">
-            {formatQuantity(held, batch.unit)}
+            {fmt.quantity(held, batch.unit)}
           </p>
         </div>
 
         <div className="p-3 rounded-xl bg-[#FF5C00]/5 border border-[#FF5C00]/20 space-y-0.5">
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#FF5C00]">
             <span className="w-2 h-2 rounded-full bg-[#FF5C00]" />
-            Unassigned
+            {t.unassigned}
           </div>
           <p className="text-xl font-bold tabular-nums text-[#FF5C00]">
-            {formatQuantity(uncommitted, batch.unit)}
+            {fmt.quantity(uncommitted, batch.unit)}
           </p>
         </div>
 
         <div className="p-3 rounded-xl bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
             <span className="w-2 h-2 rounded-full bg-[#8CC63F]" />
-            Assigned
+            {t.assigned}
           </div>
           <p className="text-xl font-bold tabular-nums text-[var(--ink)]">
-            {formatQuantity(promised, batch.unit)}
+            {fmt.quantity(promised, batch.unit)}
           </p>
         </div>
       </div>
@@ -205,6 +216,9 @@ export default function CustodianStockPage() {
   const store = useDemoStore();
   const { scope } = useDemoPersona("custodian");
   const { run, error, pending, clearError } = useAction();
+  const { stock: t } = useMessages(demoCustodian);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const view = useMemo(
     () => getCustodianDashboard(store.db, scope),
@@ -298,16 +312,16 @@ export default function CustodianStockPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading title="Stock held" />
+      <SectionHeading title={t.title} />
 
       {error && (
-        <NoticeBanner tone="blocking" title="That adjustment was refused">
+        <NoticeBanner tone="blocking" title={t.refused}>
           {error}
         </NoticeBanner>
       )}
 
       {view.holdings.length === 0 ? (
-        <EmptyState title="Nothing held" />
+        <EmptyState title={t.nothingHeld} />
       ) : (
         <>
           {/* Summary metrics header bar */}
@@ -315,30 +329,30 @@ export default function CustodianStockPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b border-[var(--line)] pb-4">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                  Held
+                  {t.held}
                 </p>
                 <p className="text-2xl sm:text-3xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--ink)]">
-                  {formatQuantity(totalHeld, "kg")}
+                  {fmt.quantity(totalHeld, "kg")}
                 </p>
               </div>
 
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#FF5C00]">
                   <span className="w-2 h-2 rounded-full bg-[#FF5C00]" />
-                  Unassigned
+                  {t.unassigned}
                 </div>
                 <p className="text-2xl sm:text-3xl font-extrabold tabular-nums tracking-[-0.03em] text-[#FF5C00]">
-                  {formatQuantity(uncommitted, "kg")}
+                  {fmt.quantity(uncommitted, "kg")}
                 </p>
               </div>
 
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                   <span className="w-2 h-2 rounded-full bg-[#8CC63F]" />
-                  Assigned
+                  {t.assigned}
                 </div>
                 <p className="text-2xl sm:text-3xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--ink)]">
-                  {formatQuantity(assigned, "kg")}
+                  {fmt.quantity(assigned, "kg")}
                 </p>
               </div>
             </div>
@@ -350,14 +364,14 @@ export default function CustodianStockPage() {
                   <div
                     className="h-full bg-[#FF5C00] transition-all duration-500 ease-out"
                     style={{ width: `${totalHeld > 0 ? (uncommitted / totalHeld) * 100 : 0}%` }}
-                    title={`Unassigned: ${formatQuantity(uncommitted, "kg")}`}
+                    title={format(t.unassignedTitle, { quantity: fmt.quantity(uncommitted, "kg") })}
                   />
                 )}
                 {assigned > 0 && (
                   <div
                     className="h-full bg-[#8CC63F] transition-all duration-500 ease-out border-l border-white/20"
                     style={{ width: `${totalHeld > 0 ? (assigned / totalHeld) * 100 : 0}%` }}
-                    title={`Assigned out: ${formatQuantity(assigned, "kg")}`}
+                    title={format(t.assignedTitle, { quantity: fmt.quantity(assigned, "kg") })}
                   />
                 )}
               </div>
@@ -374,7 +388,7 @@ export default function CustodianStockPage() {
               />
               <input
                 type="text"
-                placeholder="Search stock"
+                placeholder={t.search}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] pl-10 pr-4 py-2 text-sm text-[var(--ink)] placeholder-[var(--ink-muted)] focus:border-[var(--brand-primary)] focus:outline-none transition-colors"
@@ -385,7 +399,7 @@ export default function CustodianStockPage() {
                   onClick={() => setSearchQuery("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--ink-muted)] hover:text-[var(--ink)]"
                 >
-                  Clear
+                  {t.clear}
                 </button>
               )}
             </div>
@@ -393,12 +407,7 @@ export default function CustodianStockPage() {
             {/* Filter Pills & View Switcher */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-1">
-                {[
-                  { id: "all", label: "All" },
-                  { id: "unassigned", label: "Unassigned" },
-                  { id: "partially", label: "Partly assigned" },
-                  { id: "completely", label: "Fully assigned" },
-                ].map((pill) => (
+                {(["all", "unassigned", "partially", "completely"] as const).map((id) => ({ id, label: t.filters[id] })).map((pill) => (
                   <button
                     key={pill.id}
                     type="button"
@@ -421,14 +430,14 @@ export default function CustodianStockPage() {
 
           {filteredHoldings.length !== view.holdings.length && (
             <p className="text-xs tabular-nums text-[var(--ink-muted)]">
-              {filteredHoldings.length} of {view.holdings.length}
+              {format(t.shownOf, { shown: filteredHoldings.length, total: view.holdings.length })}
             </p>
           )}
 
           {/* Cards View */}
           {filteredHoldings.length === 0 ? (
             <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-8 text-center space-y-2">
-              <p className="text-sm font-semibold text-[var(--ink)]">No matches</p>
+              <p className="text-sm font-semibold text-[var(--ink)]">{t.noMatches}</p>
               <Button
                 variant="secondary"
                 size="sm"
@@ -438,7 +447,7 @@ export default function CustodianStockPage() {
                   setStatusFilter("all");
                 }}
               >
-                Reset filters
+                {t.resetFilters}
               </Button>
             </div>
           ) : viewMode === "grid" ? (
@@ -459,12 +468,12 @@ export default function CustodianStockPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-[var(--line)] bg-[var(--surface)] text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                      <th className="px-5 py-3.5">Material / Batch</th>
-                      <th className="px-5 py-3.5">Owner</th>
-                      <th className="px-5 py-3.5">Custody Chain</th>
-                      <th className="px-5 py-3.5">Held at Site</th>
-                      <th className="px-5 py-3.5">Unassigned</th>
-                      <th className="px-5 py-3.5 text-right">Action</th>
+                      <th className="px-5 py-3.5">{t.colMaterial}</th>
+                      <th className="px-5 py-3.5">{t.colOwner}</th>
+                      <th className="px-5 py-3.5">{t.colChain}</th>
+                      <th className="px-5 py-3.5">{t.colHeld}</th>
+                      <th className="px-5 py-3.5">{t.colUnassigned}</th>
+                      <th className="px-5 py-3.5 text-right">{t.colAction}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--line)]">
@@ -483,7 +492,7 @@ export default function CustodianStockPage() {
                         >
                           <td className="px-5 py-4">
                             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                              {holding.batch.reference} · {categoryLabel(holding.batch.materialCategory)}
+                              {holding.batch.reference} · {labels.MATERIAL_CATEGORY_LABELS[holding.batch.materialCategory]}
                             </p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <p className="font-semibold text-[var(--ink)]">
@@ -499,10 +508,10 @@ export default function CustodianStockPage() {
                             <CustodyNodeChain holding={holding} />
                           </td>
                           <td className="px-5 py-4 font-semibold tabular-nums text-[var(--ink)]">
-                            {formatQuantity(holding.held, holding.batch.unit)}
+                            {fmt.quantity(holding.held, holding.batch.unit)}
                           </td>
                           <td className="px-5 py-4 font-extrabold tabular-nums text-[#FF5C00]">
-                            {formatQuantity(holding.uncommitted, holding.batch.unit)}
+                            {fmt.quantity(holding.uncommitted, holding.batch.unit)}
                           </td>
                           <td className="px-5 py-4 text-right">
                             <Button
@@ -513,7 +522,7 @@ export default function CustodianStockPage() {
                                 openDrawer(holding.batch._id);
                               }}
                             >
-                              Report Damage
+                              {t.reportDamage}
                             </Button>
                           </td>
                         </tr>
