@@ -9,12 +9,18 @@ import {
   DashboardSection,
   PieChart,
 } from "@/components/dashboard-widgets";
-import { CirkaBadge, LinkRow, NoticeBanner, formatDate, tileHref } from "../../_components/cirka-ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoManufacturer } from "@/lib/i18n/messages/demo-manufacturer";
+import { CirkaBadge, LinkRow, NoticeBanner, tileHref } from "../../_components/cirka-ui";
+import { useFormat } from "../../_components/use-format";
+import { useLabels } from "../../_components/use-labels";
 import { getManufacturerDashboard } from "../../_mock/selectors-manufacturer";
-import { categoryLabel, formatQuantity, orgName } from "../../_mock/selectors-shared";
+import { orgName } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { RoleActivityFeed } from "../../_components/trace-timeline";
-import { statusLabel, type Unit } from "../../_mock/domain";
+import { statusLabelIn } from "../../_mock/domain-labels";
+import type { Unit } from "../../_mock/domain";
 import { classNames } from "@/lib/utils";
 import { DiscrepancyModal } from "../../_components/discrepancy-analysis";
 import type { Allocation, ResourceBatch } from "../../_mock/types";
@@ -25,31 +31,33 @@ import type { Allocation, ResourceBatch } from "../../_mock/types";
  * span several statuses, so that stage opens the whole list.
  */
 function BatchReviewTile({ view }: { view: ReturnType<typeof getManufacturerDashboard> }) {
+  const { dashboard: t } = useMessages(demoManufacturer);
+  const labels = useLabels();
   const stages = [
     {
-      label: statusLabel("draft"),
+      label: statusLabelIn(labels, "draft"),
       count: view.reviewTrack.draft,
       href: "/demo/manufacturer/batches?status=draft",
     },
     {
-      label: statusLabel("awaiting_review"),
+      label: statusLabelIn(labels, "awaiting_review"),
       count: view.reviewTrack.awaitingReview,
       href: "/demo/manufacturer/batches?status=awaiting_review",
     },
-    { label: "Recorded", count: view.reviewTrack.recorded, href: "/demo/manufacturer/batches" },
+    { label: t.recordedStage, count: view.reviewTrack.recorded, href: "/demo/manufacturer/batches" },
   ];
 
   return (
     <Panel className="p-3.5 flex flex-col justify-between gap-2.5 h-full">
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-          Total Batches
+          {t.totalBatches}
         </p>
         <span className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--ink)] tabular-nums">
           {view.metrics.batchCount}
         </span>
       </div>
-      <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs" aria-label="Batch review stages">
+      <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs" aria-label={t.reviewStages}>
         {stages.map((stage, index) => (
           <li key={stage.label} className="flex items-center gap-1">
             {index > 0 && <ChevronRight size={12} aria-hidden className="shrink-0 text-[var(--line-strong)]" />}
@@ -89,6 +97,8 @@ function CompactStatsOverview({
   const transformedPct = total > 0 ? (transformed / total) * 100 : 0;
   const committedPct = total > 0 ? (committed / total) * 100 : 0;
   const availablePct = total > 0 ? (available / total) * 100 : 0;
+  const { dashboard: t } = useMessages(demoManufacturer);
+  const fmt = useFormat();
 
   return (
     <div className="grid gap-4 lg:grid-cols-12 items-stretch">
@@ -96,10 +106,10 @@ function CompactStatsOverview({
       <Panel className="lg:col-span-7 p-5 flex flex-col justify-between space-y-4">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-            Recorded
+            {t.recorded}
           </p>
           <p className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)] tabular-nums mt-0.5">
-            {formatQuantity(total, unit)}
+            {fmt.quantity(total, unit)}
           </p>
         </div>
 
@@ -110,21 +120,21 @@ function CompactStatsOverview({
               <div
                 className="h-full bg-[#8CC63F] transition-all duration-700 ease-out"
                 style={{ width: `${transformedPct}%` }}
-                title={`Transformed: ${formatQuantity(transformed, unit)} (${Math.round(transformedPct)}%)`}
+                title={format(t.barTitle, { label: t.transformed, quantity: fmt.quantity(transformed, unit), percent: Math.round(transformedPct) })}
               />
             )}
             {committed > 0 && (
               <div
                 className="h-full bg-[#FF5C00] transition-all duration-700 ease-out border-l border-white/20"
                 style={{ width: `${committedPct}%` }}
-                title={`Committed: ${formatQuantity(committed, unit)} (${Math.round(committedPct)}%)`}
+                title={format(t.barTitle, { label: t.committed, quantity: fmt.quantity(committed, unit), percent: Math.round(committedPct) })}
               />
             )}
             {available > 0 && (
               <div
                 className="h-full bg-[#545454] transition-all duration-700 ease-out border-l border-white/20"
                 style={{ width: `${availablePct}%` }}
-                title={`Available: ${formatQuantity(available, unit)} (${Math.round(availablePct)}%)`}
+                title={format(t.barTitle, { label: t.available, quantity: fmt.quantity(available, unit), percent: Math.round(availablePct) })}
               />
             )}
           </div>
@@ -135,10 +145,10 @@ function CompactStatsOverview({
           <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
               <span className="w-2 h-2 rounded-full bg-[#8CC63F] shrink-0" />
-              Transformed
+              {t.transformed}
             </div>
             <p className="text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums">
-              {formatQuantity(transformed, unit)}
+              {fmt.quantity(transformed, unit)}
               <span className="ml-1 text-xs font-medium text-[var(--ink-muted)]">{Math.round(transformedPct)}%</span>
             </p>
           </div>
@@ -146,10 +156,10 @@ function CompactStatsOverview({
           <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
               <span className="w-2 h-2 rounded-full bg-[#FF5C00] shrink-0" />
-              Committed
+              {t.committed}
             </div>
             <p className="text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums">
-              {formatQuantity(committed, unit)}
+              {fmt.quantity(committed, unit)}
               <span className="ml-1 text-xs font-medium text-[var(--ink-muted)]">{Math.round(committedPct)}%</span>
             </p>
           </div>
@@ -157,10 +167,10 @@ function CompactStatsOverview({
           <div className="p-2.5 rounded-lg bg-[var(--surface)] border border-[var(--line)] space-y-0.5">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
               <span className="w-2 h-2 rounded-full bg-[#545454] shrink-0" />
-              Available
+              {t.available}
             </div>
             <p className="text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums">
-              {formatQuantity(available, unit)}
+              {fmt.quantity(available, unit)}
               <span className="ml-1 text-xs font-medium text-[var(--ink-muted)]">{Math.round(availablePct)}%</span>
             </p>
           </div>
@@ -190,7 +200,7 @@ function CompactStatsOverview({
           >
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-                Awaiting Dispatch
+                {t.awaitingDispatch}
               </p>
               <div className="flex items-center gap-2 mt-0.5">
                 <span
@@ -232,7 +242,7 @@ function CompactStatsOverview({
           >
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-                Open Discrepancies
+                {t.openDiscrepancies}
               </p>
               <div className="flex items-center gap-2 mt-0.5">
                 <span
@@ -269,11 +279,13 @@ function IntakeStrip({
 }: {
   arrivals: ReturnType<typeof getManufacturerDashboard>["pendingArrivals"];
 }) {
+  const { dashboard: t } = useMessages(demoManufacturer);
+  const labels = useLabels();
   const named = arrivals
     .slice(0, 2)
     .map((arrival) =>
       arrival.name ??
-      (arrival.materialCategory ? categoryLabel(arrival.materialCategory) : arrival.externalSystemName),
+      (arrival.materialCategory ? labels.MATERIAL_CATEGORY_LABELS[arrival.materialCategory] : arrival.externalSystemName),
     );
   const more = arrivals.length - named.length;
 
@@ -285,11 +297,11 @@ function IntakeStrip({
         </span>
         <div className="min-w-0 space-y-0.5">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Intake
+            {t.intake}
           </p>
           {arrivals.length === 0 ? (
             <p className="text-sm text-[var(--ink-muted)]">
-              No arrivals waiting
+              {t.noArrivals}
             </p>
           ) : (
             <Link
@@ -297,11 +309,11 @@ function IntakeStrip({
               className="group inline-flex max-w-full items-center gap-1.5 text-sm text-[var(--ink)]"
             >
               <span className="shrink-0 font-semibold tabular-nums">
-                {arrivals.length} arrival{arrivals.length === 1 ? "" : "s"} waiting for review
+                {format(arrivals.length === 1 ? t.arrivalsOne : t.arrivalsMany, { count: arrivals.length })}
               </span>
               <span className="truncate text-[var(--ink-muted)]">
                 · {named.join(" · ")}
-                {more > 0 ? ` · +${more} more` : ""}
+                {more > 0 ? format(t.more, { count: more }) : ""}
               </span>
               <ArrowRight
                 size={14}
@@ -313,7 +325,7 @@ function IntakeStrip({
       </div>
       <Button as={Link} href="/demo/manufacturer/batches/new" size="sm" className="shrink-0 gap-1.5">
         <Plus size={14} />
-        Record intake
+        {t.recordIntake}
       </Button>
     </Panel>
   );
@@ -324,6 +336,9 @@ export default function ManufacturerDashboardPage() {
   const { scope, organisation } = useDemoPersona("manufacturer");
   const view = getManufacturerDashboard(db, scope);
   const unit = view.unit;
+  const { dashboard: t } = useMessages(demoManufacturer);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const [activeModalAllocation, setActiveModalAllocation] = useState<{
     allocation: Allocation;
@@ -345,26 +360,30 @@ export default function ManufacturerDashboardPage() {
         />
       )}
 
-      <DashboardHero title={organisation?.name ?? "Dashboard"} />
+      <DashboardHero title={organisation?.name ?? t.title} />
 
       <CompactStatsOverview view={view} unit={unit} />
 
       {view.metrics.openDiscrepancies > 0 && (
         <NoticeBanner
           tone="warning"
-          title={`${view.metrics.openDiscrepancies} open discrepanc${view.metrics.openDiscrepancies === 1 ? "y" : "ies"}`}
+          title={format(view.metrics.openDiscrepancies === 1 ? t.discrepancyOne : t.discrepancyMany, {
+            count: view.metrics.openDiscrepancies,
+          })}
         >
           <div className="space-y-3">
             {view.discrepancies.map((entry) => (
               <div key={entry.allocation._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#FF5C00]/20 pb-2.5 last:border-0 last:pb-0">
                 <div>
                   <p className="text-xs font-semibold text-[#2A2A2A]">
-                    <span className="font-bold text-[#FF5C00]">{entry.allocation.reference}</span> · {entry.batch?.name ?? `Batch ${entry.allocation.batchId}`}
+                    <span className="font-bold text-[#FF5C00]">{entry.allocation.reference}</span> · {entry.batch?.name ?? format(t.batchFallback, { id: entry.allocation.batchId })}
                   </p>
                   <p className="text-xs text-[#545454] mt-0.5">
                     <strong>{entry.counterpartyName}</strong> ·{" "}
-                    {formatQuantity(entry.allocation.quantityReceived ?? 0, entry.allocation.unit)} of{" "}
-                    {formatQuantity(entry.allocation.quantityDispatched ?? 0, entry.allocation.unit)} received
+                    {format(t.receivedOf, {
+                      received: fmt.quantity(entry.allocation.quantityReceived ?? 0, entry.allocation.unit),
+                      dispatched: fmt.quantity(entry.allocation.quantityDispatched ?? 0, entry.allocation.unit),
+                    })}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -378,7 +397,7 @@ export default function ManufacturerDashboardPage() {
                     }
                     className="inline-flex items-center gap-1 rounded-full bg-[#FF5C00] px-3.5 py-1 text-xs font-bold text-white hover:bg-[#e05200] transition-colors shadow-xs"
                   >
-                    <span>Analyze Discrepancy</span>
+                    <span>{t.analyze}</span>
                     <ArrowUpRight size={13} />
                   </button>
                 </div>
@@ -392,29 +411,29 @@ export default function ManufacturerDashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <DashboardSection
-          title="Dispatch queue"
+          title={t.dispatchQueue}
           action={
             <Button as={Link} href="/demo/manufacturer/dispatch" variant="secondary" size="sm" className="normal-case tracking-normal font-semibold text-xs flex items-center gap-1.5">
-              <span>View Dispatch Log</span>
+              <span>{t.viewDispatchLog}</span>
             </Button>
           }
         >
           <div className="-mx-6 -mb-6">
             {view.dispatchQueue.length === 0 ? (
               <p className="px-6 pb-6 text-sm text-[var(--ink-muted)]">
-                Nothing is waiting to be dispatched.
+                {t.nothingToDispatch}
               </p>
             ) : (
               view.dispatchQueue.slice(0, 3).map((entry) => (
                 <LinkRow
                   key={entry.allocation._id}
                   href={`/demo/manufacturer/dispatch/${entry.allocation._id}`}
-                  title={`${entry.allocation.reference} · ${entry.batch?.name ?? "Resource batch"}`}
+                  title={`${entry.allocation.reference} · ${entry.batch?.name ?? t.resourceBatch}`}
                   tags={[
-                    { label: "To", value: entry.toName },
-                    { label: "Allocated", value: formatQuantity(entry.allocation.quantityAllocated, entry.allocation.unit) },
+                    { label: t.to, value: entry.toName },
+                    { label: t.allocated, value: fmt.quantity(entry.allocation.quantityAllocated, entry.allocation.unit) },
                     ...(entry.allocation.expectedDispatchDate
-                      ? [{ label: "Expected", value: formatDate(entry.allocation.expectedDispatchDate) }]
+                      ? [{ label: t.expected, value: fmt.date(entry.allocation.expectedDispatchDate) }]
                       : []),
                   ]}
                   right={<CirkaBadge status={entry.allocation.status} />}
@@ -425,10 +444,10 @@ export default function ManufacturerDashboardPage() {
         </DashboardSection>
 
         <DashboardSection
-          title="Recently recorded"
+          title={t.recentlyRecorded}
           action={
             <Button as={Link} href="/demo/manufacturer/batches" variant="secondary" size="sm">
-              All batches
+              {t.allBatches}
             </Button>
           }
         >
@@ -439,9 +458,9 @@ export default function ManufacturerDashboardPage() {
                 href={`/demo/manufacturer/batches/${row.batch._id}`}
                 title={row.batch.name}
                 tags={[
-                  { label: "Ref", value: row.batch.reference },
-                  { label: "Original", value: formatQuantity(row.batch.quantityOriginal, row.batch.unit) },
-                  { label: "Available", value: formatQuantity(row.batch.pots.available, row.batch.unit) },
+                  { label: t.ref, value: row.batch.reference },
+                  { label: t.original, value: fmt.quantity(row.batch.quantityOriginal, row.batch.unit) },
+                  { label: t.available, value: fmt.quantity(row.batch.pots.available, row.batch.unit) },
                 ]}
                 right={<CirkaBadge status={row.batch.exceptionStatus ?? row.batch.status} />}
               />
@@ -451,8 +470,11 @@ export default function ManufacturerDashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2 items-start">
-        <DashboardSection title="Material categories">
-          <PieChart items={view.categories} emptyLabel="No batches recorded yet." />
+        <DashboardSection title={t.categories}>
+          <PieChart
+            items={view.categories.map((item) => ({ ...item, label: labels.MATERIAL_CATEGORY_LABELS[item.key] ?? item.label }))}
+            emptyLabel={t.noBatches}
+          />
         </DashboardSection>
 
         <RoleActivityFeed role="manufacturer" />

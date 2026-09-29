@@ -4,11 +4,16 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button, EmptyState, Field, Input, Panel } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { demoManufacturer } from "@/lib/i18n/messages/demo-manufacturer";
 import { getAllocationDetail } from "../../../_mock/selectors-admin";
 import { useDemoPersona, useDemoStore } from "../../../_mock/store";
-import { formatQuantity } from "../../../_mock/selectors-shared";
-import { CirkaBadge, DataRow, NoticeBanner, formatDate, SectionHeading } from "../../../_components/cirka-ui";
+import { CirkaBadge, DataRow, NoticeBanner, SectionHeading } from "../../../_components/cirka-ui";
 import { useAction } from "../../../_components/use-action";
+import { useFormat } from "../../../_components/use-format";
+import { useLabels } from "../../../_components/use-labels";
 import { ArrowUpRight } from "lucide-react";
 import { AllocationJourney } from "../../../_components/allocation-journey";
 import { DiscrepancyAnalysisPanel } from "../../../_components/discrepancy-analysis";
@@ -24,10 +29,14 @@ export default function ManufacturerDispatchDetailPage() {
   const detail = getAllocationDetail(store.db, params.id);
   const [draftQuantity, setDraftQuantity] = useState("");
   const [draftReference, setDraftReference] = useState("");
+  const { dispatchDetail: t } = useMessages(demoManufacturer);
+  const { ui, discrepancy } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   if (!detail || detail.allocation.fromOrgId !== scope.orgId) {
     return (
-      <EmptyState title="Dispatch not found" />
+      <EmptyState title={t.notFound} />
     );
   }
 
@@ -41,7 +50,7 @@ export default function ManufacturerDispatchDetailPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Button as={Link} href="/demo/manufacturer/dispatch" variant="ghost" size="sm">
-          ← Back to Log
+          {t.back}
         </Button>
         <CirkaBadge status={allocation.status} />
       </div>
@@ -52,13 +61,13 @@ export default function ManufacturerDispatchDetailPage() {
         action={
           batch ? (
             <Button as={Link} href={`/demo/manufacturer/batches/${batch._id}`} variant="secondary" size="sm">
-              Open batch
+              {t.openBatch}
             </Button>
           ) : undefined
         }
       />
 
-      {error && <NoticeBanner tone="blocking" title="That step was refused">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={ui.stepRefused}>{error}</NoticeBanner>}
 
       <Panel className="p-6">
         <AllocationJourney allocation={allocation} />
@@ -77,33 +86,37 @@ export default function ManufacturerDispatchDetailPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel className="p-6">
           <h2 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Dispatch Quantities
+            {t.quantities}
           </h2>
           <dl>
-            <DataRow label="Allocated" value={formatQuantity(allocation.quantityAllocated, allocation.unit)} />
+            <DataRow label={t.allocated} value={fmt.quantity(allocation.quantityAllocated, allocation.unit)} />
             <DataRow
-              label="Dispatched"
+              label={t.dispatched}
               value={
                 allocation.quantityDispatched !== undefined
-                  ? formatQuantity(allocation.quantityDispatched, allocation.unit)
+                  ? fmt.quantity(allocation.quantityDispatched, allocation.unit)
                   : "-"
               }
-              hint={formatDate(allocation.dispatchedAt)}
+              hint={fmt.date(allocation.dispatchedAt)}
             />
             <DataRow
-              label="Received"
+              label={t.received}
               value={
                 allocation.quantityReceived !== undefined
-                  ? formatQuantity(allocation.quantityReceived, allocation.unit)
+                  ? fmt.quantity(allocation.quantityReceived, allocation.unit)
                   : "-"
               }
-              hint={formatDate(allocation.receivedAt)}
+              hint={fmt.date(allocation.receivedAt)}
             />
             {allocation.quantityDiscrepancy !== undefined && (
               <DataRow
-                label="Unexplained Shortfall"
-                value={formatQuantity(allocation.quantityDiscrepancy, allocation.unit)}
-                hint={allocation.discrepancyResolution?.replace(/_/g, " ") ?? "Awaiting resolution"}
+                label={t.shortfall}
+                value={fmt.quantity(allocation.quantityDiscrepancy, allocation.unit)}
+                hint={
+                  allocation.discrepancyResolution
+                    ? discrepancy.resolutions[allocation.discrepancyResolution]
+                    : t.awaitingResolution
+                }
               />
             )}
           </dl>
@@ -111,15 +124,15 @@ export default function ManufacturerDispatchDetailPage() {
 
         <Panel className="p-6">
           <h2 className="mb-2 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Consignment Details
+            {t.consignment}
           </h2>
           <dl>
-            <DataRow label="Expected dispatch" value={formatDate(allocation.expectedDispatchDate)} />
-            <DataRow label="Expected arrival" value={formatDate(allocation.expectedArrivalDate)} />
-            <DataRow label="Consignment Ref" value={allocation.dispatchReference ?? "-"} />
+            <DataRow label={t.expectedDispatch} value={fmt.date(allocation.expectedDispatchDate)} />
+            <DataRow label={t.expectedArrival} value={fmt.date(allocation.expectedArrivalDate)} />
+            <DataRow label={t.consignmentRef} value={allocation.dispatchReference ?? "-"} />
             {batch && (
               <DataRow
-                label="Resource batch"
+                label={t.resourceBatch}
                 value={
                   <Link
                     href={`/demo/manufacturer/batches/${batch._id}`}
@@ -149,7 +162,7 @@ export default function ManufacturerDispatchDetailPage() {
             }
             className="bg-[#FF5C00] hover:bg-[#e05200] text-white normal-case font-semibold tracking-normal flex items-center gap-2 px-5 py-2.5 rounded-full shadow-sm"
           >
-            Confirm Dispatch Readiness
+            {t.confirmReadiness}
           </Button>
         </Panel>
       )}
@@ -157,13 +170,13 @@ export default function ManufacturerDispatchDetailPage() {
       {allocation.status === "awaiting_dispatch" && (
         <Panel className="p-6">
           <h2 className="mb-4 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Record dispatch
+            {t.recordDispatch}
           </h2>
           <div className="space-y-4 max-w-lg">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
-                label={`Quantity dispatched (${allocation.unit})`}
-                hint={`Cannot exceed the ${formatQuantity(allocation.quantityAllocated, allocation.unit)} allocated.`}
+                label={format(t.quantityDispatched, { unit: labels.UNIT_LABELS[allocation.unit] })}
+                hint={format(t.cannotExceed, { quantity: fmt.quantity(allocation.quantityAllocated, allocation.unit) })}
               >
                 <Input
                   type="number"
@@ -174,7 +187,7 @@ export default function ManufacturerDispatchDetailPage() {
                   placeholder={allocation.quantityAllocated.toString()}
                 />
               </Field>
-              <Field label="Consignment reference">
+              <Field label={t.consignmentReference}>
                 <Input
                   value={draftReference}
                   onChange={(event) => setDraftReference(event.target.value)}
@@ -195,7 +208,7 @@ export default function ManufacturerDispatchDetailPage() {
               }
               className="bg-[#FF5C00] hover:bg-[#e05200] text-white normal-case font-semibold tracking-normal flex items-center gap-2 px-5 py-2.5 rounded-full shadow-sm"
             >
-              Record dispatch
+              {t.recordDispatch}
             </Button>
           </div>
         </Panel>

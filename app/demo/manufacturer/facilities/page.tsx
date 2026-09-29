@@ -3,15 +3,19 @@
 import { useState } from "react";
 import { MapPin, UserRound, HardDrive, Building2, Boxes, Plus } from "lucide-react";
 import { Button, Panel } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
 import { classNames } from "@/lib/utils";
-import { FACILITY_TYPE_LABELS, MATERIAL_CATEGORY_LABELS } from "../../_mock/domain";
 import type { FacilityInput, FacilityPatch } from "../../_mock/operations/facilities";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import type { Facility } from "../../_mock/types";
 import { CirkaBadge, Modal, NoticeBanner, SectionHeading, ViewModeToggle } from "../../_components/cirka-ui";
 import { FacilityForm } from "../../_components/facility-form";
 import { useAction } from "../../_components/use-action";
-import { batchActiveQuantity, formatQuantity } from "../../_mock/selectors-shared";
+import { batchActiveQuantity } from "../../_mock/selectors-shared";
+import { useFormat } from "../../_components/use-format";
+import { useLabels } from "../../_components/use-labels";
 
 /**
  * A site never changes hands, so the patch deliberately drops `orgId`. Every
@@ -43,6 +47,9 @@ function addressOf(facility: Facility): string {
 export default function ManufacturerFacilitiesPage() {
   const store = useDemoStore();
   const { scope } = useDemoPersona("manufacturer");
+  const { facilities: t, ui } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
   const rowAction = useAction();
   const form = useAction();
 
@@ -127,10 +134,10 @@ export default function ManufacturerFacilitiesPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading title="Facilities" />
+      <SectionHeading title={t.title} />
 
       {rowAction.error && (
-        <NoticeBanner tone="blocking" title="That change was refused">
+        <NoticeBanner tone="blocking" title={ui.refused}>
           {rowAction.error}
         </NoticeBanner>
       )}
@@ -141,10 +148,14 @@ export default function ManufacturerFacilitiesPage() {
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2 text-xs">
             <div className="flex items-center gap-2">
               <HardDrive size={14} className="text-[var(--brand-primary)]" />
-              <span className="font-semibold text-[var(--ink)]">Capacity used</span>
+              <span className="font-semibold text-[var(--ink)]">{t.capacityUsed}</span>
             </div>
             <span className="font-medium tabular-nums text-[var(--ink-muted)]">
-              <span className="text-[var(--ink)] font-semibold">{formatQuantity(totalOccupiedKg, "kg")}</span> / {formatQuantity(totalCapacityKg, "kg")} ({overallUtilizationPct.toFixed(1)}%)
+              {format(t.usedOf, {
+                used: fmt.quantity(totalOccupiedKg, "kg"),
+                total: fmt.quantity(totalCapacityKg, "kg"),
+                percent: fmt.percent(overallUtilizationPct / 100).replace("%", ""),
+              })}
             </span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--surface)]">
@@ -166,10 +177,10 @@ export default function ManufacturerFacilitiesPage() {
       {/* Subheader & View Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--line)] pb-3">
         <div className="flex flex-wrap items-baseline gap-3">
-          <h2 className="text-lg font-semibold text-[var(--ink)]">{facilities.length} site{facilities.length === 1 ? "" : "s"}</h2>
+          <h2 className="text-lg font-semibold text-[var(--ink)]">{format(facilities.length === 1 ? t.siteOne : t.siteMany, { count: facilities.length })}</h2>
           {activeCount !== facilities.length && (
             <p className="text-xs tabular-nums text-[var(--ink-muted)]">
-              {activeCount} active · {facilities.length - activeCount} deactivated
+              {format(t.activeSplit, { active: activeCount, inactive: facilities.length - activeCount })}
             </p>
           )}
         </div>
@@ -178,14 +189,14 @@ export default function ManufacturerFacilitiesPage() {
           <ViewModeToggle value={viewMode} onChange={setViewMode} />
           <Button size="sm" onClick={() => setEditing({})}>
             <Plus size={14} className="mr-1.5" />
-            Add site
+            {t.addSite}
           </Button>
         </div>
       </div>
 
       {facilities.length === 0 ? (
         <Panel className="p-8 text-center">
-          <p className="text-sm font-semibold text-[var(--ink)]">No sites yet</p>
+          <p className="text-sm font-semibold text-[var(--ink)]">{t.noSites}</p>
         </Panel>
       ) : viewMode === "grid" ? (
         /* GRID VIEW */
@@ -210,7 +221,7 @@ export default function ManufacturerFacilitiesPage() {
                             {facility.name}
                           </h3>
                           <span className="inline-flex items-center rounded-full border border-[var(--line-strong)] bg-[var(--surface)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                            {FACILITY_TYPE_LABELS[facility.type]}
+                            {labels.FACILITY_TYPE_LABELS[facility.type]}
                           </span>
                         </div>
                         <p className="flex items-center gap-1.5 text-xs text-[var(--ink-muted)]">
@@ -220,9 +231,9 @@ export default function ManufacturerFacilitiesPage() {
                       </div>
 
                       {facility.isActive ? (
-                        <CirkaBadge status="available" label="Active" />
+                        <CirkaBadge status="available" label={t.active} />
                       ) : (
-                        <CirkaBadge status="disabled" label="Deactivated" />
+                        <CirkaBadge status="disabled" label={t.deactivated} />
                       )}
                     </div>
 
@@ -241,7 +252,7 @@ export default function ManufacturerFacilitiesPage() {
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5">
                           <HardDrive size={13} className="text-[var(--brand-primary)]" />
-                          <span className="font-semibold text-[var(--ink)]">Capacity</span>
+                          <span className="font-semibold text-[var(--ink)]">{t.capacity}</span>
                         </div>
                         {utilizationPct !== undefined ? (
                           <span
@@ -254,11 +265,11 @@ export default function ManufacturerFacilitiesPage() {
                                 : "bg-[#F2F9E8] text-[#4A7318]",
                             )}
                           >
-                            {utilizationPct.toFixed(0)}% Occupied
+                            {format(t.occupied, { percent: utilizationPct.toFixed(0) })}
                           </span>
                         ) : (
                           <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-muted)]">
-                            Uncapped
+                            {t.uncapped}
                           </span>
                         )}
                       </div>
@@ -283,13 +294,13 @@ export default function ManufacturerFacilitiesPage() {
                       {/* Compact Storage Numbers */}
                       <div className="flex items-center justify-between text-xs text-[var(--ink-muted)] pt-0.5">
                         <span className="font-medium text-[var(--ink)]">
-                          {formatQuantity(occupiedKg, "kg")}{" "}
+                          {fmt.quantity(occupiedKg, "kg")}{" "}
                           <span className="font-normal text-[var(--ink-muted)]">
-                            / {capacityKg !== undefined ? formatQuantity(capacityKg, "kg") : "∞"}
+                            / {capacityKg !== undefined ? fmt.quantity(capacityKg, "kg") : "∞"}
                           </span>
                         </span>
                         <span>
-                          {remainingKg !== undefined ? `${formatQuantity(remainingKg, "kg")} free` : null}
+                          {remainingKg !== undefined ? format(t.free, { quantity: fmt.quantity(remainingKg, "kg") }) : null}
                         </span>
                       </div>
                     </div>
@@ -299,14 +310,14 @@ export default function ManufacturerFacilitiesPage() {
                   <div className="flex items-center justify-between gap-3 border-t border-[var(--line)] pt-3">
                     <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                       <span className="text-xs font-medium text-[var(--ink)]">
-                        {batches.length} batch{batches.length === 1 ? "" : "es"}
+                        {format(batches.length === 1 ? t.batchOne : t.batchMany, { count: batches.length })}
                       </span>
                       {categories.map((category) => (
                         <span
                           key={category}
                           className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-2 py-0.5 text-[10px] text-[var(--ink-muted)]"
                         >
-                          {MATERIAL_CATEGORY_LABELS[category]}
+                          {labels.MATERIAL_CATEGORY_LABELS[category]}
                         </span>
                       ))}
                     </div>
@@ -318,7 +329,7 @@ export default function ManufacturerFacilitiesPage() {
                         onClick={() => setEditing({ facility })}
                         disabled={rowAction.pending}
                       >
-                        Edit
+                        {t.edit}
                       </Button>
                       <Button
                         size="sm"
@@ -333,7 +344,7 @@ export default function ManufacturerFacilitiesPage() {
                           )
                         }
                       >
-                        {facility.isActive ? "Deactivate" : "Activate"}
+                        {facility.isActive ? t.deactivate : t.activate}
                       </Button>
                     </div>
                   </div>
@@ -361,12 +372,12 @@ export default function ManufacturerFacilitiesPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-semibold text-[var(--ink)]">{facility.name}</p>
                         <span className="inline-flex items-center rounded-full border border-[var(--line-strong)] bg-[var(--surface)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                          {FACILITY_TYPE_LABELS[facility.type]}
+                          {labels.FACILITY_TYPE_LABELS[facility.type]}
                         </span>
                         {facility.isActive ? (
-                          <CirkaBadge status="available" label="Active" />
+                          <CirkaBadge status="available" label={t.active} />
                         ) : (
-                          <CirkaBadge status="disabled" label="Deactivated" />
+                          <CirkaBadge status="disabled" label={t.deactivated} />
                         )}
                       </div>
 
@@ -383,7 +394,7 @@ export default function ManufacturerFacilitiesPage() {
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-[11px] font-medium text-[var(--ink-muted)]">
-                          {formatQuantity(occupiedKg, "kg")} / {capacityKg !== undefined ? formatQuantity(capacityKg, "kg") : "Uncapped"}
+                          {fmt.quantity(occupiedKg, "kg")} / {capacityKg !== undefined ? fmt.quantity(capacityKg, "kg") : t.uncapped}
                         </span>
                         {utilizationPct !== undefined && (
                           <span className="text-[10px] font-bold tabular-nums text-[var(--ink-muted)]">
@@ -418,7 +429,7 @@ export default function ManufacturerFacilitiesPage() {
                         onClick={() => setEditing({ facility })}
                         disabled={rowAction.pending}
                       >
-                        Edit
+                        {t.edit}
                       </Button>
                       <Button
                         size="sm"
@@ -433,7 +444,7 @@ export default function ManufacturerFacilitiesPage() {
                           )
                         }
                       >
-                        {facility.isActive ? "Deactivate" : "Activate"}
+                        {facility.isActive ? t.deactivate : t.activate}
                       </Button>
                     </div>
                   </li>
@@ -446,8 +457,8 @@ export default function ManufacturerFacilitiesPage() {
 
       {editing && (
         <Modal
-          eyebrow={editing.facility ? "Edit site" : undefined}
-          title={editing.facility?.name ?? "New site"}
+          eyebrow={editing.facility ? t.editSite : undefined}
+          title={editing.facility?.name ?? t.newSite}
           onClose={closeForm}
         >
           <FacilityForm

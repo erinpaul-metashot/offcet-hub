@@ -5,12 +5,16 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Button, EmptyState, Field, Input, Select } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoManufacturer } from "@/lib/i18n/messages/demo-manufacturer";
 import { MATERIAL_CATEGORIES, UNITS, type MaterialCategory, type Unit } from "../../../../_mock/domain";
-import { categoryLabel, formatQuantity } from "../../../../_mock/selectors-shared";
 import { listPendingArrivals, type PendingArrivalRow } from "../../../../_mock/selectors-intake";
 import { useDemoPersona, useDemoStore } from "../../../../_mock/store";
-import { NoticeBanner, SectionHeading, formatDateTime } from "../../../../_components/cirka-ui";
+import { NoticeBanner, SectionHeading } from "../../../../_components/cirka-ui";
 import { useAction } from "../../../../_components/use-action";
+import { useFormat } from "../../../../_components/use-format";
+import { useLabels } from "../../../../_components/use-labels";
 import type { ArrivalCorrection } from "../../../../_mock/operations/arrivals";
 
 export default function ArrivalsInboxPage() {
@@ -25,11 +29,12 @@ export default function ArrivalsInboxPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(arrivals[0]?._id ?? null);
   const selected = arrivals.find((arrival) => arrival._id === selectedId) ?? arrivals[0] ?? null;
+  const { inbox: t } = useMessages(demoManufacturer);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <SectionHeading
-        title="Intake inbox"
+        title={t.title}
         action={
           <Button
             as={Link}
@@ -39,19 +44,19 @@ export default function ArrivalsInboxPage() {
             className="border-[var(--line-strong)] hover:border-[#FF5C00]"
           >
             <ArrowLeft size={15} />
-            Back to intake
+            {t.backToIntake}
           </Button>
         }
       />
 
       {arrivals.length === 0 ? (
-        <EmptyState title="Nothing left to review" />
+        <EmptyState title={t.nothingLeft} />
       ) : (
         <div className="rounded-2xl border border-[var(--line)] bg-white shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-[20rem_1fr] items-stretch">
           {/* Queue Navigation Panel */}
           <div className="flex flex-col bg-[var(--surface)] border-b lg:border-b-0 lg:border-r border-[var(--line)]">
             <div className="px-5 py-4 border-b border-[var(--line)] flex items-center justify-between bg-[#545454]">
-              <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-white">Queue</h3>
+              <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-white">{t.queue}</h3>
               <span className="inline-flex items-center justify-center h-5 min-w-5 rounded-full bg-[#FF5C00] px-2 text-[11px] font-bold text-white shadow-sm">
                 {arrivals.length}
               </span>
@@ -85,7 +90,7 @@ export default function ArrivalsInboxPage() {
                             isActive ? "font-bold text-[var(--ink)]" : "font-medium text-[var(--ink-muted)] group-hover:text-[var(--ink)]"
                           }`}
                         >
-                          {arrival.name ?? "Untitled record"}
+                          {arrival.name ?? t.untitled}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <span
@@ -123,6 +128,9 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
   const confirmAction = useAction();
   const skipAction = useAction();
   const [correcting, setCorrecting] = useState(false);
+  const { inbox: t } = useMessages(demoManufacturer);
+  const labels = useLabels();
+  const fmt = useFormat();
   const [correction, setCorrection] = useState<ArrivalCorrection>({
     name: arrival.name,
     description: arrival.description,
@@ -149,14 +157,14 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
                 {arrival.externalSystemName}
               </span>
               <span className="text-xs text-[var(--ink-muted)] font-mono">
-                ID: {arrival.externalRecordId ?? "N/A"}
+                {format(t.id, { id: arrival.externalRecordId ?? t.notAvailable })}
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--ink)]">
-              {arrival.name ?? "Untitled Record"}
+              {arrival.name ?? t.untitled}
             </h2>
             <p className="text-xs text-[var(--ink-muted)]">
-              {formatDateTime(arrival.arrivedAt)}
+              {fmt.dateTime(arrival.arrivedAt)}
             </p>
           </div>
 
@@ -167,7 +175,7 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-2 text-xs font-semibold text-[var(--ink)] transition-colors hover:border-[#FF5C00] hover:text-[#FF5C00]"
             >
-              Open in {arrival.externalSystemName}
+              {format(t.openIn, { system: arrival.externalSystemName })}
               <ExternalLink size={14} />
             </a>
           )}
@@ -175,41 +183,41 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
 
         {arrival.updateOf && (
           <p className="rounded-xl border-l-4 border-l-[#FF5C00] bg-[#FF5C00]/5 p-4 text-sm font-bold text-[var(--ink)]">
-            Updates {arrival.updateOf.reference} · {arrival.updateOf.name}
+            {format(t.updates, { reference: arrival.updateOf.reference, name: arrival.updateOf.name })}
           </p>
         )}
 
         {/* Material Specification Grid */}
         <div className="space-y-4 pt-2">
           <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Material
+            {t.material}
           </h3>
 
           {correcting ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 rounded-xl border border-[var(--line)] bg-[var(--surface)]">
-              <Field label="Name" required>
+              <Field label={t.name} required>
                 <Input
                   value={correction.name ?? ""}
                   onChange={(event) => patch("name", event.target.value)}
                   className="bg-white"
                 />
               </Field>
-              <Field label="Material Category" required>
+              <Field label={t.materialCategory} required>
                 <Select
                   value={correction.materialCategory ?? ""}
                   onChange={(event) => patch("materialCategory", event.target.value as MaterialCategory)}
                   className="bg-white"
                 >
-                  <option value="">Select a category</option>
+                  <option value="">{t.selectCategory}</option>
                   {MATERIAL_CATEGORIES.map((option) => (
                     <option key={option} value={option}>
-                      {categoryLabel(option)}
+                      {labels.MATERIAL_CATEGORY_LABELS[option]}
                     </option>
                   ))}
                 </Select>
               </Field>
               <div className="sm:col-span-2">
-                <Field label="Description" required>
+                <Field label={t.description} required>
                   <Input
                     value={correction.description ?? ""}
                     onChange={(event) => patch("description", event.target.value)}
@@ -218,7 +226,7 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:col-span-2">
-                <Field label="Quantity" required>
+                <Field label={t.quantity} required>
                   <Input
                     type="number"
                     value={correction.quantity ?? ""}
@@ -226,29 +234,29 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
                     className="bg-white"
                   />
                 </Field>
-                <Field label="Unit" required>
+                <Field label={t.unit} required>
                   <Select
                     value={correction.unit ?? ""}
                     onChange={(event) => patch("unit", event.target.value as Unit)}
                     className="bg-white"
                   >
-                    <option value="">Select a unit</option>
+                    <option value="">{t.selectUnit}</option>
                     {UNITS.map((option) => (
                       <option key={option} value={option}>
-                        {option}
+                        {labels.UNIT_LABELS[option]}
                       </option>
                     ))}
                   </Select>
                 </Field>
               </div>
-              <Field label="Composition">
+              <Field label={t.composition}>
                 <Input
                   value={correction.composition ?? ""}
                   onChange={(event) => patch("composition", event.target.value)}
                   className="bg-white"
                 />
               </Field>
-              <Field label="Location">
+              <Field label={t.location}>
                 <Input
                   value={correction.locationText ?? ""}
                   onChange={(event) => patch("locationText", event.target.value)}
@@ -259,31 +267,31 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
           ) : (
             <div className="divide-y divide-[var(--line)] rounded-xl border border-[var(--line)] overflow-hidden">
               <SpecRow
-                label="Description"
+                label={t.description}
                 value={arrival.description}
                 source={arrival.externalSystemName}
                 fullWidth
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[var(--line)]">
                 <SpecRow
-                  label="Material Category"
-                  value={arrival.materialCategory ? categoryLabel(arrival.materialCategory) : undefined}
+                  label={t.materialCategory}
+                  value={arrival.materialCategory ? labels.MATERIAL_CATEGORY_LABELS[arrival.materialCategory] : undefined}
                   source={arrival.externalSystemName}
                 />
                 <SpecRow
-                  label="Quantity"
-                  value={arrival.quantity !== undefined && arrival.unit ? formatQuantity(arrival.quantity, arrival.unit) : undefined}
+                  label={t.quantity}
+                  value={arrival.quantity !== undefined && arrival.unit ? fmt.quantity(arrival.quantity, arrival.unit) : undefined}
                   source={arrival.externalSystemName}
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[var(--line)]">
                 <SpecRow
-                  label="Composition"
+                  label={t.composition}
                   value={arrival.composition}
                   source={arrival.externalSystemName}
                 />
                 <SpecRow
-                  label="Location"
+                  label={t.location}
                   value={arrival.locationText}
                   source={arrival.externalSystemName}
                 />
@@ -294,12 +302,12 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
       </div>
 
       {confirmAction.error && (
-        <NoticeBanner tone="blocking" title="Couldn't confirm this record">
+        <NoticeBanner tone="blocking" title={t.confirmFailed}>
           {confirmAction.error}
         </NoticeBanner>
       )}
       {skipAction.error && (
-        <NoticeBanner tone="blocking" title="Couldn't skip this record">
+        <NoticeBanner tone="blocking" title={t.skipFailed}>
           {skipAction.error}
         </NoticeBanner>
       )}
@@ -312,7 +320,7 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
           onClick={() => skipAction.run(() => store.skipArrival("manufacturer", { arrivalId: arrival._id }))}
           className="text-[var(--ink-muted)] hover:text-[#545454] hover:bg-[var(--surface)] font-medium"
         >
-          Skip for now
+          {t.skip}
         </Button>
         <div className="flex items-center gap-3">
           <Button
@@ -321,7 +329,7 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
             onClick={() => setCorrecting((current) => !current)}
             className="border-[var(--line-strong)] text-[var(--ink)] font-semibold hover:border-[#FF5C00]"
           >
-            {correcting ? "Cancel Corrections" : "Edit Fields"}
+            {correcting ? t.cancelCorrections : t.editFields}
           </Button>
           <Button
             disabled={confirmAction.pending || skipAction.pending}
@@ -335,7 +343,7 @@ function ArrivalDetail({ arrival }: { arrival: PendingArrivalRow }) {
             }
             className="bg-[#FF5C00] hover:bg-[#E55300] text-white font-semibold border-transparent shadow-md shadow-[#FF5C00]/25 px-6 py-2.5"
           >
-            {arrival.updateOf ? "Confirm Update" : "Confirm Record"}
+            {arrival.updateOf ? t.confirmUpdate : t.confirmRecord}
           </Button>
         </div>
       </div>
@@ -354,6 +362,8 @@ function SpecRow({
   source: string;
   fullWidth?: boolean;
 }) {
+  const { inbox: t } = useMessages(demoManufacturer);
+
   return (
     <div className={`p-4 bg-white hover:bg-[var(--surface)]/50 transition-colors ${fullWidth ? "" : ""}`}>
       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)] mb-1.5">
@@ -362,9 +372,9 @@ function SpecRow({
       {value === undefined || value === "" ? (
         <span
           className="inline-flex items-center rounded-md bg-[#FF5C00]/10 px-2.5 py-1 text-xs font-semibold text-[#FF5C00]"
-          title={`Required by CIRKA · not sent by ${source}`}
+          title={format(t.requiredBy, { source })}
         >
-          Missing
+          {t.missing}
         </span>
       ) : (
         <p className="text-sm font-semibold text-[var(--ink)] leading-snug">

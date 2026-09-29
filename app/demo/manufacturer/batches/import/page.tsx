@@ -9,7 +9,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Settings, Inbox, History, CheckCircle2 } from "lucide-react";
 import { Button, Panel } from "@/components/ui";
-import { categoryLabel, formatQuantity } from "../../../_mock/selectors-shared";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoManufacturer } from "@/lib/i18n/messages/demo-manufacturer";
 import {
   getRetexcirConnection,
   listPendingArrivals,
@@ -20,8 +21,9 @@ import { useDemoPersona, useDemoStore } from "../../../_mock/store";
 import {
   CirkaBadge,
   SectionHeading,
-  formatDateTime,
 } from "../../../_components/cirka-ui";
+import { useFormat } from "../../../_components/use-format";
+import { useLabels } from "../../../_components/use-labels";
 import { INBOX_HREF, RetexcirLink } from "./retexcir-link";
 import { ImportChannelsGrid } from "./import-channels";
 import { IntegrationSettingsModal } from "./integration-settings-modal";
@@ -31,6 +33,9 @@ export default function IntakePage() {
   const { scope } = useDemoPersona("manufacturer");
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { intake: t } = useMessages(demoManufacturer);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const connection = getRetexcirConnection(db, scope);
   const waiting = listPendingArrivals(db, scope, { channel: "sorting_system" });
@@ -47,15 +52,15 @@ export default function IntakePage() {
 
       {/* Header */}
       <SectionHeading
-        title="Intake"
+        title={t.title}
         action={
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setIsSettingsOpen(true)}>
               <Settings size={15} className="mr-2" />
-              Integrations
+              {t.integrations}
             </Button>
             <Button as={Link} href="/demo/manufacturer/batches" variant="secondary" size="sm">
-              All Batches
+              {t.allBatches}
               <ArrowRight size={14} className="ml-1.5" />
             </Button>
           </div>
@@ -73,7 +78,7 @@ export default function IntakePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <h2 className="text-base font-semibold tracking-[-0.02em] text-[var(--ink)]">
-              Waiting for review
+              {t.waiting}
             </h2>
             {waiting.length > 0 && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF5C00] px-2 text-[11px] font-bold text-white tabular-nums">
@@ -86,7 +91,7 @@ export default function IntakePage() {
               href={INBOX_HREF} 
               className="text-xs font-semibold text-[#FF5C00] hover:underline inline-flex items-center gap-1"
             >
-              Open inbox <ArrowRight size={13} />
+              {t.openInbox} <ArrowRight size={13} />
             </Link>
           )}
         </div>
@@ -97,7 +102,7 @@ export default function IntakePage() {
               <Inbox size={20} />
             </div>
             <div>
-              <p className="text-sm font-semibold text-[var(--ink)]">Nothing waiting</p>
+              <p className="text-sm font-semibold text-[var(--ink)]">{t.nothingWaiting}</p>
             </div>
           </div>
         ) : (
@@ -110,7 +115,7 @@ export default function IntakePage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-[var(--ink)]">
-                      {arrival.name ?? "Untitled Record"}
+                      {arrival.name ?? t.untitledRecord}
                     </p>
                     <span className="rounded bg-[#FF5C00]/10 px-2 py-0.5 text-[10px] font-bold text-[#FF5C00]">
                       {arrival.externalRecordId}
@@ -118,12 +123,12 @@ export default function IntakePage() {
                   </div>
                   <p className="text-xs text-[var(--ink-muted)]">
                     <span className="font-medium text-[var(--ink)]">
-                      {arrival.materialCategory ? categoryLabel(arrival.materialCategory) : "Unclassified"}
+                      {arrival.materialCategory ? labels.MATERIAL_CATEGORY_LABELS[arrival.materialCategory] : t.unclassified}
                     </span>
                     {" · "}
                     <span className="tabular-nums font-semibold text-[var(--ink)]">
                       {arrival.quantity !== undefined && arrival.unit
-                        ? formatQuantity(arrival.quantity, arrival.unit)
+                        ? fmt.quantity(arrival.quantity, arrival.unit)
                         : "–"}
                     </span>
                   </p>
@@ -131,7 +136,7 @@ export default function IntakePage() {
                 
                 <div className="flex items-center gap-3">
                   {arrival.externalRecordUrl && (
-                    <RetexcirLink href={arrival.externalRecordUrl}>View in Retexcir</RetexcirLink>
+                    <RetexcirLink href={arrival.externalRecordUrl}>{t.viewInRetexcir}</RetexcirLink>
                   )}
                   <Button
                     as={Link}
@@ -139,7 +144,7 @@ export default function IntakePage() {
                     size="sm"
                     className="bg-[#FF5C00] text-white hover:bg-[#E55300] shadow-sm font-medium"
                   >
-                    Review
+                    {t.review}
                   </Button>
                 </div>
               </div>
@@ -154,7 +159,7 @@ export default function IntakePage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
-              Imported
+              {t.imported}
             </h2>
             <span className="text-xs font-semibold text-[var(--ink-muted)]">
               {imported.length}
@@ -163,7 +168,7 @@ export default function IntakePage() {
 
           {imported.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-center bg-[var(--surface)]/50">
-              <p className="text-xs font-medium text-[var(--ink-muted)]">None yet</p>
+              <p className="text-xs font-medium text-[var(--ink-muted)]">{t.noneYet}</p>
             </div>
           ) : (
             <Panel className="divide-y divide-[var(--line)] p-0 bg-[var(--surface)] shadow-sm">
@@ -189,7 +194,7 @@ export default function IntakePage() {
                     <div className="flex items-center justify-between text-xs text-[var(--ink-muted)]">
                       <span className="font-mono text-[11px]">{batch.reference}</span>
                       <span className="tabular-nums font-semibold text-[var(--ink)]">
-                        {formatQuantity(batch.quantityOriginal, batch.unit)}
+                        {fmt.quantity(batch.quantityOriginal, batch.unit)}
                       </span>
                     </div>
                   </div>
@@ -203,7 +208,7 @@ export default function IntakePage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
-              Transfers
+              {t.transfers}
             </h2>
             <span className="text-xs font-semibold text-[var(--ink-muted)]">
               {transfers.length}
@@ -212,7 +217,7 @@ export default function IntakePage() {
 
           {transfers.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-center bg-[var(--surface)]/50">
-              <p className="text-xs font-medium text-[var(--ink-muted)]">No transfers yet</p>
+              <p className="text-xs font-medium text-[var(--ink-muted)]">{t.noTransfers}</p>
             </div>
           ) : (
             <Panel className="divide-y divide-[var(--line)] p-0 bg-[var(--surface)] shadow-sm">
@@ -228,12 +233,12 @@ export default function IntakePage() {
                       </p>
                       <CirkaBadge
                         status={transfer.status}
-                        label={transfer.status === "success" ? "Accepted" : "Rejected"}
+                        label={transfer.status === "success" ? t.accepted : t.rejected}
                       />
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-[var(--ink-muted)]">
-                        {formatDateTime(transfer.createdAt)} · {transfer.payloadSummary}
+                        {fmt.dateTime(transfer.createdAt)} · {transfer.payloadSummary}
                       </p>
                       {transfer.errorMessage && (
                         <p className="text-xs leading-relaxed font-medium text-[#8A1F1F]">

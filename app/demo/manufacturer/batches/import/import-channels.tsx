@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { PlugZap, FileSpreadsheet, Database, Keyboard, RefreshCw, ArrowRight, Settings, PlusCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoManufacturer } from "@/lib/i18n/messages/demo-manufacturer";
 import { NoticeBanner } from "../../../_components/cirka-ui";
 import { useDemoStore } from "../../../_mock/store";
 import { useAction } from "../../../_components/use-action";
@@ -17,6 +19,7 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
   const store = useDemoStore();
   const pullRetexcir = useAction();
   const pullErp = useAction();
+  const { channels: t } = useMessages(demoManufacturer);
 
   const handleRetexcirSync = async () => {
     if (!connection) {
@@ -47,11 +50,11 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
               </div>
               {connection ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#8CC63F]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#5a8720]">
-                  <CheckCircle2 size={12} /> Connected
+                  <CheckCircle2 size={12} /> {t.connected}
                 </span>
               ) : (
                 <span className="inline-flex items-center rounded-full bg-[var(--paper)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">
-                  Not connected
+                  {t.notConnected}
                 </span>
               )}
             </div>
@@ -70,22 +73,22 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
               {pullRetexcir.pending ? (
                 <>
                   <RefreshCw size={14} className="mr-1.5 animate-spin" />
-                  Syncing...
+                  {t.syncing}
                 </>
               ) : connection ? (
                 <>
                   <RefreshCw size={14} className="mr-1.5" />
-                  Sync
+                  {t.sync}
                 </>
               ) : (
-                "Connect"
+                t.connect
               )}
             </Button>
             {connection && (
               <button
                 onClick={onOpenSettings}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--line)] text-[var(--ink-muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)] transition-colors"
-                title="Integration settings" aria-label="Integration settings"
+                title={t.settings} aria-label={t.settings}
               >
                 <Settings size={15} />
               </button>
@@ -103,7 +106,7 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
             </div>
 
             <h3 className="font-semibold text-[var(--ink)] group-hover:text-[#FF5C00] transition-colors">
-              Spreadsheet
+              {t.spreadsheet}
             </h3>
           </div>
 
@@ -114,7 +117,7 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
               variant="secondary"
               className="w-full text-xs h-9 justify-center font-medium"
             >
-              Upload CSV
+              {t.uploadCsv}
               <ArrowRight size={14} className="ml-1.5" />
             </Button>
           </div>
@@ -144,12 +147,12 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
               {pullErp.pending ? (
                 <>
                   <RefreshCw size={14} className="mr-1.5 animate-spin" />
-                  Pulling...
+                  {t.pulling}
                 </>
               ) : (
                 <>
                   <RefreshCw size={14} className="mr-1.5" />
-                  Pull records
+                  {t.pullRecords}
                 </>
               )}
             </Button>
@@ -166,7 +169,7 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
             </div>
 
             <h3 className="font-semibold text-[var(--ink)] group-hover:text-[#FF5C00] transition-colors">
-              Manual entry
+              {t.manualEntry}
             </h3>
           </div>
 
@@ -178,14 +181,14 @@ export function ImportChannelsGrid({ connection, onOpenSettings }: ImportChannel
               className="w-full text-xs h-9 justify-center font-medium"
             >
               <PlusCircle size={14} className="mr-1.5 text-[#FF5C00]" />
-              New batch
+              {t.newBatch}
             </Button>
           </div>
         </div>
       </div>
 
       {(pullRetexcir.error || pullErp.error) && (
-        <NoticeBanner tone="blocking" title="Nothing was received">
+        <NoticeBanner tone="blocking" title={t.nothingReceived}>
           {pullRetexcir.error || pullErp.error}
         </NoticeBanner>
       )}

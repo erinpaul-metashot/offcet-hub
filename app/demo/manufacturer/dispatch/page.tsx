@@ -7,14 +7,17 @@ import { ArrowUpRight, Truck, PackageCheck, AlertTriangle, Eye, CheckCircle2, Sh
 import { Button, EmptyState, Input, Select } from "@/components/ui";
 import { DEMO_NOW } from "../../_mock/data";
 import { getManufacturerDashboard } from "../../_mock/selectors-manufacturer";
-import { formatQuantity, orgName } from "../../_mock/selectors-shared";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { demoManufacturer } from "@/lib/i18n/messages/demo-manufacturer";
+import { orgName } from "../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
-import { ALLOCATION_STATUSES, statusLabel, type AllocationStatus } from "../../_mock/domain";
-import {
-  CirkaBadge,
-  NoticeBanner,
-  formatDate,
-} from "../../_components/cirka-ui";
+import { ALLOCATION_STATUSES, type AllocationStatus } from "../../_mock/domain";
+import { statusLabelIn } from "../../_mock/domain-labels";
+import { CirkaBadge, NoticeBanner } from "../../_components/cirka-ui";
+import { useFormat } from "../../_components/use-format";
+import { useLabels } from "../../_components/use-labels";
 import { useAction } from "../../_components/use-action";
 import { DiscrepancyModal } from "../../_components/discrepancy-analysis";
 import type { Allocation, ResourceBatch } from "../../_mock/types";
@@ -26,38 +29,38 @@ function getDispatchButtonConfig(status: AllocationStatus) {
   switch (status) {
     case "accepted":
       return {
-        label: "Prepare Dispatch",
+        action: "prepare" as const,
         icon: PackageCheck,
         className: "bg-[#FF5C00] text-white hover:bg-[#e05200] border-transparent font-semibold shadow-sm",
       };
     case "awaiting_dispatch":
       return {
-        label: "Record Dispatch",
+        action: "record" as const,
         icon: Truck,
         className: "bg-[#FF5C00] text-white hover:bg-[#e05200] border-transparent font-semibold shadow-sm",
       };
     case "discrepancy":
       return {
-        label: "Inspect Discrepancy",
+        action: "inspect" as const,
         icon: AlertTriangle,
         className: "bg-[#FF5C00] text-white hover:bg-[#e05200] border-transparent font-semibold shadow-sm",
       };
     case "in_transit":
       return {
-        label: "Track Shipment",
+        action: "track" as const,
         icon: ArrowUpRight,
         className: "border border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--surface)] font-medium",
       };
     case "received":
     case "completed":
       return {
-        label: "View Details",
+        action: "view" as const,
         icon: CheckCircle2,
         className: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--surface)] font-medium",
       };
     default:
       return {
-        label: "View Details",
+        action: "view" as const,
         icon: Eye,
         className: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--surface)] font-medium",
       };
@@ -70,6 +73,10 @@ export default function ManufacturerDispatchPage() {
   const { run, error, pending } = useAction();
 
   const view = getManufacturerDashboard(store.db, scope);
+  const { dispatch: t } = useMessages(demoManufacturer);
+  const { ui } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
 
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<DispatchTab>(() => {
@@ -152,7 +159,7 @@ export default function ManufacturerDispatchPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--line)] pb-5">
           <div>
             <h1 className="text-2xl font-bold tracking-[-0.03em] text-[var(--ink)]">
-              Dispatch
+              {t.title}
             </h1>
           </div>
         </div>
@@ -167,7 +174,7 @@ export default function ManufacturerDispatchPage() {
                 : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
             }`}
           >
-            Active
+            {t.tabActive}
           </button>
           <button
             onClick={() => setActiveTab("discrepancy")}
@@ -178,7 +185,7 @@ export default function ManufacturerDispatchPage() {
             }`}
           >
             <AlertTriangle size={13} className="text-[#FF5C00]" />
-            <span>Discrepancies</span>
+            <span>{t.tabDiscrepancies}</span>
             {discrepancyCount > 0 && (
               <span className="ml-1 rounded-full bg-[#FF5C00] px-2 py-0.5 text-[10px] font-extrabold text-white">
                 {discrepancyCount}
@@ -193,7 +200,7 @@ export default function ManufacturerDispatchPage() {
                 : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
             }`}
           >
-            Completed
+            {t.tabCompleted}
           </button>
           <button
             onClick={() => setActiveTab("all")}
@@ -203,13 +210,13 @@ export default function ManufacturerDispatchPage() {
                 : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
             }`}
           >
-            All
+            {t.tabAll}
           </button>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center pt-1">
           <Input
-            placeholder="Search dispatch ref, batch, or destination..."
+            placeholder={t.search}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="h-10 flex-1 bg-[var(--surface)] border-transparent focus:border-[var(--brand-primary)] focus:bg-white"
@@ -220,10 +227,10 @@ export default function ManufacturerDispatchPage() {
               onChange={(event) => setStatus(event.target.value)}
               className="h-10 min-w-[160px] bg-[var(--surface)] border-transparent font-medium"
             >
-              <option value="">All statuses</option>
+              <option value="">{t.allStatuses}</option>
               {ALLOCATION_STATUSES.map((value) => (
                 <option key={value} value={value}>
-                  {statusLabel(value)}
+                  {statusLabelIn(labels, value)}
                 </option>
               ))}
             </Select>
@@ -231,10 +238,10 @@ export default function ManufacturerDispatchPage() {
         </div>
       </div>
 
-      {error && <NoticeBanner tone="blocking" title="That step was refused">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={ui.stepRefused}>{error}</NoticeBanner>}
 
       {filteredQueue.length === 0 ? (
-        <EmptyState title="None" />
+        <EmptyState title={t.none} />
       ) : (
         <div className="flex flex-col gap-3">
           {filteredQueue.map(({ allocation, batch, toName }) => {
@@ -261,7 +268,7 @@ export default function ManufacturerDispatchPage() {
                     <CirkaBadge status={allocation.status} />
                     {isOverdue && (
                       <span className="block text-[10px] font-bold uppercase tracking-[0.1em] text-[#8A3D11]">
-                        Overdue
+                        {t.overdue}
                       </span>
                     )}
                   </div>
@@ -269,12 +276,12 @@ export default function ManufacturerDispatchPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-semibold text-[var(--ink)] truncate">
-                        {batch ? batch.name : `Batch ${allocation.batchId}`}
+                        {batch ? batch.name : format(t.batchFallback, { id: allocation.batchId })}
                       </h3>
                       {hasShortfall && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-[#FF5C00]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FF5C00]">
                           <AlertTriangle size={11} />
-                          <span>{formatQuantity(allocation.quantityDiscrepancy ?? 0, allocation.unit)} Gap</span>
+                          <span>{format(t.gap, { quantity: fmt.quantity(allocation.quantityDiscrepancy ?? 0, allocation.unit) })}</span>
                         </span>
                       )}
                     </div>
@@ -282,17 +289,17 @@ export default function ManufacturerDispatchPage() {
                     {/* Only what a dispatch decision needs: where it goes and by when.
                         The reference and history live on the detail page. */}
                     <div className="flex flex-wrap items-center gap-x-2 mt-1 text-xs text-[var(--ink-muted)] tabular-nums">
-                      <span>To <strong className="font-medium text-[var(--ink)]">{toName}</strong></span>
+                      <span>{t.to} <strong className="font-medium text-[var(--ink)]">{toName}</strong></span>
                       {allocation.status === "in_transit" ? (
                         <>
                           <span className="text-[var(--line-strong)]">•</span>
-                          <span>Sent {formatDate(allocation.dispatchedAt)}</span>
+                          <span>{format(t.sent, { date: fmt.date(allocation.dispatchedAt) })}</span>
                         </>
                       ) : allocation.expectedDispatchDate ? (
                         <>
                           <span className="text-[var(--line-strong)]">•</span>
                           <span className={isOverdue ? "font-medium text-[#8A3D11]" : undefined}>
-                            Due {formatDate(allocation.expectedDispatchDate)}
+                            {format(t.due, { date: fmt.date(allocation.expectedDispatchDate) })}
                           </span>
                         </>
                       ) : null}
@@ -303,10 +310,10 @@ export default function ManufacturerDispatchPage() {
                 <div className="flex shrink-0 items-center justify-between sm:justify-end gap-6 border-t border-[var(--line)] pt-3 sm:border-0 sm:pt-0">
                   <div className="text-left sm:text-right min-w-[100px]">
                     <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-                      {allocation.status === "in_transit" ? "Dispatched" : "Allocated"}
+                      {allocation.status === "in_transit" ? t.dispatched : t.allocated}
                     </p>
                     <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)] leading-tight mt-0.5">
-                      {formatQuantity(headlineQuantity, allocation.unit)}
+                      {fmt.quantity(headlineQuantity, allocation.unit)}
                     </p>
                   </div>
 
@@ -322,7 +329,7 @@ export default function ManufacturerDispatchPage() {
                       className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-xs transition-all duration-200 shrink-0 hover:scale-[1.02] active:scale-[0.98] ${buttonConfig.className}`}
                     >
                       <ActionIcon className="h-3.5 w-3.5 shrink-0" />
-                      <span>{buttonConfig.label}</span>
+                      <span>{t.actions[buttonConfig.action]}</span>
                     </button>
                   ) : (
                     <Link
@@ -330,7 +337,7 @@ export default function ManufacturerDispatchPage() {
                       className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-xs transition-all duration-200 shrink-0 hover:scale-[1.02] active:scale-[0.98] ${buttonConfig.className}`}
                     >
                       <ActionIcon className="h-3.5 w-3.5 shrink-0" />
-                      <span>{buttonConfig.label}</span>
+                      <span>{t.actions[buttonConfig.action]}</span>
                     </Link>
                   )}
                 </div>

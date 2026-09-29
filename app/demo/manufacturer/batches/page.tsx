@@ -4,12 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button, Input, Panel, Select } from "@/components/ui";
-import { BATCH_STATUSES, MATERIAL_CATEGORIES, statusLabel } from "../../_mock/domain";
-import { categoryLabel } from "../../_mock/selectors-shared";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoManufacturer } from "@/lib/i18n/messages/demo-manufacturer";
+import { BATCH_STATUSES, MATERIAL_CATEGORIES } from "../../_mock/domain";
+import { statusLabelIn } from "../../_mock/domain-labels";
 import { listBatches } from "../../_mock/selectors-batches";
 import { useDemoPersona, useDemoStore } from "../../_mock/store";
 import { BatchTable } from "../../_components/batch-table";
-import { SectionHeading } from "../../_components/cirka-ui";
+import { useLabels } from "../../_components/use-labels";
 
 export default function ManufacturerBatchesPage() {
   const { db } = useDemoStore();
@@ -23,6 +25,8 @@ export default function ManufacturerBatchesPage() {
     return (BATCH_STATUSES as readonly string[]).includes(requested) ? requested : "";
   });
   const [category, setCategory] = useState("");
+  const { batches: t } = useMessages(demoManufacturer);
+  const labels = useLabels();
 
   const rows = listBatches(db, scope, {
     ownerOrgId: scope.orgId,
@@ -36,7 +40,7 @@ export default function ManufacturerBatchesPage() {
       <div className="flex flex-col gap-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--line)] pb-5">
           <h1 className="text-2xl font-bold tracking-[-0.03em] text-[var(--ink)]">
-            Resource batches
+            {t.title}
           </h1>
           <div className="flex items-center gap-3">
             <Button 
@@ -45,21 +49,21 @@ export default function ManufacturerBatchesPage() {
               variant="secondary"
               className="h-9 border-[var(--line-strong)] text-[11px] font-bold uppercase tracking-[0.12em]"
             >
-              Record Manually
+              {t.recordManually}
             </Button>
             <Button 
               as={Link} 
               href="/demo/manufacturer/batches/import" 
               className="h-9 bg-[var(--brand-primary)] text-[11px] font-bold uppercase tracking-[0.12em] text-white hover:bg-[#E55300]"
             >
-              Intake
+              {t.intake}
             </Button>
           </div>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Input
-            placeholder="Search name, reference or location..."
+            placeholder={t.search}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="h-10 flex-1 bg-[var(--surface)] border-transparent focus:border-[var(--brand-primary)] focus:bg-white"
@@ -70,10 +74,10 @@ export default function ManufacturerBatchesPage() {
               onChange={(event) => setStatus(event.target.value)}
               className="h-10 min-w-[140px] bg-[var(--surface)] border-transparent font-medium"
             >
-              <option value="">All statuses</option>
+              <option value="">{t.allStatuses}</option>
               {BATCH_STATUSES.map((value) => (
                 <option key={value} value={value}>
-                  {statusLabel(value)}
+                  {statusLabelIn(labels, value)}
                 </option>
               ))}
             </Select>
@@ -82,10 +86,10 @@ export default function ManufacturerBatchesPage() {
               onChange={(event) => setCategory(event.target.value)}
               className="h-10 min-w-[160px] bg-[var(--surface)] border-transparent font-medium"
             >
-              <option value="">All categories</option>
+              <option value="">{t.allCategories}</option>
               {MATERIAL_CATEGORIES.map((value) => (
                 <option key={value} value={value}>
-                  {categoryLabel(value)}
+                  {labels.MATERIAL_CATEGORY_LABELS[value]}
                 </option>
               ))}
             </Select>

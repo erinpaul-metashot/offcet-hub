@@ -3,24 +3,26 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion, useSpring, useTransform } from "framer-motion";
 import { Lock, Package } from "lucide-react";
+import { INTL_LOCALE, format } from "@/lib/i18n/locale";
+import { useLocale, useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { demoManufacturer } from "@/lib/i18n/messages/demo-manufacturer";
 import { classNames } from "@/lib/utils";
 import {
   CirkaBadge,
   ProvenanceChip,
   QuantityPotsBar,
-  formatDate,
 } from "../../../_components/cirka-ui";
+import { useFormat } from "../../../_components/use-format";
+import { useLabels } from "../../../_components/use-labels";
+import type { DomainLabels } from "../../../_mock/domain-labels";
 import {
-  FORMAT_LABELS,
-  QUALITY_CLASS_LABELS,
-  UNIT_LABELS,
   type CompositionConfidence,
   type MaterialCategory,
   type MaterialFormat,
   type QualityClass,
   type Unit,
 } from "../../../_mock/domain";
-import { categoryLabel } from "../../../_mock/selectors-shared";
 import type { PotSlice } from "../../../_mock/selectors-batches";
 
 export interface BatchPreviewCardProps {
@@ -41,11 +43,7 @@ export interface BatchPreviewCardProps {
   selectedImageUrls: string[];
 }
 
-const CONFIDENCE_LABELS: Record<CompositionConfidence, string> = {
-  stated: "Stated",
-  tested: "Tested",
-  estimated: "Estimated",
-};
+type PreviewMessages = (typeof demoManufacturer)["en"]["batchPreview"];
 
 const CARD_CLASSES =
   "relative bg-[var(--paper)] border border-[var(--line)] rounded-[3px_18px_18px_3px] pl-9 pr-5 py-6 shadow-[0_16px_32px_-8px_rgba(51,51,51,0.12)] rotate-[-1.75deg] hover:rotate-0 focus-within:rotate-0 transition-transform duration-200 ease-[var(--ease-out)] motion-reduce:transition-none motion-reduce:rotate-0";
@@ -60,18 +58,23 @@ function toTimestamp(value: string): number | undefined {
   return Number.isNaN(parsed) ? undefined : parsed;
 }
 
-function availabilityText(availableFrom: string, availableUntil: string): string | undefined {
+function availabilityText(
+  availableFrom: string,
+  availableUntil: string,
+  t: PreviewMessages,
+  date: (timestamp?: number) => string,
+): string | undefined {
   const from = toTimestamp(availableFrom);
   const until = toTimestamp(availableUntil);
 
   if (from && until) {
-    return `${formatDate(from)}: ${formatDate(until)}`;
+    return format(t.range, { from: date(from), until: date(until) });
   }
   if (from) {
-    return `From ${formatDate(from)}`;
+    return format(t.from, { date: date(from) });
   }
   if (until) {
-    return `Until ${formatDate(until)}`;
+    return format(t.until, { date: date(until) });
   }
   return undefined;
 }
@@ -82,27 +85,33 @@ interface DetailRow {
   value: React.ReactNode;
 }
 
-function buildDetailRows(props: BatchPreviewCardProps): DetailRow[] {
+function buildDetailRows(
+  props: BatchPreviewCardProps,
+  t: PreviewMessages,
+  labels: DomainLabels,
+  confidence: Record<CompositionConfidence, string>,
+  date: (timestamp?: number) => string,
+): DetailRow[] {
   const rows: DetailRow[] = [];
 
   if (props.composition.trim() !== "") {
     rows.push({
       key: "composition",
-      label: "Composition",
-      value: `${props.composition.trim()} · ${CONFIDENCE_LABELS[props.compositionConfidence]}`,
+      label: t.composition,
+      value: `${props.composition.trim()} · ${confidence[props.compositionConfidence]}`,
     });
   }
 
   rows.push({
     key: "format",
-    label: "Format & quality",
-    value: `${FORMAT_LABELS[props.format]} · ${QUALITY_CLASS_LABELS[props.qualityClass]}`,
+    label: t.formatQuality,
+    value: `${labels.FORMAT_LABELS[props.format]} · ${labels.QUALITY_CLASS_LABELS[props.qualityClass]}`,
   });
 
   if (props.colour.trim() !== "") {
     rows.push({
       key: "colour",
-      label: "Colour",
+      label: t.colour,
       value: (
         <span className="inline-flex items-center gap-2">
           <span className="h-2.5 w-2.5 shrink-0 rounded-full border border-[var(--line-strong)] bg-[var(--ink-muted)]" />
@@ -113,16 +122,16 @@ function buildDetailRows(props: BatchPreviewCardProps): DetailRow[] {
   }
 
   if (props.description.trim() !== "") {
-    rows.push({ key: "description", label: "Description", value: props.description.trim() });
+    rows.push({ key: "description", label: t.description, value: props.description.trim() });
   }
 
   if (props.locationText.trim() !== "") {
-    rows.push({ key: "location", label: "Location", value: props.locationText.trim() });
+    rows.push({ key: "location", label: t.location, value: props.locationText.trim() });
   }
 
-  const availability = availabilityText(props.availableFrom, props.availableUntil);
+  const availability = availabilityText(props.availableFrom, props.availableUntil, t, date);
   if (availability) {
-    rows.push({ key: "availability", label: "Available", value: availability });
+    rows.push({ key: "availability", label: t.available, value: availability });
   }
 
   return rows;
@@ -140,37 +149,42 @@ function PunchedHole() {
 
 function AvailablePot({ quantity, unit }: { quantity: number; unit: Unit }) {
   const springValue = useSpring(quantity, { stiffness: 200, damping: 30 });
+  const { batchPreview: t } = useMessages(demoManufacturer);
+  const { locale } = useLocale();
+  const labels = useLabels();
 
   useEffect(() => {
     springValue.set(quantity);
   }, [quantity, springValue]);
 
-  const displayValue = useTransform(springValue, (value) => Math.round(value).toLocaleString());
+  const displayValue = useTransform(springValue, (value) =>
+    Math.round(value).toLocaleString(INTL_LOCALE[locale]),
+  );
 
   if (quantity <= 0) {
     return (
       <div className="flex items-center gap-2 text-xs text-[var(--ink-muted)]">
         <Lock size={13} className="shrink-0" />
-        No quantity yet
+        {t.noQuantity}
       </div>
     );
   }
 
   const slices: PotSlice[] = [
-    { bucket: "available", label: "Available", quantity, share: 1, terminal: false },
+    { bucket: "available", label: t.available, quantity, share: 1, terminal: false },
   ];
 
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between">
         <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-          Available
+          {t.available}
         </span>
         <span className="inline-flex items-baseline gap-1">
           <motion.span className="text-sm font-semibold text-[var(--ink)]">
             {displayValue}
           </motion.span>
-          <span className="text-xs font-medium text-[var(--ink-muted)]">{UNIT_LABELS[unit]}</span>
+          <span className="text-xs font-medium text-[var(--ink-muted)]">{labels.UNIT_LABELS[unit]}</span>
         </span>
       </div>
       <QuantityPotsBar slices={slices} total={quantity} unit={unit} compact />
@@ -179,6 +193,8 @@ function AvailablePot({ quantity, unit }: { quantity: number; unit: Unit }) {
 }
 
 function EmptyPreview() {
+  const { batchPreview: t } = useMessages(demoManufacturer);
+
   return (
     <motion.div
       key="empty-preview"
@@ -189,14 +205,18 @@ function EmptyPreview() {
       className="rounded-2xl border-2 border-dashed border-[var(--line-strong)] bg-[var(--surface)] p-10 text-center"
     >
       <Package size={28} strokeWidth={1.5} className="mx-auto mb-3 text-[var(--ink-muted)]" />
-      <p className="text-sm font-semibold text-[var(--ink)]">Nothing recorded yet</p>
+      <p className="text-sm font-semibold text-[var(--ink)]">{t.nothingYet}</p>
     </motion.div>
   );
 }
 
 function PopulatedPreview(props: BatchPreviewCardProps) {
   const quantityNum = parseFloat(props.quantity) || 0;
-  const rows = buildDetailRows(props);
+  const { batchPreview: t } = useMessages(demoManufacturer);
+  const { lot } = useMessages(demoCommon);
+  const labels = useLabels();
+  const fmt = useFormat();
+  const rows = buildDetailRows(props, t, labels, lot.confidence, fmt.date);
 
   return (
     <motion.div
@@ -212,14 +232,14 @@ function PopulatedPreview(props: BatchPreviewCardProps) {
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center rounded-full border border-[var(--line)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            {categoryLabel(props.materialCategory)}
+            {labels.MATERIAL_CATEGORY_LABELS[props.materialCategory]}
           </span>
           <CirkaBadge status={props.releaseImmediately ? "awaiting_review" : "draft"} />
         </div>
 
         <h3 className="text-lg font-semibold tracking-[-0.02em] text-[var(--ink)]">
           {props.name.trim() === "" ? (
-            <span className="italic text-[var(--ink-muted)]">Untitled batch</span>
+            <span className="italic text-[var(--ink-muted)]">{t.untitled}</span>
           ) : (
             props.name
           )}

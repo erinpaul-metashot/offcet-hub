@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, UploadCloud } from "lucide-react";
 import { Button, EmptyState, Field, Input, Panel, Select, Textarea } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoManufacturer } from "@/lib/i18n/messages/demo-manufacturer";
 import {
   IMPORT_COLUMNS,
   parseDelimitedSheet,
@@ -22,17 +25,6 @@ import { useAction } from "../../../../_components/use-action";
 type ImportColumn = (typeof IMPORT_COLUMNS)[number];
 type Stage = 1 | 2;
 type RowClassification = "new" | "update" | "invalid";
-
-const COLUMN_LABELS: Record<ImportColumn, string> = {
-  name: "Name",
-  description: "Description",
-  materialCategory: "Material category",
-  quantity: "Quantity",
-  unit: "Unit",
-  composition: "Composition",
-  locationText: "Location",
-  externalRecordId: "External record ID",
-};
 
 const AUTO_GUESS: Array<{ test: RegExp; field: ImportColumn }> = [
   { test: /namn|artikel|^name$/i, field: "name" },
@@ -86,6 +78,7 @@ export default function ImportMappingWizardPage() {
   const router = useRouter();
   const store = useDemoStore();
   const commitAction = useAction();
+  const { csvImport: t } = useMessages(demoManufacturer);
 
   const [stage, setStage] = useState<Stage>(1);
   const [rawText, setRawText] = useState("");
@@ -170,11 +163,11 @@ export default function ImportMappingWizardPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        title="Spreadsheet import"
+        title={t.title}
         action={
           <Button as={Link} href="/demo/manufacturer/batches/import" variant="secondary" size="sm">
             <ArrowLeft size={15} />
-            Back to intake
+            {t.backToIntake}
           </Button>
         }
       />
@@ -186,30 +179,30 @@ export default function ImportMappingWizardPage() {
           <div className="flex flex-wrap items-center justify-end gap-3">
             <Button variant="secondary" size="sm" onClick={loadSample}>
               <UploadCloud size={15} />
-              Load sample
+              {t.loadSample}
             </Button>
           </div>
 
-          <Field label="External system (optional)">
+          <Field label={t.externalSystem}>
             <Input
               value={externalSystemName}
               onChange={(event) => setExternalSystemName(event.target.value)}
-              placeholder="e.g. Nordväst ERP"
+              placeholder={t.externalSystemPlaceholder}
             />
           </Field>
 
-          <Field label="Sheet contents" required>
+          <Field label={t.sheetContents} required>
             <Textarea
               rows={10}
               value={rawText}
               onChange={(event) => setRawText(event.target.value)}
-              placeholder="Paste CSV, header row first"
+              placeholder={t.sheetPlaceholder}
             />
           </Field>
 
           <div className="flex justify-end border-t border-[var(--line)] pt-4">
             <Button disabled={!rawText.trim()} onClick={goToMapping}>
-              Map columns
+              {t.mapColumns}
               <ArrowRight size={15} />
             </Button>
           </div>
@@ -232,9 +225,10 @@ export default function ImportMappingWizardPage() {
 }
 
 function StepIndicator({ stage }: { stage: Stage }) {
+  const { csvImport: t } = useMessages(demoManufacturer);
   const steps: Array<{ step: Stage; label: string }> = [
-    { step: 1, label: "Paste sheet" },
-    { step: 2, label: "Map & send to inbox" },
+    { step: 1, label: t.stepPaste },
+    { step: 2, label: t.stepMap },
   ];
 
   return (
@@ -276,16 +270,18 @@ function StageMap({
   pending?: boolean;
   error?: string | null;
 }) {
+  const { csvImport: t } = useMessages(demoManufacturer);
+
   if (sheet.headers.length === 0) {
     return (
       <div className="space-y-5">
         <EmptyState
-          title="Nothing to map"
-          body="No columns found. Check the header row is included."
+          title={t.nothingToMap}
+          body={t.noColumns}
         />
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft size={15} />
-          Back
+          {t.back}
         </Button>
       </div>
     );
@@ -296,12 +292,12 @@ function StageMap({
   return (
     <Panel className="space-y-5 p-6">
       <p className="text-sm text-[var(--ink-muted)]">
-        {sheet.headers.length} column{sheet.headers.length === 1 ? "" : "s"} ·{" "}
-        {sheet.rows.length} row{sheet.rows.length === 1 ? "" : "s"}
+        {format(sheet.headers.length === 1 ? t.columnOne : t.columnMany, { count: sheet.headers.length })} ·{" "}
+        {format(sheet.rows.length === 1 ? t.rowOne : t.rowMany, { count: sheet.rows.length })}
       </p>
 
       {error && (
-        <NoticeBanner tone="blocking" title="Couldn't queue these imports">
+        <NoticeBanner tone="blocking" title={t.queueFailed}>
           {error}
         </NoticeBanner>
       )}
@@ -311,11 +307,11 @@ function StageMap({
         {/* Column Headers */}
         <div className="hidden sm:flex items-center gap-2 pb-2 border-b border-[var(--line)]/50">
           <div className="w-[42%] text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Column
+            {t.column}
           </div>
           <div className="flex-1" />
           <div className="w-[42%] text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
-            Field
+            {t.field}
           </div>
         </div>
 
@@ -354,10 +350,10 @@ function StageMap({
                   value={columnMap[header] ?? ""}
                   onChange={(event) => onChangeMap(header, event.target.value)}
                 >
-                  <option value="">Ignore this column</option>
+                  <option value="">{t.ignore}</option>
                   {IMPORT_COLUMNS.map((field) => (
                     <option key={field} value={field}>
-                      {COLUMN_LABELS[field]}
+                      {t.columns[field]}
                     </option>
                   ))}
                 </Select>
@@ -370,10 +366,10 @@ function StageMap({
       <div className="flex justify-between border-t border-[var(--line)] pt-4">
         <Button variant="ghost" onClick={onBack} disabled={pending}>
           <ArrowLeft size={15} />
-          Back
+          {t.back}
         </Button>
         <Button onClick={onContinue} disabled={pending}>
-          Send to inbox
+          {t.send}
           <ArrowRight size={15} />
         </Button>
       </div>

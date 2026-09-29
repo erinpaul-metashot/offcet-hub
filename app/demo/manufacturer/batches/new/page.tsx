@@ -5,38 +5,40 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button, Field, Input, Panel, Select, Textarea } from "@/components/ui";
+import { format } from "@/lib/i18n/locale";
+import { useMessages } from "@/lib/i18n/locale-provider";
+import { demoCommon } from "@/lib/i18n/messages/demo-common";
+import { demoManufacturer } from "@/lib/i18n/messages/demo-manufacturer";
 import {
   COMPOSITION_CONFIDENCES,
   MATERIAL_CATEGORIES,
   MATERIAL_FORMATS,
   QUALITY_CLASSES,
   UNITS,
-  FORMAT_LABELS,
-  QUALITY_CLASS_LABELS,
-  UNIT_LABELS,
   type CompositionConfidence,
   type MaterialCategory,
   type MaterialFormat,
   type QualityClass,
   type Unit,
 } from "../../../_mock/domain";
-import { categoryLabel } from "../../../_mock/selectors-shared";
 import { useDemoPersona, useDemoStore } from "../../../_mock/store";
 import { NoticeBanner, SectionHeading } from "../../../_components/cirka-ui";
 import { useAction } from "../../../_components/use-action";
+import { useLabels } from "../../../_components/use-labels";
 import { BatchPreviewCard } from "./batch-preview-card";
 
+/** `key` names the caption in `demoCommon.batchEdit.photoChoices`. */
 const PHOTO_CHOICES = [
-  { url: "/cirka_batch_jersey_offcuts.png", label: "Jersey offcuts" },
-  { url: "/cirka_batch_denim_rolls.png", label: "Denim rolls" },
-  { url: "/cirka_batch_merino_knit.png", label: "Merino knit" },
-  { url: "/cirka_batch_cotton_twill.png", label: "Cotton twill" },
-  { url: "/cirka_batch_flax_linen.png", label: "Flax linen" },
-  { url: "/cirka_batch_fleece_trimmings.png", label: "Fleece trimmings" },
-  { url: "/cirka_batch_melton_wool.png", label: "Melton wool" },
-  { url: "/cirka_pattern_maker.png", label: "Cutting table" },
-  { url: "/cirka_sewing_machine.png", label: "Sewing line" },
-];
+  { url: "/cirka_batch_jersey_offcuts.png", key: "jersey" },
+  { url: "/cirka_batch_denim_rolls.png", key: "denim" },
+  { url: "/cirka_batch_merino_knit.png", key: "merino" },
+  { url: "/cirka_batch_cotton_twill.png", key: "twill" },
+  { url: "/cirka_batch_flax_linen.png", key: "linen" },
+  { url: "/cirka_batch_fleece_trimmings.png", key: "fleece" },
+  { url: "/cirka_batch_melton_wool.png", key: "melton" },
+  { url: "/cirka_pattern_maker.png", key: "cutting" },
+  { url: "/cirka_sewing_machine.png", key: "sewing" },
+] as const;
 
 function toTimestamp(value: string): number | undefined {
   if (!value) {
@@ -52,6 +54,9 @@ export default function RecordBatchPage() {
   const { createResourceBatch, db } = useDemoStore();
   const { scope } = useDemoPersona("manufacturer");
   const { run, error, pending } = useAction();
+  const { newBatch: t } = useMessages(demoManufacturer);
+  const { batchEdit: f, lot } = useMessages(demoCommon);
+  const labels = useLabels();
 
   const facilities = db.facilities.filter(
     (facility) => facility.orgId === scope.orgId && facility.isActive,
@@ -115,33 +120,33 @@ export default function RecordBatchPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        title="New resource batch"
+        title={t.title}
         action={
           <Button as={Link} href="/demo/manufacturer/batches/import" variant="secondary" size="sm">
             <ArrowLeft size={15} />
-            Back to intake
+            {t.backToIntake}
           </Button>
         }
       />
 
-      {error && <NoticeBanner tone="blocking" title="The batch was not saved">{error}</NoticeBanner>}
+      {error && <NoticeBanner tone="blocking" title={t.notSaved}>{error}</NoticeBanner>}
 
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
       <form onSubmit={submit} className="space-y-6 lg:col-span-8">
         <Panel className="space-y-5 p-6">
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Material
+            {t.material}
           </h2>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Name">
+            <Field label={f.name}>
               <Input
                 required
                 value={form.name}
                 onChange={(event) => update("name", event.target.value)}
-                placeholder="Organic cotton jersey offcuts"
+                placeholder={t.namePlaceholder}
               />
             </Field>
-            <Field label="Material category">
+            <Field label={f.materialCategory}>
               <Select
                 value={form.materialCategory}
                 onChange={(event) =>
@@ -150,31 +155,31 @@ export default function RecordBatchPage() {
               >
                 {MATERIAL_CATEGORIES.map((value) => (
                   <option key={value} value={value}>
-                    {categoryLabel(value)}
+                    {labels.MATERIAL_CATEGORY_LABELS[value]}
                   </option>
                 ))}
               </Select>
             </Field>
           </div>
 
-          <Field label="Description">
+          <Field label={f.description}>
             <Textarea
               required
               value={form.description}
               onChange={(event) => update("description", event.target.value)}
-              placeholder="Origin, packing, piece size"
+              placeholder={t.descriptionPlaceholder}
             />
           </Field>
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Composition">
+            <Field label={f.composition}>
               <Input
                 value={form.composition}
                 onChange={(event) => update("composition", event.target.value)}
-                placeholder="100% organic cotton"
+                placeholder={t.compositionPlaceholder}
               />
             </Field>
-            <Field label="Composition confidence">
+            <Field label={f.confidenceLabel}>
               <Select
                 value={form.compositionConfidence}
                 onChange={(event) =>
@@ -183,52 +188,52 @@ export default function RecordBatchPage() {
               >
                 {COMPOSITION_CONFIDENCES.map((value) => (
                   <option key={value} value={value}>
-                    {value}
+                    {lot.confidence[value]}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Format">
+            <Field label={f.format}>
               <Select
                 value={form.format}
                 onChange={(event) => update("format", event.target.value as MaterialFormat)}
               >
                 {MATERIAL_FORMATS.map((value) => (
                   <option key={value} value={value}>
-                    {FORMAT_LABELS[value]}
+                    {labels.FORMAT_LABELS[value]}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Quality classification">
+            <Field label={t.qualityClassification}>
               <Select
                 value={form.qualityClass}
                 onChange={(event) => update("qualityClass", event.target.value as QualityClass)}
               >
                 {QUALITY_CLASSES.map((value) => (
                   <option key={value} value={value}>
-                    {QUALITY_CLASS_LABELS[value]}
+                    {labels.QUALITY_CLASS_LABELS[value]}
                   </option>
                 ))}
               </Select>
             </Field>
           </div>
 
-          <Field label="Colour">
+          <Field label={f.colour}>
             <Input
               value={form.colour}
               onChange={(event) => update("colour", event.target.value)}
-              placeholder="Ecru / off-white"
+              placeholder={t.colourPlaceholder}
             />
           </Field>
         </Panel>
 
         <Panel className="space-y-5 p-6">
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            Quantity & location
+            {t.quantityLocation}
           </h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Quantity">
+            <Field label={t.quantity}>
               <Input
                 required
                 type="number"
@@ -239,26 +244,26 @@ export default function RecordBatchPage() {
                 placeholder="500"
               />
             </Field>
-            <Field label="Unit">
+            <Field label={t.unit}>
               <Select
                 value={form.unit}
                 onChange={(event) => update("unit", event.target.value as Unit)}
               >
                 {UNITS.map((value) => (
                   <option key={value} value={value}>
-                    {UNIT_LABELS[value]}
+                    {labels.UNIT_LABELS[value]}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Available from">
+            <Field label={f.availableFrom}>
               <Input
                 type="date"
                 value={form.availableFrom}
                 onChange={(event) => update("availableFrom", event.target.value)}
               />
             </Field>
-            <Field label="Available until">
+            <Field label={f.availableUntil}>
               <Input
                 type="date"
                 value={form.availableUntil}
@@ -268,7 +273,7 @@ export default function RecordBatchPage() {
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Source facility">
+            <Field label={f.sourceFacility}>
               <Select
                 value={form.sourceFacilityId}
                 onChange={(event) => {
@@ -283,7 +288,7 @@ export default function RecordBatchPage() {
                   }
                 }}
               >
-                <option value="">Not recorded</option>
+                <option value="">{f.notRecorded}</option>
                 {facilities.map((facility) => (
                   <option key={facility._id} value={facility._id}>
                     {facility.name}
@@ -291,7 +296,7 @@ export default function RecordBatchPage() {
                 ))}
               </Select>
             </Field>
-            <Field label="Location">
+            <Field label={f.location}>
               <Input
                 value={form.locationText}
                 onChange={(event) => update("locationText", event.target.value)}
@@ -299,7 +304,7 @@ export default function RecordBatchPage() {
             </Field>
           </div>
 
-          <Field label="Estimated value (SEK)" hint="Never shown to brands">
+          <Field label={f.estimatedValue} hint={t.neverShownToBrands}>
             <Input
               type="number"
               min="0"
@@ -312,9 +317,9 @@ export default function RecordBatchPage() {
 
         <Panel className="space-y-5 p-6">
           <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">Images</h2>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{t.images}</h2>
             <span className="text-[11px] font-bold uppercase tracking-[0.16em] tabular-nums text-[var(--ink-muted)]">
-              {images.length} selected
+              {format(t.selected, { count: images.length })}
             </span>
           </div>
           <div className="grid gap-4 sm:grid-cols-4">
@@ -337,9 +342,9 @@ export default function RecordBatchPage() {
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photo.url} alt={photo.label} className="h-24 w-full object-cover" />
+                  <img src={photo.url} alt={f.photoChoices[photo.key]} className="h-24 w-full object-cover" />
                   <span className="block px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                    {photo.label}
+                    {f.photoChoices[photo.key]}
                   </span>
                 </button>
               );
@@ -355,10 +360,10 @@ export default function RecordBatchPage() {
               onChange={(event) => update("releaseImmediately", event.target.checked)}
               className="mt-1"
             />
-            <span>Release for matching</span>
+            <span>{t.release}</span>
           </label>
           <Button type="submit" disabled={pending}>
-            {pending ? "Recording…" : "Record batch"}
+            {pending ? t.recording : t.record}
           </Button>
         </Panel>
       </form>
